@@ -1,0 +1,22 @@
+{
+	"name": "SQUINT",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.copilot",
+				"GitHub.vscode-github-actions",
+				"GitHub.copilot-chat",
+				"llvm-vs-code-extensions.vscode-clangd",
+				"ms-vscode.cmake-tools",
+				"matepek.vscode-catch2-test-adapter"
+			]
+		}
+	}
+}

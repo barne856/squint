@@ -1,0 +1,17 @@
+Math - Tensor Quantities (TQ)
+	Units
+	Linalg (Scalars, Vectors, Matrices)
+Quntities
+	util (functions, Constants, misc helper functions for math) everything else
+	optimization (root finding, convex optimization, lagrange multipliers)
+Hydraulics - Hydraulic Analysis Library (HAL)
+	Network (links and nodes)
+	Friction
+	Shapes
+	Headloss
+	util (Dimensionless numbers, characteristic lengths)  everything else
+Components (Fully connected networks) new module for each component
+	Opening
+	Passage
+Model (Set of components independent of each other or connected through binding points)
+IO (writing, reading models)

@@ -1,0 +1,3 @@
+Checks: '-*,readability-*,-readability-braces-around-statements,clang-analyzer-*,-readability-identifier-length,-readability-magic-numbers,-readability-function-cognitive-complexity'
+HeaderFilterRegex: '.*'
+FormatStyle: file
