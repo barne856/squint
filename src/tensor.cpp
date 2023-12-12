@@ -7,6 +7,7 @@
  *
  */
 module;
+#include <cstdio>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -328,6 +329,33 @@ template <int... sizes> bool bounds_check(std::integral auto... indices) {
     assert(sizeof...(indices) <= sizeof...(sizes) - first_not_one); // too many indices.
     for (int i = first_not_one; i < sizeof...(indices) + first_not_one; i++) {
         if (index_arr[i - first_not_one] >= size_arr[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+// compile time check if two tensors have the same shape
+template <fixed_tensor T, fixed_tensor U> constexpr bool same_shape() {
+    constexpr size_t N = T::shape().size();
+    constexpr size_t M = U::shape().size();
+    bool is_same = false;
+    if (M >= N) {
+        is_same = [&]<auto... I>(std::index_sequence<I...>) {
+            return ((T::shape(I) == U::shape(I)) && ...);
+        }(std::make_index_sequence<M>{});
+    } else {
+        is_same = [&]<auto... I>(std::index_sequence<I...>) {
+            return ((T::shape(I) == U::shape(I)) && ...);
+        }(std::make_index_sequence<N>{});
+    }
+    return is_same;
+}
+// runtime check if two tensors have the same shape
+template <tensorial T, tensorial U> bool same_shape(const T &tens1, const U &tens2) {
+    size_t N = tens1.shape().size();
+    size_t M = tens2.shape().size();
+    for (size_t i = 0; i < std::max(N, M); i++) {
+        if (tens1.shape(i) != tens2.shape(i)) {
             return false;
         }
     }

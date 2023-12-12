@@ -96,7 +96,7 @@ using pow_type = decltype(pow<N>(std::declval<typename T::value_type &>()));
 template <fixed_tensor U, fixed_tensor V>
     requires(!scalar<U> && !scalar<V>)
 auto operator+(const U &a, const V &b) {
-    static_assert(U::squeezed_shape() == V::squeezed_shape(), "tensors must have the same shape");
+    static_assert(same_shape<U, V>(), "tensors must have the same shape");
     using res_type = typename std::remove_const<sum_type<U, V>>::type;
     constexpr size_t N = U::shape().size();
     return [&]<auto... I>(std::index_sequence<I...>) {
@@ -112,7 +112,7 @@ auto operator+(const U &a, const V &b) {
 template <fixed_tensor U, fixed_tensor V>
     requires(!scalar<U> && !scalar<V>)
 auto operator-(const U &a, const V &b) {
-    static_assert(U::squeezed_shape() == V::squeezed_shape(), "tensors must have the same shape");
+    static_assert(same_shape<U, V>(), "tensors must have the same shape");
     using res_type = typename std::remove_const<diff_type<U, V>>::type;
     constexpr size_t N = U::shape().size();
     return [&]<auto... I>(std::index_sequence<I...>) {
@@ -126,7 +126,7 @@ auto operator-(const U &a, const V &b) {
     }(std::make_index_sequence<N>{});
 }
 template <dynamic_tensor U, dynamic_tensor V> auto operator+(const U &a, const V &b) {
-    assert(a.squeezed_shape() == b.squeezed_shape());
+    assert(same_shape(a, b));
     using res_type = typename std::remove_const<sum_type<U, V>>::type;
     tensor<res_type, dynamic_shape> y(a.shape(), res_type(0));
     auto it3 = y.begin();
@@ -137,7 +137,7 @@ template <dynamic_tensor U, dynamic_tensor V> auto operator+(const U &a, const V
     return y;
 }
 template <dynamic_tensor U, dynamic_tensor V> auto operator-(const U &a, const V &b) {
-    assert(a.squeezed_shape() == b.squeezed_shape());
+    assert(same_shape(a, b));
     using res_type = typename std::remove_const<diff_type<U, V>>::type;
     tensor<res_type, dynamic_shape> y(a.shape(), res_type(0));
     auto it3 = y.begin();
