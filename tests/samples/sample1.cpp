@@ -9,7 +9,9 @@ int main(){
     using position3d = squint::tensor<squint::quantities::length, 3>;
     using time = squint::quantities::time;
     using velocity = squint::quantities::velocity;
-    const auto dt = time{0.1};
+
+
+    const time dt = time::seconds(0.1);
     std::vector<position3d> points{{1, 2, 3}};
     for (auto &p : points)
     {
