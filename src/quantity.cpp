@@ -28,8 +28,8 @@ template <typename T, dimensional D> class quantity {
         requires(tensorial<S> && std::is_same<quantity, typename S::value_type>::value)
     constexpr quantity(const S &other) : _elem(other.data()[0]._elem) {}
     constexpr quantity(const quantity &other) : _elem(other._elem) {}
-    // implicit conversion from value type only if dimensionless
-    explicit(!std::is_same<D, dimensions::dimensionless>::value) constexpr quantity(const T &other) : _elem(other) {}
+    // implicit conversion from value type
+    constexpr quantity(const T &other) : _elem(other) {}
     operator const T &() const
         requires(std::is_same<D, dimensions::dimensionless>::value)
     {

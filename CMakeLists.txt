@@ -24,6 +24,7 @@ include(Catch)
 ## Create the tests
 add_executable(tests tests/tests.cpp)
 add_executable(sample tests/sample.cpp)
+add_executable(sample1 tests/samples/sample1.cpp)
 add_library(squint)
 target_sources(squint PUBLIC FILE_SET CXX_MODULES FILES
   src/dimension.cpp
@@ -35,6 +36,7 @@ target_sources(squint PUBLIC FILE_SET CXX_MODULES FILES
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain squint)
 target_link_libraries(sample PRIVATE squint)
+target_link_libraries(sample1 PRIVATE squint)
 if(USE_MKL)
     # Set to your MKL directory path, you can source /opt/intel/oneapi/setvars.sh to set the environment variable MKLROOT
     # you probably need to source this or else you could get OpenMP not found errors
