@@ -1,6 +1,7 @@
 TODO: use multidimensional subscript operator to retrun value type when indexing to a scalar instead of tensor of shape 1
 TODO: quantities should be templated instead of length and length_f use length<double> and length<float>
 TODO: literal subscript are not needed - remove. e.g. _m, _yd, etc...
+TODO: move convience types to squint.cpp
 
 Math - Tensor Quantities (TQ)
 	Units
