@@ -6,12 +6,13 @@
  * @copyright Copyright (c) 2022
  *
  */
-module;
+#ifndef SQUINT_DIMENSION_HPP
+#define SQUINT_DIMENSION_HPP
 #include <concepts>
 #include <ratio>
-export module squint:dimension;
 
-export namespace squint {
+
+namespace squint {
 // define a concept for the standard library ratio template type
 template <class T>
 concept rational = std::is_same<T, std::ratio<T::num, T::den>>::value;
@@ -86,3 +87,4 @@ using flow = div_t<volume, time>;
 using energy = mult_t<force, length>;
 } // namespace dimensions
 } // namespace squint
+#endif // SQUINT_DIMENSION_HPP

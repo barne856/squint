@@ -5,18 +5,25 @@
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {},
-		"ghcr.io/devcontainers/features/github-cli:1": {}
+		"ghcr.io/adamlm/devcontainer-features/cmake": {
+			"version": "3.29.5"
+		}
 	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"GitHub.copilot",
-				"GitHub.vscode-github-actions",
-				"GitHub.copilot-chat",
 				"llvm-vs-code-extensions.vscode-clangd",
-				"ms-vscode.cmake-tools",
-				"matepek.vscode-catch2-test-adapter"
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ms-vscode.cmake-tools"
 			]
 		}
-	}
+	},
+	"mounts": [
+		"source=squint-build,target=${containerWorkspaceFolder}/build,type=volume"
+	],
+	// make vscode user own the workspace and all mounts
+	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
+	// prevent git dubious ownership
+	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

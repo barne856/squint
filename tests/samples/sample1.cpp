@@ -2,7 +2,7 @@
 #include <typeinfo>
 #include <cassert>
 #include <vector>
-import squint;
+#include "squint/linalg.hpp"
 
 
 int main(){

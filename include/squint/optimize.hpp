@@ -1,12 +1,11 @@
-module;
+#ifndef SQUINT_OPTIMIZE_HPP
+#define SQUINT_OPTIMIZE_HPP
 #include <ostream>
 #include <iostream>
-export module squint:optimize;
+#include "squint/quantity.hpp"
+#include "squint/tensor.hpp"
 
-import :quantity;
-import :tensor;
-
-export namespace squint {
+namespace squint {
 // concepts for functions
 template <class F, typename T>
 concept single_variable = scalar<T> && std::invocable<F, T> && scalar<typename std::invoke_result<F, T>::type>;
@@ -46,3 +45,4 @@ requires(vector_valued<F, T>) auto jac(const F &func, const T &args) {
 }
 
 } // namespace squint
+#endif // SQUINT_OPTIMIZE_HPP

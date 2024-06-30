@@ -6,17 +6,17 @@
  * @copyright Copyright (c) 2022
  *
  */
-module;
+#ifndef SQUINT_QUANTITY_HPP
+#define SQUINT_QUANTITY_HPP
+#define _USE_MATH_DEFINES
 #include <cassert>
 #include <cmath>
 #include <ostream>
-#define _USE_MATH_DEFINES
-export module squint:quantity;
+#include "squint/dimension.hpp"
+#include "squint/tensor.hpp"
 
-import :dimension;
-import :tensor;
 
-export namespace squint {
+namespace squint {
 namespace quantities {
 template <typename T, dimensional D> class quantity {
   public:
@@ -901,3 +901,4 @@ inline constexpr auto g = acceleration::mps2(9.8067);
 inline constexpr auto g_f = acceleration_f::mps2(9.8067);
 } // namespace quantities
 } // namespace squint
+#endif // SQUINT_QUANTITIES_HPP

@@ -1,7 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <sstream>
 
-import squint;
+#include "squint/linalg.hpp"
+#include "squint/optimize.hpp"
 
 // TODO: add tests for matrix mult and inverse of transposed and sparse matrix refs
 using namespace squint;

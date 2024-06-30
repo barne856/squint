@@ -6,7 +6,8 @@
  * @copyright Copyright (c) 2022
  *
  */
-module;
+#ifndef SQUINT_LINALG_HPP
+#define SQUINT_LINALG_HPP
 #ifdef SQUINT_USE_MKL
 #include "mkl_service.h"
 #include <mkl.h>
@@ -15,12 +16,11 @@ module;
 #endif
 #include <ostream>
 #include <cassert>
-export module squint:linalg;
-import :quantity;
-import :tensor;
-import :dimension;
+#include "squint/quantity.hpp"
+#include "squint/tensor.hpp"
+#include "squint/dimension.hpp"
 
-export namespace squint {
+namespace squint {
 // constexpr max
 template <class T> inline constexpr T const &maximum(const T &first, const T &second) {
     return first < second ? second : first;
@@ -1350,3 +1350,4 @@ void tensor_solve_lls(T &A, U &B, V &X) {
 }
 #endif
 } // namespace squint
+#endif // SQUINT_LINALG_H

@@ -6,7 +6,8 @@
  * @copyright Copyright (c) 2022
  *
  */
-module;
+#ifndef SQUINT_TENSOR_HPP
+#define SQUINT_TENSOR_HPP
 #include <cstdio>
 #include <algorithm>
 #include <array>
@@ -25,11 +26,10 @@ module;
 #include <utility>
 #include <vector>
 
-export module squint:tensor;
+#include "squint/dimension.hpp"
 
-import :dimension;
 
-export namespace squint {
+namespace squint {
 
 // Utility -------------------------------------------------------------------------------------------------------
 // constant values -----------------------------------------------------------------------------------------------------
@@ -2411,3 +2411,4 @@ template <dynamic_tensor U, dynamic_tensor V> bool operator<(U const &x, V const
 using dtens = tensor<double, dynamic_shape>;
 using ftens = tensor<float, dynamic_shape>;
 } // namespace squint
+#endif // SQUINT_TENSOR_HPP
