@@ -6,6 +6,16 @@ set(CMAKE_CXX_STANDARD 23)
 include_directories("./include")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Define an INTERFACE library target
+add_library(squint INTERFACE)
+
+# Add include directories
+target_include_directories(squint
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
 # ## Find or fetch Catch2
 # include(FetchContent)
 # FetchContent_Declare(
