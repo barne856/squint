@@ -894,19 +894,194 @@ constexpr pressure operator""_psf(unsigned long long int d) { return pressure::p
 // Pounds per Square Inch
 constexpr pressure operator""_psi(long double d) { return pressure::psi(static_cast<double>(d)); }
 constexpr pressure operator""_psi(unsigned long long int d) { return pressure::psi(static_cast<double>(d)); }
+namespace constants {
 
-// Physical constants --------------------------------------------------------------------------------------------------
-// Gravitational constant
-inline constexpr auto G = quantity<double, div_t<mult_t<dimensions::force, dimensions::area>,
-                                                 mult_t<dimensions::mass, dimensions::mass>>>::from_value(6.67430e-11);
-inline constexpr auto G_f = quantity<float, div_t<mult_t<dimensions::force, dimensions::area>,
-                                                  mult_t<dimensions::mass, dimensions::mass>>>::from_value(6.67430e-11);
-// Speed of light
-inline constexpr auto c = velocity::mps(299792458.0);
-inline constexpr auto c_f = velocity_f::mps(299792458.0);
-// Earth's acceleration due to gravity
-inline constexpr auto g = acceleration::mps2(9.8067);
-inline constexpr auto g_f = acceleration_f::mps2(9.8067);
+// Fundamental constants
+inline constexpr auto c = velocity::mps(299792458.0); // Speed of light in vacuum
+inline constexpr auto c_f = velocity_f::mps(299792458.0f);
+
+inline constexpr auto h = quantity<double, mult_t<dimensions::energy, dimensions::time>>::from_value(6.62607015e-34); // Planck constant
+inline constexpr auto h_f = quantity<float, mult_t<dimensions::energy, dimensions::time>>::from_value(6.62607015e-34f);
+
+inline constexpr auto hbar = quantity<double, mult_t<dimensions::energy, dimensions::time>>::from_value(1.054571817e-34); // Reduced Planck constant
+inline constexpr auto hbar_f = quantity<float, mult_t<dimensions::energy, dimensions::time>>::from_value(1.054571817e-34f);
+
+inline constexpr auto G = quantity<double, div_t<mult_t<dimensions::force, dimensions::area>, mult_t<dimensions::mass, dimensions::mass>>>::from_value(6.67430e-11); // Gravitational constant
+inline constexpr auto G_f = quantity<float, div_t<mult_t<dimensions::force, dimensions::area>, mult_t<dimensions::mass, dimensions::mass>>>::from_value(6.67430e-11f);
+
+inline constexpr auto e = quantity<double, dimensions::charge>::from_value(1.602176634e-19); // Elementary charge
+inline constexpr auto e_f = quantity<float, dimensions::charge>::from_value(1.602176634e-19f);
+
+// Electromagnetic constants
+inline constexpr auto mu_0 = quantity<double, div_t<dimensions::force, mult_t<dimensions::current, dimensions::current>>>::from_value(1.25663706212e-6); // Vacuum permeability
+inline constexpr auto mu_0_f = quantity<float, div_t<dimensions::force, mult_t<dimensions::current, dimensions::current>>>::from_value(1.25663706212e-6f);
+
+inline constexpr auto epsilon_0 = quantity<double, div_t<dimensions::capacitance, dimensions::length>>::from_value(8.8541878128e-12); // Vacuum permittivity
+inline constexpr auto epsilon_0_f = quantity<float, div_t<dimensions::capacitance, dimensions::length>>::from_value(8.8541878128e-12f);
+
+// Atomic and nuclear constants
+inline constexpr auto m_e = mass::kilograms(9.1093837015e-31); // Electron mass
+inline constexpr auto m_e_f = mass_f::kilograms(9.1093837015e-31f);
+
+inline constexpr auto m_p = mass::kilograms(1.67262192369e-27); // Proton mass
+inline constexpr auto m_p_f = mass_f::kilograms(1.67262192369e-27f);
+
+inline constexpr auto m_n = mass::kilograms(1.67492749804e-27); // Neutron mass
+inline constexpr auto m_n_f = mass_f::kilograms(1.67492749804e-27f);
+
+inline constexpr auto alpha = dimensionless::from_value(7.2973525693e-3); // Fine-structure constant
+inline constexpr auto alpha_f = dimensionless_f::from_value(7.2973525693e-3f);
+
+// Physico-chemical constants
+inline constexpr auto N_A = quantity<double, dimensions::inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23); // Avogadro constant
+inline constexpr auto N_A_f = quantity<float, dimensions::inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23f);
+
+inline constexpr auto k_B = quantity<double, div_t<dimensions::energy, dimensions::temperature>>::from_value(1.380649e-23); // Boltzmann constant
+inline constexpr auto k_B_f = quantity<float, div_t<dimensions::energy, dimensions::temperature>>::from_value(1.380649e-23f);
+
+inline constexpr auto R = quantity<double, div_t<mult_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324); // Gas constant
+inline constexpr auto R_f = quantity<float, div_t<mult_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324f);
+
+// Earth and astronomical constants
+inline constexpr auto g = acceleration::mps2(9.80665); // Standard acceleration due to gravity
+inline constexpr auto g_f = acceleration_f::mps2(9.80665f);
+
+inline constexpr auto au = length::meters(149597870700.0); // Astronomical unit
+inline constexpr auto au_f = length_f::meters(149597870700.0f);
+
+// Mathematical constants
+inline constexpr auto pi = dimensionless::from_value(3.141592653589793238462643383279502884);
+inline constexpr auto pi_f = dimensionless_f::from_value(3.141592653589793238462643383279502884f);
+
+inline constexpr auto e_const = dimensionless::from_value(2.718281828459045235360287471352662498);
+inline constexpr auto e_const_f = dimensionless_f::from_value(2.718281828459045235360287471352662498f);
+
+} // namespace constants
+namespace units {
+
+// Length units
+inline constexpr auto meter = quantity<double, dimensions::length>::from_value(1.0);
+inline constexpr auto meter_f = quantity<float, dimensions::length>::from_value(1.0f);
+inline constexpr auto foot = quantity<double, dimensions::length>::feet(1.0);
+inline constexpr auto foot_f = quantity<float, dimensions::length>::feet(1.0f);
+inline constexpr auto inch = quantity<double, dimensions::length>::inches(1.0);
+inline constexpr auto inch_f = quantity<float, dimensions::length>::inches(1.0f);
+inline constexpr auto yard = quantity<double, dimensions::length>::yards(1.0);
+inline constexpr auto yard_f = quantity<float, dimensions::length>::yards(1.0f);
+inline constexpr auto mile = quantity<double, dimensions::length>::miles(1.0);
+inline constexpr auto mile_f = quantity<float, dimensions::length>::miles(1.0f);
+
+// Area units
+inline constexpr auto square_meter = quantity<double, dimensions::area>::square_meters(1.0);
+inline constexpr auto square_meter_f = quantity<float, dimensions::area>::square_meters(1.0f);
+inline constexpr auto square_foot = quantity<double, dimensions::area>::square_feet(1.0);
+inline constexpr auto square_foot_f = quantity<float, dimensions::area>::square_feet(1.0f);
+inline constexpr auto square_inch = quantity<double, dimensions::area>::square_inches(1.0);
+inline constexpr auto square_inch_f = quantity<float, dimensions::area>::square_inches(1.0f);
+inline constexpr auto square_yard = quantity<double, dimensions::area>::square_yards(1.0);
+inline constexpr auto square_yard_f = quantity<float, dimensions::area>::square_yards(1.0f);
+inline constexpr auto square_mile = quantity<double, dimensions::area>::square_miles(1.0);
+inline constexpr auto square_mile_f = quantity<float, dimensions::area>::square_miles(1.0f);
+inline constexpr auto acre = quantity<double, dimensions::area>::acres(1.0);
+inline constexpr auto acre_f = quantity<float, dimensions::area>::acres(1.0f);
+
+// Volume units
+inline constexpr auto cubic_meter = quantity<double, dimensions::volume>::cubic_meters(1.0);
+inline constexpr auto cubic_meter_f = quantity<float, dimensions::volume>::cubic_meters(1.0f);
+inline constexpr auto cubic_foot = quantity<double, dimensions::volume>::cubic_feet(1.0);
+inline constexpr auto cubic_foot_f = quantity<float, dimensions::volume>::cubic_feet(1.0f);
+inline constexpr auto liter = quantity<double, dimensions::volume>::liters(1.0);
+inline constexpr auto liter_f = quantity<float, dimensions::volume>::liters(1.0f);
+inline constexpr auto gallon = quantity<double, dimensions::volume>::gallons(1.0);
+inline constexpr auto gallon_f = quantity<float, dimensions::volume>::gallons(1.0f);
+
+// Time units
+inline constexpr auto second = quantity<double, dimensions::time>::seconds(1.0);
+inline constexpr auto second_f = quantity<float, dimensions::time>::seconds(1.0f);
+
+// Mass units
+inline constexpr auto kilogram = quantity<double, dimensions::mass>::kilograms(1.0);
+inline constexpr auto kilogram_f = quantity<float, dimensions::mass>::kilograms(1.0f);
+inline constexpr auto slug = quantity<double, dimensions::mass>::slugs(1.0);
+inline constexpr auto slug_f = quantity<float, dimensions::mass>::slugs(1.0f);
+
+// Temperature units
+inline constexpr auto kelvin = quantity<double, dimensions::temperature>::kelvin(1.0);
+inline constexpr auto kelvin_f = quantity<float, dimensions::temperature>::kelvin(1.0f);
+inline constexpr auto celsius = quantity<double, dimensions::temperature>::celcius(1.0);
+inline constexpr auto celsius_f = quantity<float, dimensions::temperature>::celcius(1.0f);
+inline constexpr auto fahrenheit = quantity<double, dimensions::temperature>::fahrenheit(1.0);
+inline constexpr auto fahrenheit_f = quantity<float, dimensions::temperature>::fahrenheit(1.0f);
+
+// Flow units
+inline constexpr auto cubic_meter_per_second = quantity<double, dimensions::flow>::cms(1.0);
+inline constexpr auto cubic_meter_per_second_f = quantity<float, dimensions::flow>::cms(1.0f);
+inline constexpr auto cubic_foot_per_second = quantity<double, dimensions::flow>::cfs(1.0);
+inline constexpr auto cubic_foot_per_second_f = quantity<float, dimensions::flow>::cfs(1.0f);
+inline constexpr auto gallon_per_minute = quantity<double, dimensions::flow>::gpm(1.0);
+inline constexpr auto gallon_per_minute_f = quantity<float, dimensions::flow>::gpm(1.0f);
+inline constexpr auto gallon_per_day = quantity<double, dimensions::flow>::gpd(1.0);
+inline constexpr auto gallon_per_day_f = quantity<float, dimensions::flow>::gpd(1.0f);
+inline constexpr auto million_gallon_per_day = quantity<double, dimensions::flow>::mgd(1.0);
+inline constexpr auto million_gallon_per_day_f = quantity<float, dimensions::flow>::mgd(1.0f);
+
+// Velocity units
+inline constexpr auto meter_per_second = quantity<double, dimensions::velocity>::mps(1.0);
+inline constexpr auto meter_per_second_f = quantity<float, dimensions::velocity>::mps(1.0f);
+inline constexpr auto foot_per_second = quantity<double, dimensions::velocity>::fps(1.0);
+inline constexpr auto foot_per_second_f = quantity<float, dimensions::velocity>::fps(1.0f);
+
+// Acceleration units
+inline constexpr auto meter_per_second_squared = quantity<double, dimensions::acceleration>::mps2(1.0);
+inline constexpr auto meter_per_second_squared_f = quantity<float, dimensions::acceleration>::mps2(1.0f);
+inline constexpr auto foot_per_second_squared = quantity<double, dimensions::acceleration>::fps2(1.0);
+inline constexpr auto foot_per_second_squared_f = quantity<float, dimensions::acceleration>::fps2(1.0f);
+
+// Density units
+inline constexpr auto kilogram_per_cubic_meter = quantity<double, dimensions::density>::kilograms_per_cubic_meter(1.0);
+inline constexpr auto kilogram_per_cubic_meter_f = quantity<float, dimensions::density>::kilograms_per_cubic_meter(1.0f);
+inline constexpr auto slug_per_cubic_foot = quantity<double, dimensions::density>::slugs_per_cubic_foot(1.0);
+inline constexpr auto slug_per_cubic_foot_f = quantity<float, dimensions::density>::slugs_per_cubic_foot(1.0f);
+
+// Dynamic viscosity units
+inline constexpr auto pascal_second = quantity<double, dimensions::dynamic_viscosity>::pascal_seconds(1.0);
+inline constexpr auto pascal_second_f = quantity<float, dimensions::dynamic_viscosity>::pascal_seconds(1.0f);
+inline constexpr auto pound_per_square_foot_second = quantity<double, dimensions::dynamic_viscosity>::psf_seconds(1.0);
+inline constexpr auto pound_per_square_foot_second_f = quantity<float, dimensions::dynamic_viscosity>::psf_seconds(1.0f);
+
+// Kinematic viscosity units
+inline constexpr auto square_meter_per_second = quantity<double, dimensions::kinematic_viscosity>::square_meters_per_second(1.0);
+inline constexpr auto square_meter_per_second_f = quantity<float, dimensions::kinematic_viscosity>::square_meters_per_second(1.0f);
+inline constexpr auto square_foot_per_second = quantity<double, dimensions::kinematic_viscosity>::square_feet_per_second(1.0);
+inline constexpr auto square_foot_per_second_f = quantity<float, dimensions::kinematic_viscosity>::square_feet_per_second(1.0f);
+
+// Force units
+inline constexpr auto newton = quantity<double, dimensions::force>::newtons(1.0);
+inline constexpr auto newton_f = quantity<float, dimensions::force>::newtons(1.0f);
+inline constexpr auto pound_force = quantity<double, dimensions::force>::pounds(1.0);
+inline constexpr auto pound_force_f = quantity<float, dimensions::force>::pounds(1.0f);
+
+// Force density units
+inline constexpr auto newton_per_cubic_meter = quantity<double, dimensions::force_density>::newtons_per_cubic_meter(1.0);
+inline constexpr auto newton_per_cubic_meter_f = quantity<float, dimensions::force_density>::newtons_per_cubic_meter(1.0f);
+inline constexpr auto pound_per_cubic_foot = quantity<double, dimensions::force_density>::pcf(1.0);
+inline constexpr auto pound_per_cubic_foot_f = quantity<float, dimensions::force_density>::pcf(1.0f);
+
+// Dimensionless units
+inline constexpr auto radian = quantity<double, dimensions::dimensionless>::radians(1.0);
+inline constexpr auto radian_f = quantity<float, dimensions::dimensionless>::radians(1.0f);
+inline constexpr auto degree = quantity<double, dimensions::dimensionless>::degrees(1.0);
+inline constexpr auto degree_f = quantity<float, dimensions::dimensionless>::degrees(1.0f);
+
+// Pressure units
+inline constexpr auto pascal = quantity<double, dimensions::pressure>::pascals(1.0);
+inline constexpr auto pascal_f = quantity<float, dimensions::pressure>::pascals(1.0f);
+inline constexpr auto pound_per_square_foot = quantity<double, dimensions::pressure>::psf(1.0);
+inline constexpr auto pound_per_square_foot_f = quantity<float, dimensions::pressure>::psf(1.0f);
+inline constexpr auto pound_per_square_inch = quantity<double, dimensions::pressure>::psi(1.0);
+inline constexpr auto pound_per_square_inch_f = quantity<float, dimensions::pressure>::psi(1.0f);
+
+} // namespace units
 } // namespace quantities
 } // namespace squint
 #endif // SQUINT_QUANTITIES_HPP
