@@ -25,7 +25,6 @@
 
 
 namespace squint {
-namespace quantities {
 template <typename T, dimensional D> class quantity {
   public:
     using value_type = T;     // data type of the element
@@ -933,14 +932,14 @@ inline constexpr auto alpha = dimensionless::from_value(7.2973525693e-3); // Fin
 inline constexpr auto alpha_f = dimensionless_f::from_value(7.2973525693e-3f);
 
 // Physico-chemical constants
-inline constexpr auto N_A = quantity<double, dimensions::inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23); // Avogadro constant
-inline constexpr auto N_A_f = quantity<float, dimensions::inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23f);
+inline constexpr auto N_A = quantity<double, inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23); // Avogadro constant
+inline constexpr auto N_A_f = quantity<float, inv_t<dimensions::amount_of_substance>>::from_value(6.02214076e23f);
 
 inline constexpr auto k_B = quantity<double, div_t<dimensions::energy, dimensions::temperature>>::from_value(1.380649e-23); // Boltzmann constant
 inline constexpr auto k_B_f = quantity<float, div_t<dimensions::energy, dimensions::temperature>>::from_value(1.380649e-23f);
 
-inline constexpr auto R = quantity<double, div_t<mult_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324); // Gas constant
-inline constexpr auto R_f = quantity<float, div_t<mult_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324f);
+inline constexpr auto R = quantity<double, div_t<div_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324); // Gas constant
+inline constexpr auto R_f = quantity<float, div_t<div_t<dimensions::energy, dimensions::amount_of_substance>, dimensions::temperature>>::from_value(8.31446261815324f);
 
 // Earth and astronomical constants
 inline constexpr auto g = acceleration::mps2(9.80665); // Standard acceleration due to gravity
@@ -1082,6 +1081,5 @@ inline constexpr auto pound_per_square_inch = quantity<double, dimensions::press
 inline constexpr auto pound_per_square_inch_f = quantity<float, dimensions::pressure>::psi(1.0f);
 
 } // namespace units
-} // namespace quantities
 } // namespace squint
 #endif // SQUINT_QUANTITIES_HPP
