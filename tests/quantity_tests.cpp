@@ -53,17 +53,11 @@ TEST_CASE("Quantity Construction and Basic Operations") {
 TEST_CASE("Quantity Accessors and Conversions") {
     quantity<double, length> q(5.0);
 
-    SUBCASE("value() accessor") {
-        CHECK(q.value() == doctest::Approx(5.0));
-    }
+    SUBCASE("value() accessor") { CHECK(q.value() == doctest::Approx(5.0)); }
 
-    SUBCASE("Arrow operator") {
-        CHECK(*q.operator->() == doctest::Approx(5.0));
-    }
+    SUBCASE("Arrow operator") { CHECK(*q.operator->() == doctest::Approx(5.0)); }
 
-    SUBCASE("Dereference operator") {
-        CHECK(*q == doctest::Approx(5.0));
-    }
+    SUBCASE("Dereference operator") { CHECK(*q == doctest::Approx(5.0)); }
 
     SUBCASE("Explicit conversion to value type") {
         double d = static_cast<double>(q);
@@ -131,7 +125,7 @@ TEST_CASE("Quantity Increment and Decrement Operators") {
     quantity<int, length> q(5);
 
     SUBCASE("Pre-increment") {
-        auto& result = ++q;
+        auto &result = ++q;
         CHECK(q.value() == 6);
         CHECK(&result == &q);
     }
@@ -143,7 +137,7 @@ TEST_CASE("Quantity Increment and Decrement Operators") {
     }
 
     SUBCASE("Pre-decrement") {
-        auto& result = --q;
+        auto &result = --q;
         CHECK(q.value() == 4);
         CHECK(&result == &q);
     }
@@ -241,22 +235,28 @@ TEST_CASE("Quantity Dimension Correctness") {
 
     SUBCASE("Acceleration (length / time^2)") {
         auto acceleration = l / (t * t);
-        CHECK(std::is_same_v<decltype(acceleration)::dimension_type, squint::div_t<length, mult_t<dimensions::time, dimensions::time>>>);
+        CHECK(std::is_same_v<decltype(acceleration)::dimension_type,
+                             squint::div_t<length, mult_t<dimensions::time, dimensions::time>>>);
     }
 
     SUBCASE("Force (mass * length / time^2)") {
         auto force = m * l / (t * t);
-        CHECK(std::is_same_v<decltype(force)::dimension_type, squint::div_t<mult_t<mass, length>, mult_t<dimensions::time, dimensions::time>>>);
+        CHECK(std::is_same_v<decltype(force)::dimension_type,
+                             squint::div_t<mult_t<mass, length>, mult_t<dimensions::time, dimensions::time>>>);
     }
 
     SUBCASE("Energy (mass * length^2 / time^2)") {
         auto energy = m * l * l / (t * t);
-        CHECK(std::is_same_v<decltype(energy)::dimension_type, squint::div_t<mult_t<mass, mult_t<length, length>>, mult_t<dimensions::time, dimensions::time>>>);
+        CHECK(std::is_same_v<
+              decltype(energy)::dimension_type,
+              squint::div_t<mult_t<mass, mult_t<length, length>>, mult_t<dimensions::time, dimensions::time>>>);
     }
 
     SUBCASE("Power (mass * length^2 / time^3)") {
         auto power = m * l * l / (t * t * t);
-        CHECK(std::is_same_v<decltype(power)::dimension_type, squint::div_t<mult_t<mass, mult_t<length, length>>, mult_t<dimensions::time, mult_t<dimensions::time, dimensions::time>>>>);
+        CHECK(std::is_same_v<decltype(power)::dimension_type,
+                             squint::div_t<mult_t<mass, mult_t<length, length>>,
+                                           mult_t<dimensions::time, mult_t<dimensions::time, dimensions::time>>>>);
     }
 }
 
@@ -312,18 +312,28 @@ TEST_CASE("Unit Conversion") {
 
 TEST_CASE("Physical Constants") {
     SUBCASE("Speed of light") {
-        CHECK(si::c.value() == doctest::Approx(299792458.0));
-        CHECK(std::is_same_v<decltype(si::c)::dimension_type, velocity>);
+        CHECK(constants::si_constants<float>::c.value() == doctest::Approx(299792458.0F));
+        CHECK(constants::si_constants<double>::c.value() == doctest::Approx(299792458.0));
+        CHECK(std::is_same_v<decltype(constants::si_constants<float>::c)::dimension_type, dimensions::velocity>);
+        CHECK(std::is_same_v<decltype(constants::si_constants<double>::c)::dimension_type, dimensions::velocity>);
     }
 
     SUBCASE("Planck constant") {
-        CHECK(si::h.value() == doctest::Approx(6.62607015e-34));
-        CHECK(std::is_same_v<decltype(si::h)::dimension_type, mult_t<energy, dimensions::time>>);
+        CHECK(constants::si_constants<float>::h.value() == doctest::Approx(6.62607015e-34F));
+        CHECK(constants::si_constants<double>::h.value() == doctest::Approx(6.62607015e-34));
+        CHECK(std::is_same_v<decltype(constants::si_constants<float>::h)::dimension_type,
+                             mult_t<dimensions::energy, dimensions::time>>);
+        CHECK(std::is_same_v<decltype(constants::si_constants<double>::h)::dimension_type,
+                             mult_t<dimensions::energy, dimensions::time>>);
     }
 
     SUBCASE("Gravitational constant") {
-        CHECK(si::G.value() == doctest::Approx(6.67430e-11));
-        CHECK(std::is_same_v<decltype(si::G)::dimension_type, squint::div_t<mult_t<force, area>, pow_t<mass, 2>>>);
+        CHECK(constants::si_constants<float>::G.value() == doctest::Approx(6.67430e-11F));
+        CHECK(constants::si_constants<double>::G.value() == doctest::Approx(6.67430e-11));
+        CHECK(std::is_same_v<decltype(constants::si_constants<float>::G)::dimension_type,
+                             squint::div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>);
+        CHECK(std::is_same_v<decltype(constants::si_constants<double>::G)::dimension_type,
+                             squint::div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>);
     }
 }
 
@@ -370,83 +380,100 @@ TEST_CASE("Quantity Arithmetic with Mixed Types") {
 
 TEST_CASE("Quantity Operations with Constants") {
     using namespace squint::units;
+
     SUBCASE("Multiplication with pi") {
-        auto circle_circumference = length_t<double>::meters(2.0) * constants::pi;
-        CHECK(circle_circumference.value() == doctest::Approx(2.0 * std::numbers::pi));
-        CHECK(std::is_same_v<decltype(circle_circumference)::dimension_type, dimensions::length>);
+        {
+            auto circle_circumference = length_t<float>::meters(2.0F) * constants::math_constants<float>::pi;
+            CHECK(circle_circumference.value() == doctest::Approx(2.0F * std::numbers::pi_v<float>));
+            CHECK(std::is_same_v<decltype(circle_circumference)::dimension_type, dimensions::length>);
+        }
+        {
+            auto circle_circumference = length_t<double>::meters(2.0) * constants::math_constants<double>::pi;
+            CHECK(circle_circumference.value() == doctest::Approx(2.0 * std::numbers::pi));
+            CHECK(std::is_same_v<decltype(circle_circumference)::dimension_type, dimensions::length>);
+        }
     }
 
     SUBCASE("Division by speed of light") {
-        auto time_dilation = squint::units::time_t<double>::seconds(1.0) / constants::si::c;
-        CHECK(time_dilation.value() == doctest::Approx(1.0 / 299792458.0));
-        CHECK(std::is_same_v<decltype(time_dilation)::dimension_type, squint::div_t<squint::dimensions::time, dimensions::velocity>>);
+        {
+            auto time_dilation = squint::units::time_t<float>::seconds(1.0F) / constants::si_constants<float>::c;
+            CHECK(time_dilation.value() == doctest::Approx(1.0F / 299792458.0F));
+            CHECK(std::is_same_v<decltype(time_dilation)::dimension_type,
+                                 squint::div_t<dimensions::time, dimensions::velocity>>);
+        }
+        {
+            auto time_dilation = squint::units::time_t<double>::seconds(1.0) / constants::si_constants<double>::c;
+            CHECK(time_dilation.value() == doctest::Approx(1.0 / 299792458.0));
+            CHECK(std::is_same_v<decltype(time_dilation)::dimension_type,
+                                 squint::div_t<dimensions::time, dimensions::velocity>>);
+        }
     }
 }
 
 TEST_CASE("Error Handling and Edge Cases") {
     SUBCASE("Integer Overflow") {
         using checked_int_length = quantity<int, dimensions::length, error_checking_enabled>;
-        
+
         SUBCASE("Addition") {
             checked_int_length max_length(std::numeric_limits<int>::max());
             CHECK_THROWS_AS(max_length + checked_int_length(1), std::overflow_error);
-            
+
             checked_int_length min_length(std::numeric_limits<int>::min());
             CHECK_THROWS_AS(min_length + checked_int_length(-1), std::overflow_error);
         }
-        
+
         SUBCASE("Subtraction") {
             checked_int_length max_length(std::numeric_limits<int>::max());
             CHECK_THROWS_AS(max_length - checked_int_length(-1), std::overflow_error);
-            
+
             checked_int_length min_length(std::numeric_limits<int>::min());
             CHECK_THROWS_AS(min_length - checked_int_length(1), std::overflow_error);
         }
-        
+
         SUBCASE("Multiplication") {
             checked_int_length large_length(std::numeric_limits<int>::max() / 2 + 1);
             CHECK_THROWS_AS(large_length * 2, std::overflow_error);
             CHECK_THROWS_AS(2 * large_length, std::overflow_error);
-            
+
             checked_int_length negative_length(std::numeric_limits<int>::min() / 2 - 1);
             CHECK_THROWS_AS(negative_length * 2, std::overflow_error);
             CHECK_THROWS_AS(2 * negative_length, std::overflow_error);
         }
     }
-    
+
     SUBCASE("Division by Zero") {
         using checked_double_length = quantity<double, dimensions::length, error_checking_enabled>;
         checked_double_length length(10.0);
-        
+
         CHECK_THROWS_AS(length / 0.0, std::domain_error);
         CHECK_THROWS_AS(length / checked_double_length(0.0), std::domain_error);
         CHECK_THROWS_AS(1.0 / checked_double_length(0.0), std::domain_error);
     }
-    
+
     SUBCASE("Floating-Point Underflow") {
         using checked_float_length = quantity<float, dimensions::length, error_checking_enabled>;
         checked_float_length tiny_length(std::numeric_limits<float>::min());
-        
+
         CHECK_THROWS_AS(tiny_length / std::numeric_limits<float>::max(), std::underflow_error);
     }
-    
+
     SUBCASE("No Error Checking") {
         using unchecked_int_length = quantity<int, dimensions::length>;
-        
+
         unchecked_int_length max_length(std::numeric_limits<int>::max());
         CHECK_NOTHROW(max_length + unchecked_int_length(1));
-        
+
         unchecked_int_length min_length(std::numeric_limits<int>::min());
         CHECK_NOTHROW(min_length - unchecked_int_length(1));
     }
-    
+
     SUBCASE("Edge Cases") {
         SUBCASE("Integer Division Rounding") {
             using int_length = quantity<int, dimensions::length>;
             CHECK((int_length(5) / int_length(2)).value() == 2);
             CHECK((int_length(-5) / int_length(2)).value() == -2);
         }
-        
+
         SUBCASE("Floating-Point Precision") {
             using float_length = quantity<float, dimensions::length>;
             float_length a(1.0F);
@@ -454,21 +481,21 @@ TEST_CASE("Error Handling and Edge Cases") {
             float_length sum = a + b;
             CHECK(sum.value() == doctest::Approx(1.0F));
         }
-        
+
         SUBCASE("Negative Zero") {
             using double_length = quantity<double, dimensions::length>;
             double_length pos_zero(0.0);
             double_length neg_zero(-0.0);
             CHECK(pos_zero == neg_zero);
         }
-        
+
         SUBCASE("NaN Handling") {
             using double_length = quantity<double, dimensions::length>;
             double_length nan_length(std::numeric_limits<double>::quiet_NaN());
             CHECK(nan_length != nan_length);
             CHECK_FALSE(nan_length == nan_length);
         }
-        
+
         SUBCASE("Infinity Handling") {
             using double_length = quantity<double, dimensions::length>;
             double_length inf_length(std::numeric_limits<double>::infinity());

@@ -22,6 +22,7 @@ namespace squint {
 struct error_checking_enabled {};
 struct error_checking_disabled {};
 
+
 namespace detail {
 // Constexpr power function for integer exponents
 template <typename T> constexpr T int_pow(T base, int exp) {
@@ -308,19 +309,19 @@ template <typename T, dimensional D> using constant_quantity = quantity<T, D, er
 
 // Output stream operator
 template <arithmetic T, dimensional D, typename ErrorChecking>
-std::ostream& operator<<(std::ostream& os, const quantity<T, D, ErrorChecking>& q) {
+std::ostream &operator<<(std::ostream &os, const quantity<T, D, ErrorChecking> &q) {
     return os << q.value();
 }
 
 // Input stream operator
 template <arithmetic T, dimensional D, typename ErrorChecking>
-std::istream& operator>>(std::istream& is, quantity<T, D, ErrorChecking>& q) {
+std::istream &operator>>(std::istream &is, quantity<T, D, ErrorChecking> &q) {
     T value;
     is >> value;
     if constexpr (std::is_same_v<ErrorChecking, error_checking_enabled>) {
         try {
             q = quantity<T, D, ErrorChecking>(value);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             is.setstate(std::ios_base::failbit);
             throw;
         }
@@ -782,7 +783,6 @@ template <typename T, typename ErrorChecking = error_checking_disabled>
 using wave_number_t = unit_t<T, dimensions::wave_number, ErrorChecking>;
 
 // Convenience typedefs for float types with error checking disabled
-// TODO, add for double precision?
 using dimensionless = dimensionless_t<float>;
 using length = length_t<float>;
 using time = time_t<float>;
@@ -833,105 +833,116 @@ using wave_number = wave_number_t<float>;
 
 } // namespace units
 
-// TODO add namespace constants_d for double precision constants?
 namespace constants {
 
+// Concept to ensure the type is a floating-point type
+template <typename T>
+concept FloatingPoint = std::is_floating_point_v<T>;
+
+// Template alias for constant_quantity
+template <FloatingPoint T, typename Dimension> using constant_quantity_t = constant_quantity<T, Dimension>;
+
 // Mathematical constants
-inline constexpr auto pi = constant_quantity<float, dimensions::dimensionless>(std::numbers::pi_v<float>);
-inline constexpr auto e = constant_quantity<float, dimensions::dimensionless>(std::numbers::e_v<float>);
-inline constexpr auto sqrt2 = constant_quantity<float, dimensions::dimensionless>(std::numbers::sqrt2_v<float>);
-inline constexpr auto ln2 = constant_quantity<float, dimensions::dimensionless>(std::numbers::ln2_v<float>);
-inline constexpr auto phi = constant_quantity<float, dimensions::dimensionless>(1.618033988749895F);
+template <FloatingPoint T> struct math_constants {
+    static inline constexpr auto pi = constant_quantity_t<T, dimensions::dimensionless>(std::numbers::pi_v<T>);
+    static inline constexpr auto e = constant_quantity_t<T, dimensions::dimensionless>(std::numbers::e_v<T>);
+    static inline constexpr auto sqrt2 = constant_quantity_t<T, dimensions::dimensionless>(std::numbers::sqrt2_v<T>);
+    static inline constexpr auto ln2 = constant_quantity_t<T, dimensions::dimensionless>(std::numbers::ln2_v<T>);
+    static inline constexpr auto phi = constant_quantity_t<T, dimensions::dimensionless>(T(1.618033988749895));
+};
 
-// Physical constants
-namespace si {
-// Speed of light in vacuum
-inline constexpr auto c = constant_quantity<float, dimensions::velocity>(299'792'458.0F);
+// Physical constants (SI)
+template <FloatingPoint T> struct si_constants {
+    // Speed of light in vacuum
+    static inline constexpr auto c = constant_quantity_t<T, dimensions::velocity>(T(299'792'458.0));
 
-// Planck constant
-inline constexpr auto h = constant_quantity<float, mult_t<dimensions::energy, dimensions::time>>(6.62607015e-34F);
+    // Planck constant
+    static inline constexpr auto h =
+        constant_quantity_t<T, mult_t<dimensions::energy, dimensions::time>>(T(6.62607015e-34));
 
-// Reduced Planck constant (h-bar)
-inline constexpr auto hbar = h / (2 * pi);
+    // Reduced Planck constant (h-bar)
+    static inline constexpr auto hbar = h / (T(2) * math_constants<T>::pi);
 
-// Gravitational constant
-inline constexpr auto G =
-    constant_quantity<float, div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>(
-        6.67430e-11F);
+    // Gravitational constant
+    static inline constexpr auto G =
+        constant_quantity_t<T, div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>(
+            T(6.67430e-11));
 
-// Elementary charge
-inline constexpr auto e_charge = constant_quantity<float, dimensions::charge>(1.602176634e-19F);
+    // Elementary charge
+    static inline constexpr auto e_charge = constant_quantity_t<T, dimensions::charge>(T(1.602176634e-19));
 
-// Electron mass
-inline constexpr auto m_e = constant_quantity<float, dimensions::mass>(9.1093837015e-31F);
+    // Electron mass
+    static inline constexpr auto m_e = constant_quantity_t<T, dimensions::mass>(T(9.1093837015e-31));
 
-// Proton mass
-inline constexpr auto m_p = constant_quantity<float, dimensions::mass>(1.67262192369e-27F);
+    // Proton mass
+    static inline constexpr auto m_p = constant_quantity_t<T, dimensions::mass>(T(1.67262192369e-27));
 
-// Fine-structure constant
-inline constexpr auto alpha = constant_quantity<float, dimensions::dimensionless>(7.2973525693e-3F);
+    // Fine-structure constant
+    static inline constexpr auto alpha = constant_quantity_t<T, dimensions::dimensionless>(T(7.2973525693e-3));
 
-// Boltzmann constant
-inline constexpr auto k_B = constant_quantity<float, div_t<dimensions::energy, dimensions::temperature>>(1.380649e-23F);
+    // Boltzmann constant
+    static inline constexpr auto k_B =
+        constant_quantity_t<T, div_t<dimensions::energy, dimensions::temperature>>(T(1.380649e-23));
 
-// Avogadro constant
-inline constexpr auto N_A = constant_quantity<float, inv_t<dimensions::amount_of_substance>>(6.02214076e23F);
+    // Avogadro constant
+    static inline constexpr auto N_A = constant_quantity_t<T, inv_t<dimensions::amount_of_substance>>(T(6.02214076e23));
 
-// Gas constant
-inline constexpr auto R = k_B * N_A;
+    // Gas constant
+    static inline constexpr auto R = k_B * N_A;
 
-// Vacuum electric permittivity
-inline constexpr auto epsilon_0 =
-    constant_quantity<float, div_t<dimensions::capacitance, dimensions::length>>(8.8541878128e-12F);
+    // Vacuum electric permittivity
+    static inline constexpr auto epsilon_0 =
+        constant_quantity_t<T, div_t<dimensions::capacitance, dimensions::length>>(T(8.8541878128e-12));
 
-// Vacuum magnetic permeability
-inline constexpr auto mu_0 =
-    constant_quantity<float, div_t<dimensions::inductance, dimensions::length>>(1.25663706212e-6F);
+    // Vacuum magnetic permeability
+    static inline constexpr auto mu_0 =
+        constant_quantity_t<T, div_t<dimensions::inductance, dimensions::length>>(T(1.25663706212e-6));
 
-// Stefan-Boltzmann constant
-inline constexpr auto sigma =
-    constant_quantity<float, div_t<dimensions::power, mult_t<dimensions::area, pow_t<dimensions::temperature, 4>>>>(
-        5.670374419e-8F);
-} // namespace si
+    // Stefan-Boltzmann constant
+    static inline constexpr auto sigma =
+        constant_quantity_t<T, div_t<dimensions::power, mult_t<dimensions::area, pow_t<dimensions::temperature, 4>>>>(
+            T(5.670374419e-8));
+};
 
 // Astronomical constants
-namespace astro {
-// Astronomical Unit
-inline constexpr auto AU = constant_quantity<float, dimensions::length>(1.495978707e11F);
+template <FloatingPoint T> struct astro_constants {
+    // Astronomical Unit
+    static inline constexpr auto AU = constant_quantity_t<T, dimensions::length>(T(1.495978707e11));
 
-// Parsec
-inline constexpr auto parsec = constant_quantity<float, dimensions::length>(3.0856775814913673e16F);
+    // Parsec
+    static inline constexpr auto parsec = constant_quantity_t<T, dimensions::length>(T(3.0856775814913673e16));
 
-// Light year
-inline constexpr auto light_year = si::c * constant_quantity<float, dimensions::time>(365.25F * 24 * 3600);
+    // Light year
+    static inline constexpr auto light_year =
+        si_constants<T>::c * constant_quantity_t<T, dimensions::time>(T(365.25) * T(24) * T(3600));
 
-// Solar mass
-inline constexpr auto solar_mass = constant_quantity<float, dimensions::mass>(1.988847e30F);
+    // Solar mass
+    static inline constexpr auto solar_mass = constant_quantity_t<T, dimensions::mass>(T(1.988847e30));
 
-// Earth mass
-inline constexpr auto earth_mass = constant_quantity<float, dimensions::mass>(5.97217e24F);
+    // Earth mass
+    static inline constexpr auto earth_mass = constant_quantity_t<T, dimensions::mass>(T(5.97217e24));
 
-// Earth radius (equatorial)
-inline constexpr auto earth_radius = constant_quantity<float, dimensions::length>(6.3781e6F);
+    // Earth radius (equatorial)
+    static inline constexpr auto earth_radius = constant_quantity_t<T, dimensions::length>(T(6.3781e6));
 
-// Standard gravitational acceleration on Earth
-inline constexpr auto g = constant_quantity<float, dimensions::acceleration>(9.80665F);
-} // namespace astro
+    // Standard gravitational acceleration on Earth
+    static inline constexpr auto g = constant_quantity_t<T, dimensions::acceleration>(T(9.80665));
+};
 
 // Atomic and nuclear constants
-namespace atomic {
-// Rydberg constant
-inline constexpr auto R_inf = constant_quantity<float, dimensions::wave_number>(10973731.568160F);
+template <FloatingPoint T> struct atomic_constants {
+    // Rydberg constant
+    static inline constexpr auto R_inf = constant_quantity_t<T, dimensions::wave_number>(T(10973731.568160));
 
-// Bohr radius
-inline constexpr auto a_0 = constant_quantity<float, dimensions::length>(5.29177210903e-11F);
+    // Bohr radius
+    static inline constexpr auto a_0 = constant_quantity_t<T, dimensions::length>(T(5.29177210903e-11));
 
-// Classical electron radius
-inline constexpr auto r_e = constant_quantity<float, dimensions::length>(2.8179403262e-15F);
+    // Classical electron radius
+    static inline constexpr auto r_e = constant_quantity_t<T, dimensions::length>(T(2.8179403262e-15));
 
-// Proton-electron mass ratio
-inline constexpr auto m_p_m_e = si::m_p / si::m_e;
-} // namespace atomic
+    // Proton-electron mass ratio
+    static inline constexpr auto m_p_m_e = si_constants<T>::m_p / si_constants<T>::m_e;
+};
 
 } // namespace constants
 

@@ -2,8 +2,11 @@
 #include <iostream>
 
 using namespace squint::units;
+using namespace squint::constants;
 
 int main() {
+    auto pi = math_constants<long double>::pi;
+    std::cout << pi << std::endl;
     auto l = length(1.0F) * 2;
     float test = float(l);
     // float test = l; // compile error
@@ -15,6 +18,6 @@ int main() {
     std::cout << v.as<miles_per_hour_t>() << std::endl;
 
     auto a = squint::units::acceleration_t<float, squint::error_checking_enabled>(1.0F);
-    std::cout << a / 0 << std::endl;
+    // std::cout << a / pi << std::endl;
     return 0;
 }
