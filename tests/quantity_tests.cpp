@@ -504,3 +504,116 @@ TEST_CASE("Error Handling and Edge Cases") {
         }
     }
 }
+
+TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
+    using checked_double_length = quantity<double, dimensions::length, error_checking_enabled>;
+    using unchecked_double_length = quantity<double, dimensions::length, error_checking_disabled>;
+    using checked_int_length = quantity<int, dimensions::length, error_checking_enabled>;
+    using unchecked_int_length = quantity<int, dimensions::length, error_checking_disabled>;
+
+    SUBCASE("Addition with mixed error checking") {
+        checked_double_length checked(5.0);
+        unchecked_double_length unchecked(3.0);
+        
+        auto result = checked + unchecked;
+        CHECK(result.value() == doctest::Approx(8.0));
+        CHECK(std::is_same_v<decltype(result), checked_double_length>);
+
+        result = unchecked + checked;
+        CHECK(result.value() == doctest::Approx(8.0));
+        CHECK(std::is_same_v<decltype(result), checked_double_length>);
+    }
+
+    SUBCASE("Subtraction with mixed error checking") {
+        checked_double_length checked(5.0);
+        unchecked_double_length unchecked(3.0);
+        
+        auto result = checked - unchecked;
+        CHECK(result.value() == doctest::Approx(2.0));
+        CHECK(std::is_same_v<decltype(result), checked_double_length>);
+
+        result = unchecked - checked;
+        CHECK(result.value() == doctest::Approx(-2.0));
+        CHECK(std::is_same_v<decltype(result), checked_double_length>);
+    }
+
+    SUBCASE("Multiplication with mixed error checking") {
+        checked_double_length checked(5.0);
+        unchecked_double_length unchecked(3.0);
+        
+        auto result = checked * unchecked;
+        CHECK(result.value() == doctest::Approx(15.0));
+        CHECK(std::is_same_v<decltype(result)::dimension_type, mult_t<dimensions::length, dimensions::length>>);
+        CHECK(std::is_same_v<decltype(result)::value_type, double>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+
+        result = unchecked * checked;
+        CHECK(result.value() == doctest::Approx(15.0));
+        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+    }
+
+    SUBCASE("Division with mixed error checking") {
+        checked_double_length checked(6.0);
+        unchecked_double_length unchecked(3.0);
+        
+        auto result = checked / unchecked;
+        CHECK(result.value() == doctest::Approx(2.0));
+        CHECK(std::is_same_v<decltype(result)::dimension_type, dimensions::dimensionless>);
+        CHECK(std::is_same_v<decltype(result)::value_type, double>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking_enabled>>);
+
+        result = unchecked / checked;
+        CHECK(result.value() == doctest::Approx(0.5));
+        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking_enabled>>);
+    }
+
+    SUBCASE("Scalar operations with mixed error checking") {
+        checked_double_length checked(5.0);
+        unchecked_double_length unchecked(3.0);
+
+        auto result1 = checked * 2.0;
+        CHECK(result1.value() == doctest::Approx(10.0));
+        CHECK(std::is_same_v<decltype(result1), checked_double_length>);
+
+        auto result2 = 2.0 * unchecked;
+        CHECK(result2.value() == doctest::Approx(6.0));
+        CHECK(std::is_same_v<decltype(result2), unchecked_double_length>);
+
+        auto result3 = checked / 2.0;
+        CHECK(result3.value() == doctest::Approx(2.5));
+        CHECK(std::is_same_v<decltype(result3), checked_double_length>);
+
+        auto result4 = 6.0 / unchecked;
+        CHECK(result4.value() == doctest::Approx(2.0));
+        CHECK(std::is_same_v<decltype(result4)::dimension_type, inv_t<dimensions::length>>);
+        CHECK(std::is_same_v<decltype(result4)::value_type, double>);
+        CHECK(std::is_same_v<decltype(result4), quantity<double, inv_t<dimensions::length>, error_checking_disabled>>);
+    }
+
+    SUBCASE("Error checking behavior") {
+        checked_int_length checked_max(std::numeric_limits<int>::max());
+        unchecked_int_length unchecked_one(1);
+
+        CHECK_THROWS_AS(checked_max + unchecked_one, std::overflow_error);
+        CHECK_NOTHROW(unchecked_one + checked_max); // This should not throw, but the result is undefined
+
+        checked_int_length checked_zero(0);
+        unchecked_int_length unchecked_zero(0);
+
+        CHECK_THROWS_AS(checked_zero / unchecked_zero, std::domain_error);
+        CHECK_NOTHROW(unchecked_zero / checked_zero); // This should not throw, but the result is undefined
+    }
+
+    SUBCASE("Mixed type and error checking") {
+        checked_double_length checked_double(5.0);
+        unchecked_int_length unchecked_int(3);
+
+        auto result = checked_double + unchecked_int;
+        CHECK(result.value() == doctest::Approx(8.0));
+        CHECK(std::is_same_v<decltype(result), checked_double_length>);
+
+        result = unchecked_int * checked_double;
+        CHECK(result.value() == doctest::Approx(15.0));
+        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+    }
+}

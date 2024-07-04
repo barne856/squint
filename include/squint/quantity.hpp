@@ -22,6 +22,13 @@ namespace squint {
 struct error_checking_enabled {};
 struct error_checking_disabled {};
 
+template <typename ErrorChecking1, typename ErrorChecking2>
+struct resulting_error_checking {
+    using type = std::conditional_t<std::is_same_v<ErrorChecking1, error_checking_enabled> ||
+                                    std::is_same_v<ErrorChecking2, error_checking_enabled>,
+                                    error_checking_enabled,
+                                    error_checking_disabled>;
+};
 
 namespace detail {
 // Constexpr power function for integer exponents
@@ -74,6 +81,16 @@ template <arithmetic T, dimensional D, typename ErrorChecking = error_checking_d
     template <arithmetic U> constexpr quantity(const U &value) noexcept : value_(static_cast<T>(value)) {
         static_assert(std::is_same_v<D, dimensions::dimensionless>,
                       "Implicit conversion from arithmetic type is only allowed for dimensionless quantities");
+    }
+
+    // Conversion constructor for quantities with different error checking
+    template <typename U, typename OtherErrorChecking>
+    constexpr quantity(const quantity<U, D, OtherErrorChecking>& other) noexcept 
+        : value_(static_cast<T>(other.value())) {
+        if constexpr (std::is_same_v<ErrorChecking, error_checking_enabled> && 
+                      std::is_same_v<OtherErrorChecking, error_checking_disabled>) {
+            // Perform any necessary error checking here
+        }
     }
 
     // Accessor methods
@@ -243,62 +260,97 @@ template <arithmetic T, dimensional D, typename ErrorChecking = error_checking_d
 };
 
 // Arithmetic operations between quantities
-template <typename T, typename U, dimensional D, typename ErrorChecking>
-constexpr auto operator+(const quantity<T, D, ErrorChecking> &lhs, const quantity<U, D, ErrorChecking> &rhs) {
+template <typename T1, typename T2, dimensional D, typename ErrorChecking1, typename ErrorChecking2>
+constexpr auto operator+(const quantity<T1, D, ErrorChecking1>& lhs, const quantity<T2, D, ErrorChecking2>& rhs) {
     using result_type = decltype(lhs.value() + rhs.value());
-    quantity<result_type, D, ErrorChecking>::check_overflow_add(lhs.value(), rhs.value());
-    return quantity<result_type, D, ErrorChecking>(lhs.value() + rhs.value());
+    using result_error_checking = typename resulting_error_checking<ErrorChecking1, ErrorChecking2>::type;
+    
+    if constexpr (std::is_same_v<result_error_checking, error_checking_enabled>) {
+        quantity<result_type, D, result_error_checking>::check_overflow_add(lhs.value(), rhs.value());
+    }
+    
+    return quantity<result_type, D, result_error_checking>(lhs.value() + rhs.value());
 }
 
-template <typename T, typename U, dimensional D, typename ErrorChecking>
-constexpr auto operator-(const quantity<T, D, ErrorChecking> &lhs, const quantity<U, D, ErrorChecking> &rhs) {
+template <typename T1, typename T2, dimensional D, typename ErrorChecking1, typename ErrorChecking2>
+constexpr auto operator-(const quantity<T1, D, ErrorChecking1>& lhs, const quantity<T2, D, ErrorChecking2>& rhs) {
     using result_type = decltype(lhs.value() - rhs.value());
-    quantity<result_type, D, ErrorChecking>::check_overflow_subtract(lhs.value(), rhs.value());
-    return quantity<result_type, D, ErrorChecking>(lhs.value() - rhs.value());
+    using result_error_checking = typename resulting_error_checking<ErrorChecking1, ErrorChecking2>::type;
+    
+    if constexpr (std::is_same_v<result_error_checking, error_checking_enabled>) {
+        quantity<result_type, D, result_error_checking>::check_overflow_subtract(lhs.value(), rhs.value());
+    }
+    
+    return quantity<result_type, D, result_error_checking>(lhs.value() - rhs.value());
 }
 
-template <typename T, typename U, dimensional D1, dimensional D2, typename ErrorChecking>
-constexpr auto operator*(const quantity<T, D1, ErrorChecking> &lhs, const quantity<U, D2, ErrorChecking> &rhs) {
+template <typename T1, typename T2, dimensional D1, dimensional D2, typename ErrorChecking1, typename ErrorChecking2>
+constexpr auto operator*(const quantity<T1, D1, ErrorChecking1>& lhs, const quantity<T2, D2, ErrorChecking2>& rhs) {
     using result_type = decltype(lhs.value() * rhs.value());
-    quantity<result_type, mult_t<D1, D2>, ErrorChecking>::check_overflow_multiply(lhs.value(), rhs.value());
-    return quantity<result_type, mult_t<D1, D2>, ErrorChecking>(lhs.value() * rhs.value());
+    using result_dimension = mult_t<D1, D2>;
+    using result_error_checking = typename resulting_error_checking<ErrorChecking1, ErrorChecking2>::type;
+    
+    if constexpr (std::is_same_v<result_error_checking, error_checking_enabled>) {
+        quantity<result_type, result_dimension, result_error_checking>::check_overflow_multiply(lhs.value(), rhs.value());
+    }
+    
+    return quantity<result_type, result_dimension, result_error_checking>(lhs.value() * rhs.value());
 }
 
-template <typename T, typename U, dimensional D1, dimensional D2, typename ErrorChecking>
-constexpr auto operator/(const quantity<T, D1, ErrorChecking> &lhs, const quantity<U, D2, ErrorChecking> &rhs) {
+template <typename T1, typename T2, dimensional D1, dimensional D2, typename ErrorChecking1, typename ErrorChecking2>
+constexpr auto operator/(const quantity<T1, D1, ErrorChecking1>& lhs, const quantity<T2, D2, ErrorChecking2>& rhs) {
     using result_type = decltype(lhs.value() / rhs.value());
-    quantity<result_type, div_t<D1, D2>, ErrorChecking>::check_division_by_zero(rhs.value());
-    quantity<result_type, div_t<D1, D2>, ErrorChecking>::check_underflow_divide(rhs.value(), lhs.value());
-    return quantity<result_type, div_t<D1, D2>, ErrorChecking>(lhs.value() / rhs.value());
+    using result_dimension = div_t<D1, D2>;
+    using result_error_checking = typename resulting_error_checking<ErrorChecking1, ErrorChecking2>::type;
+    
+    if constexpr (std::is_same_v<result_error_checking, error_checking_enabled>) {
+        quantity<result_type, result_dimension, result_error_checking>::check_division_by_zero(rhs.value());
+        quantity<result_type, result_dimension, result_error_checking>::check_underflow_divide(lhs.value(), rhs.value());
+    }
+    
+    return quantity<result_type, result_dimension, result_error_checking>(lhs.value() / rhs.value());
 }
 
-// Scalar multiplication and division
+// Scalar operations
 template <arithmetic T, typename U, dimensional D, typename ErrorChecking>
-constexpr auto operator*(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
+constexpr auto operator*(const T& scalar, const quantity<U, D, ErrorChecking>& q) {
     using result_type = decltype(scalar * q.value());
-    quantity<result_type, D, ErrorChecking>::check_overflow_multiply(scalar, q.value());
+    
+    if constexpr (std::is_same_v<ErrorChecking, error_checking_enabled>) {
+        quantity<result_type, D, ErrorChecking>::check_overflow_multiply(scalar, q.value());
+    }
+    
     return quantity<result_type, D, ErrorChecking>(scalar * q.value());
 }
 
 template <typename T, arithmetic U, dimensional D, typename ErrorChecking>
-constexpr auto operator*(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
+constexpr auto operator*(const quantity<T, D, ErrorChecking>& q, const U& scalar) {
     return scalar * q;
 }
 
 template <typename T, arithmetic U, dimensional D, typename ErrorChecking>
-constexpr auto operator/(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
+constexpr auto operator/(const quantity<T, D, ErrorChecking>& q, const U& scalar) {
     using result_type = decltype(q.value() / scalar);
-    quantity<result_type, D, ErrorChecking>::check_division_by_zero(scalar);
-    quantity<result_type, D, ErrorChecking>::check_underflow_divide(q.value(), scalar);
+    
+    if constexpr (std::is_same_v<ErrorChecking, error_checking_enabled>) {
+        quantity<result_type, D, ErrorChecking>::check_division_by_zero(scalar);
+        quantity<result_type, D, ErrorChecking>::check_underflow_divide(q.value(), scalar);
+    }
+    
     return quantity<result_type, D, ErrorChecking>(q.value() / scalar);
 }
 
 template <arithmetic T, typename U, dimensional D, typename ErrorChecking>
-constexpr auto operator/(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
+constexpr auto operator/(const T& scalar, const quantity<U, D, ErrorChecking>& q) {
     using result_type = decltype(scalar / q.value());
-    quantity<result_type, inv_t<D>, ErrorChecking>::check_division_by_zero(q.value());
-    quantity<result_type, inv_t<D>, ErrorChecking>::check_underflow_divide(scalar, q.value());
-    return quantity<result_type, inv_t<D>, ErrorChecking>(scalar / q.value());
+    using result_dimension = inv_t<D>;
+    
+    if constexpr (std::is_same_v<ErrorChecking, error_checking_enabled>) {
+        quantity<result_type, result_dimension, ErrorChecking>::check_division_by_zero(q.value());
+        quantity<result_type, result_dimension, ErrorChecking>::check_underflow_divide(scalar, q.value());
+    }
+    
+    return quantity<result_type, result_dimension, ErrorChecking>(scalar / q.value());
 }
 
 // Type alias for quantities with error checking enabled

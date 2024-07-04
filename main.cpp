@@ -18,6 +18,7 @@ int main() {
     std::cout << v.as<miles_per_hour_t>() << std::endl;
 
     auto a = squint::units::acceleration_t<float, squint::error_checking_enabled>(1.0F);
-    // std::cout << a / pi << std::endl;
+    std::cout << a / pi << std::endl;
+    std::cout << a / 0 << std::endl;
     return 0;
 }
