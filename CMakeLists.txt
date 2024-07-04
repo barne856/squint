@@ -31,3 +31,5 @@ include_directories(${DOCTEST_INCLUDE_DIR} "include")
 add_executable(quantity_tests tests/quantity_tests.cpp)
 # target_compile_features(quantity_tests PRIVATE cxx_std_17)
 target_link_libraries(quantity_tests)
+
+add_executable(main main.cpp)

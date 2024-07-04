@@ -127,12 +127,13 @@ template <arithmetic T, dimensional D> class quantity {
     // Equality comparison
     constexpr bool operator==(const quantity &rhs) const noexcept { return value_ == rhs.value_; }
 
-    // unit conversion
-    template <typename TargetUnit> constexpr T as() const {
-        if constexpr (std::is_same_v<TargetUnit, quantity<T, D>>) {
+    // Unit conversion
+    template <template <typename> typename TargetUnit>
+    constexpr T as() const {
+        if constexpr (std::is_same_v<TargetUnit<T>, quantity<T, D>>) {
             return value_;
         } else {
-            return value_ / TargetUnit::conversion_factor;
+            return value_ / TargetUnit<T>::conversion_factor();
         }
     }
 
@@ -225,417 +226,350 @@ template <typename T> inline constexpr bool is_quantity_v = is_quantity<T>::valu
 template <typename T>
 concept quantitative = is_quantity_v<T>;
 
-// TODO add namespace units_d for double precision units
+
 namespace units {
 
-// Base units
-using dimensionless = quantity<float, dimensions::dimensionless>;
-
-namespace length {
-struct meters : quantity<float, dimensions::length> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct feet : quantity<float, dimensions::length> {
-    constexpr feet(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.3048f;
-};
-struct inches : quantity<float, dimensions::length> {
-    constexpr inches(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.0254f;
-};
-struct kilometers : quantity<float, dimensions::length> {
-    constexpr kilometers(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 1000.0f;
-};
-struct miles : quantity<float, dimensions::length> {
-    constexpr miles(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 1609.344f;
-};
-} // namespace length
-
-namespace time {
-struct seconds : quantity<float, dimensions::time> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct minutes : quantity<float, dimensions::time> {
-    constexpr minutes(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 60.0f;
-};
-struct hours : quantity<float, dimensions::time> {
-    constexpr hours(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 3600.0f;
-};
-struct days : quantity<float, dimensions::time> {
-    constexpr days(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 86400.0f;
-};
-} // namespace time
-
-namespace mass {
-struct kilograms : quantity<float, dimensions::mass> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct grams : quantity<float, dimensions::mass> {
-    constexpr grams(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.001f;
-};
-struct pounds : quantity<float, dimensions::mass> {
-    constexpr pounds(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.45359237f;
-};
-} // namespace mass
-
-struct temperature : quantity<float, dimensions::temperature> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Base unit type
+template <typename T, typename Dim>
+struct unit_type : quantity<T, Dim> {
+    using quantity<T, Dim>::quantity;
+    static constexpr T conversion_factor() { return T(1); }
+    // Allow implicit conversion from quantity<T, Dim>
+    template <typename U>
+    constexpr unit_type(const quantity<U, Dim>& q) : unit_type<T, Dim>(q.value()) {}
 };
 
-struct current : quantity<float, dimensions::current> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Dimensionless
+template <typename T> using dimensionless_t = unit_type<T, dimensions::dimensionless>;
+
+// Length
+template <typename T>
+struct length_t : unit_type<T, dimensions::length> {
+    using unit_type<T, dimensions::length>::unit_type;
+    static constexpr length_t<T> meters(T value) { return length_t<T>(value); }
+    static constexpr length_t<T> feet(T value) { return length_t<T>(value * T(0.3048)); }
+    static constexpr length_t<T> inches(T value) { return length_t<T>(value * T(0.0254)); }
+    static constexpr length_t<T> kilometers(T value) { return length_t<T>(value * T(1000.0)); }
+    static constexpr length_t<T> miles(T value) { return length_t<T>(value * T(1609.344)); }
 };
 
-struct amount_of_substance : quantity<float, dimensions::amount_of_substance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct feet_t : length_t<T> {
+    using length_t<T>::length_t;
+    static constexpr T conversion_factor() { return T(0.3048); }
 };
 
-struct luminous_intensity : quantity<float, dimensions::luminous_intensity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct inches_t : length_t<T> {
+    using length_t<T>::length_t;
+    static constexpr T conversion_factor() { return T(0.0254); }
 };
 
-// Other dimensionless quantities
-namespace angle {
-struct radians : dimensionless {
-    using dimensionless::dimensionless;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct degrees : dimensionless {
-    constexpr degrees(float value) : dimensionless(value * conversion_factor) {}
-    static constexpr float conversion_factor = std::numbers::pi_v<float> / 180.0f;
-};
-} // namespace angle
-
-using solid_angle = dimensionless;
-using strain = dimensionless;
-using refractive_index = dimensionless;
-
-// Derived units
-namespace velocity {
-struct meters_per_second : quantity<float, dimensions::velocity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct kilometers_per_hour : quantity<float, dimensions::velocity> {
-    constexpr kilometers_per_hour(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 1.0f / 3.6f;
-};
-struct miles_per_hour : quantity<float, dimensions::velocity> {
-    constexpr miles_per_hour(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.44704f;
-};
-} // namespace velocity
-
-struct acceleration : quantity<float, dimensions::acceleration> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct kilometers_t : length_t<T> {
+    using length_t<T>::length_t;
+    static constexpr T conversion_factor() { return T(1000.0); }
 };
 
-namespace area {
-struct square_meters : quantity<float, dimensions::area> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct square_feet : quantity<float, dimensions::area> {
-    constexpr square_feet(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.09290304f;
-};
-struct acres : quantity<float, dimensions::area> {
-    constexpr acres(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 4046.8564224f;
-};
-} // namespace area
-
-namespace volume {
-struct cubic_meters : quantity<float, dimensions::volume> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct liters : quantity<float, dimensions::volume> {
-    constexpr liters(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.001f;
-};
-struct gallons : quantity<float, dimensions::volume> {
-    constexpr gallons(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 0.00378541f;
-};
-} // namespace volume
-
-struct density : quantity<float, dimensions::density> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct miles_t : length_t<T> {
+    using length_t<T>::length_t;
+    static constexpr T conversion_factor() { return T(1609.344); }
 };
 
-namespace force {
-struct newtons : quantity<float, dimensions::force> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct pounds_force : quantity<float, dimensions::force> {
-    constexpr pounds_force(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 4.448222f;
-};
-} // namespace force
-
-struct force_density : quantity<float, dimensions::force_density> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Time
+template <typename T>
+struct time_t : unit_type<T, dimensions::time> {
+    using unit_type<T, dimensions::time>::unit_type;
+    static constexpr time_t<T> seconds(T value) { return time_t<T>(value); }
+    static constexpr time_t<T> minutes(T value) { return time_t<T>(value * T(60.0)); }
+    static constexpr time_t<T> hours(T value) { return time_t<T>(value * T(3600.0)); }
+    static constexpr time_t<T> days(T value) { return time_t<T>(value * T(86400.0)); }
 };
 
-namespace pressure {
-struct pascals : quantity<float, dimensions::pressure> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct bars : quantity<float, dimensions::pressure> {
-    constexpr bars(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 100000.0f;
-};
-struct psi : quantity<float, dimensions::pressure> {
-    constexpr psi(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 6894.75729f;
-};
-} // namespace pressure
-
-struct dynamic_viscosity : quantity<float, dimensions::dynamic_viscosity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct minutes_t : time_t<T> {
+    using time_t<T>::time_t;
+    static constexpr T conversion_factor() { return T(60.0); }
 };
 
-struct kinematic_viscosity : quantity<float, dimensions::kinematic_viscosity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct hours_t : time_t<T> {
+    using time_t<T>::time_t;
+    static constexpr T conversion_factor() { return T(3600.0); }
 };
 
-struct flow : quantity<float, dimensions::flow> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct days_t : time_t<T> {
+    using time_t<T>::time_t;
+    static constexpr T conversion_factor() { return T(86400.0); }
 };
 
-namespace energy {
-struct joules : quantity<float, dimensions::energy> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct kilowatt_hours : quantity<float, dimensions::energy> {
-    constexpr kilowatt_hours(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 3600000.0f;
-};
-} // namespace energy
-
-namespace power {
-struct watts : quantity<float, dimensions::power> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-struct horsepower : quantity<float, dimensions::power> {
-    constexpr horsepower(float value) : quantity(value * conversion_factor) {}
-    static constexpr float conversion_factor = 745.699872f;
-};
-} // namespace power
-
-struct charge : quantity<float, dimensions::charge> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Mass
+template <typename T>
+struct mass_t : unit_type<T, dimensions::mass> {
+    using unit_type<T, dimensions::mass>::unit_type;
+    static constexpr mass_t<T> kilograms(T value) { return mass_t<T>(value); }
+    static constexpr mass_t<T> grams(T value) { return mass_t<T>(value * T(0.001)); }
+    static constexpr mass_t<T> pounds(T value) { return mass_t<T>(value * T(0.45359237)); }
 };
 
-struct voltage : quantity<float, dimensions::voltage> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct grams_t : mass_t<T> {
+    using mass_t<T>::mass_t;
+    static constexpr T conversion_factor() { return T(0.001); }
 };
 
-struct capacitance : quantity<float, dimensions::capacitance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct pounds_t : mass_t<T> {
+    using mass_t<T>::mass_t;
+    static constexpr T conversion_factor() { return T(0.45359237); }
 };
 
-struct resistance : quantity<float, dimensions::resistance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Temperature
+template <typename T>
+struct temperature_t : unit_type<T, dimensions::temperature> {
+    using unit_type<T, dimensions::temperature>::unit_type;
+    static constexpr temperature_t<T> kelvin(T value) { return temperature_t<T>(value); }
+    static constexpr temperature_t<T> celsius(T value) { return temperature_t<T>(value + T(273.15)); }
+    static constexpr temperature_t<T> fahrenheit(T value) { return temperature_t<T>((value - T(32.0)) * T(5.0) / T(9.0) + T(273.15)); }
 };
 
-struct conductance : quantity<float, dimensions::conductance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct celsius_t : temperature_t<T> {
+    using temperature_t<T>::temperature_t;
+    static constexpr T conversion_factor() { return T(1); }
+    static constexpr T offset() { return T(273.15); }
 };
 
-struct magnetic_flux : quantity<float, dimensions::magnetic_flux> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct fahrenheit_t : temperature_t<T> {
+    using temperature_t<T>::temperature_t;
+    static constexpr T conversion_factor() { return T(5.0) / T(9.0); }
+    static constexpr T offset() { return T(273.15) - T(32.0) * T(5.0) / T(9.0); }
 };
 
-struct magnetic_flux_density : quantity<float, dimensions::magnetic_flux_density> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Current
+template <typename T>
+using current_t = unit_type<T, dimensions::current>;
+
+// Amount of substance
+template <typename T>
+using amount_of_substance_t = unit_type<T, dimensions::amount_of_substance>;
+
+// Luminous intensity
+template <typename T>
+using luminous_intensity_t = unit_type<T, dimensions::luminous_intensity>;
+
+// Angle
+template <typename T>
+struct angle_t : unit_type<T, dimensions::dimensionless> {
+    using unit_type<T, dimensions::dimensionless>::unit_type;
+    static constexpr angle_t<T> radians(T value) { return angle_t<T>(value); }
+    static constexpr angle_t<T> degrees(T value) { return angle_t<T>(value * std::numbers::pi_v<T> / T(180.0)); }
 };
 
-struct inductance : quantity<float, dimensions::inductance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct degrees_t : angle_t<T> {
+    using angle_t<T>::angle_t;
+    static constexpr T conversion_factor() { return std::numbers::pi_v<T> / T(180.0); }
 };
 
-struct frequency : quantity<float, dimensions::frequency> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Velocity
+template <typename T>
+struct velocity_t : unit_type<T, dimensions::velocity> {
+    using unit_type<T, dimensions::velocity>::unit_type;
+    static constexpr velocity_t<T> meters_per_second(T value) { return velocity_t<T>(value); }
+    static constexpr velocity_t<T> kilometers_per_hour(T value) { return velocity_t<T>(value / T(3.6)); }
+    static constexpr velocity_t<T> miles_per_hour(T value) { return velocity_t<T>(value * T(0.44704)); }
 };
 
-struct angular_velocity : quantity<float, dimensions::angular_velocity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct kilometers_per_hour_t : velocity_t<T> {
+    using velocity_t<T>::velocity_t;
+    static constexpr T conversion_factor() { return T(1) / T(3.6); }
 };
 
-struct momentum : quantity<float, dimensions::momentum> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct miles_per_hour_t : velocity_t<T> {
+    using velocity_t<T>::velocity_t;
+    static constexpr T conversion_factor() { return T(0.44704); }
 };
 
-struct angular_momentum : quantity<float, dimensions::angular_momentum> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Acceleration
+template <typename T>
+struct acceleration_t : unit_type<T, dimensions::acceleration> {
+    using unit_type<T, dimensions::acceleration>::unit_type;
+    static constexpr acceleration_t<T> meters_per_second_squared(T value) { return acceleration_t<T>(value); }
 };
 
-struct torque : quantity<float, dimensions::torque> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Area
+template <typename T>
+struct area_t : unit_type<T, dimensions::area> {
+    using unit_type<T, dimensions::area>::unit_type;
+    static constexpr area_t<T> square_meters(T value) { return area_t<T>(value); }
+    static constexpr area_t<T> square_feet(T value) { return area_t<T>(value * T(0.09290304)); }
+    static constexpr area_t<T> acres(T value) { return area_t<T>(value * T(4046.8564224)); }
 };
 
-struct surface_tension : quantity<float, dimensions::surface_tension> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct square_feet_t : area_t<T> {
+    using area_t<T>::area_t;
+    static constexpr T conversion_factor() { return T(0.09290304); }
 };
 
-struct heat_capacity : quantity<float, dimensions::heat_capacity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct acres_t : area_t<T> {
+    using area_t<T>::area_t;
+    static constexpr T conversion_factor() { return T(4046.8564224); }
 };
 
-struct specific_heat_capacity : quantity<float, dimensions::specific_heat_capacity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Volume
+template <typename T>
+struct volume_t : unit_type<T, dimensions::volume> {
+    using unit_type<T, dimensions::volume>::unit_type;
+    static constexpr volume_t<T> cubic_meters(T value) { return volume_t<T>(value); }
+    static constexpr volume_t<T> liters(T value) { return volume_t<T>(value * T(0.001)); }
+    static constexpr volume_t<T> gallons(T value) { return volume_t<T>(value * T(0.00378541)); }
 };
 
-struct thermal_conductivity : quantity<float, dimensions::thermal_conductivity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct liters_t : volume_t<T> {
+    using volume_t<T>::volume_t;
+    static constexpr T conversion_factor() { return T(0.001); }
 };
 
-struct electric_field_strength : quantity<float, dimensions::electric_field_strength> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct gallons_t : volume_t<T> {
+    using volume_t<T>::volume_t;
+    static constexpr T conversion_factor() { return T(0.00378541); }
 };
 
-struct electric_displacement : quantity<float, dimensions::electric_displacement> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Force
+template <typename T>
+struct force_t : unit_type<T, dimensions::force> {
+    using unit_type<T, dimensions::force>::unit_type;
+    static constexpr force_t<T> newtons(T value) { return force_t<T>(value); }
+    static constexpr force_t<T> pounds_force(T value) { return force_t<T>(value * T(4.448222)); }
 };
 
-struct permittivity : quantity<float, dimensions::permittivity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct pounds_force_t : force_t<T> {
+    using force_t<T>::force_t;
+    static constexpr T conversion_factor() { return T(4.448222); }
 };
 
-struct permeability : quantity<float, dimensions::permeability> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Pressure
+template <typename T>
+struct pressure_t : unit_type<T, dimensions::pressure> {
+    using unit_type<T, dimensions::pressure>::unit_type;
+    static constexpr pressure_t<T> pascals(T value) { return pressure_t<T>(value); }
+    static constexpr pressure_t<T> bars(T value) { return pressure_t<T>(value * T(100000.0)); }
+    static constexpr pressure_t<T> psi(T value) { return pressure_t<T>(value * T(6894.75729)); }
 };
 
-struct molar_energy : quantity<float, dimensions::molar_energy> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct bars_t : pressure_t<T> {
+    using pressure_t<T>::pressure_t;
+    static constexpr T conversion_factor() { return T(100000.0); }
 };
 
-struct molar_entropy : quantity<float, dimensions::molar_entropy> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct psi_t : pressure_t<T> {
+    using pressure_t<T>::pressure_t;
+    static constexpr T conversion_factor() { return T(6894.75729); }
 };
 
-struct exposure : quantity<float, dimensions::exposure> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Energy
+template <typename T>
+struct energy_t : unit_type<T, dimensions::energy> {
+    using unit_type<T, dimensions::energy>::unit_type;
+    static constexpr energy_t<T> joules(T value) { return energy_t<T>(value); }
+    static constexpr energy_t<T> kilowatt_hours(T value) { return energy_t<T>(value * T(3600000.0)); }
 };
 
-struct dose_equivalent : quantity<float, dimensions::dose_equivalent> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct kilowatt_hours_t : energy_t<T> {
+    using energy_t<T>::energy_t;
+    static constexpr T conversion_factor() { return T(3600000.0); }
 };
 
-struct catalytic_activity : quantity<float, dimensions::catalytic_activity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+// Power
+template <typename T>
+struct power_t : unit_type<T, dimensions::power> {
+    using unit_type<T, dimensions::power>::unit_type;
+    static constexpr power_t<T> watts(T value) { return power_t<T>(value); }
+    static constexpr power_t<T> horsepower(T value) { return power_t<T>(value * T(745.699872)); }
 };
 
-struct luminance : quantity<float, dimensions::luminance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
+template <typename T> struct horsepower_t : power_t<T> {
+    using power_t<T>::power_t;
+    static constexpr T conversion_factor() { return T(745.699872); }
 };
 
-struct magnetic_field_strength : quantity<float, dimensions::magnetic_field_strength> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
+// Other derived units
+template <typename T> using density_t = unit_type<T, dimensions::density>;
+template <typename T> using charge_t = unit_type<T, dimensions::charge>;
+template <typename T> using voltage_t = unit_type<T, dimensions::voltage>;
+template <typename T> using capacitance_t = unit_type<T, dimensions::capacitance>;
+template <typename T> using resistance_t = unit_type<T, dimensions::resistance>;
+template <typename T> using conductance_t = unit_type<T, dimensions::conductance>;
+template <typename T> using magnetic_flux_t = unit_type<T, dimensions::magnetic_flux>;
+template <typename T> using magnetic_flux_density_t = unit_type<T, dimensions::magnetic_flux_density>;
+template <typename T> using inductance_t = unit_type<T, dimensions::inductance>;
+template <typename T> using frequency_t = unit_type<T, dimensions::frequency>;
+template <typename T> using angular_velocity_t = unit_type<T, dimensions::angular_velocity>;
+template <typename T> using momentum_t = unit_type<T, dimensions::momentum>;
+template <typename T> using angular_momentum_t = unit_type<T, dimensions::angular_momentum>;
+template <typename T> using torque_t = unit_type<T, dimensions::torque>;
+template <typename T> using surface_tension_t = unit_type<T, dimensions::surface_tension>;
+template <typename T> using dynamic_viscosity_t = unit_type<T, dimensions::dynamic_viscosity>;
+template <typename T> using kinematic_viscosity_t = unit_type<T, dimensions::kinematic_viscosity>;
+template <typename T> using heat_capacity_t = unit_type<T, dimensions::heat_capacity>;
+template <typename T> using specific_heat_capacity_t = unit_type<T, dimensions::specific_heat_capacity>;
+template <typename T> using thermal_conductivity_t = unit_type<T, dimensions::thermal_conductivity>;
+template <typename T> using electric_field_strength_t = unit_type<T, dimensions::electric_field_strength>;
+template <typename T> using electric_displacement_t = unit_type<T, dimensions::electric_displacement>;
+template <typename T> using permittivity_t = unit_type<T, dimensions::permittivity>;
+template <typename T> using permeability_t = unit_type<T, dimensions::permeability>;
+template <typename T> using molar_energy_t = unit_type<T, dimensions::molar_energy>;
+template <typename T> using molar_entropy_t = unit_type<T, dimensions::molar_entropy>;
+template <typename T> using exposure_t = unit_type<T, dimensions::exposure>;
+template <typename T> using dose_equivalent_t = unit_type<T, dimensions::dose_equivalent>;
+template <typename T> using catalytic_activity_t = unit_type<T, dimensions::catalytic_activity>;
+template <typename T> using wave_number_t = unit_type<T, dimensions::wave_number>;
 
-struct molarity : quantity<float, dimensions::molarity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct molar_mass : quantity<float, dimensions::molar_mass> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct impulse : quantity<float, dimensions::impulse> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct wave_number : quantity<float, dimensions::wave_number> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct specific_volume : quantity<float, dimensions::specific_volume> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct radiant_intensity : quantity<float, dimensions::radiant_intensity> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct radiance : quantity<float, dimensions::radiance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct irradiance : quantity<float, dimensions::irradiance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
-
-struct thermal_resistance : quantity<float, dimensions::thermal_resistance> {
-    using quantity::quantity;
-    static constexpr float conversion_factor = 1.0f;
-};
+// Convenience typedefs for float types
+// TODO add for double precision units?
+using dimensionless = dimensionless_t<float>;
+using length = length_t<float>;
+using time = time_t<float>;
+using mass = mass_t<float>;
+using temperature = temperature_t<float>;
+using current = current_t<float>;
+using amount_of_substance = amount_of_substance_t<float>;
+using luminous_intensity = luminous_intensity_t<float>;
+using angle = angle_t<float>;
+using velocity = velocity_t<float>;
+using acceleration = acceleration_t<float>;
+using area = area_t<float>;
+using volume = volume_t<float>;
+using force = force_t<float>;
+using pressure = pressure_t<float>;
+using energy = energy_t<float>;
+using power = power_t<float>;
+using density = density_t<float>;
+using charge = charge_t<float>;
+using voltage = voltage_t<float>;
+using capacitance = capacitance_t<float>;
+using resistance = resistance_t<float>;
+using conductance = conductance_t<float>;
+using magnetic_flux = magnetic_flux_t<float>;
+using magnetic_flux_density = magnetic_flux_density_t<float>;
+using inductance = inductance_t<float>;
+using frequency = frequency_t<float>;
+using angular_velocity = angular_velocity_t<float>;
+using momentum = momentum_t<float>;
+using angular_momentum = angular_momentum_t<float>;
+using torque = torque_t<float>;
+using surface_tension = surface_tension_t<float>;
+using dynamic_viscosity = dynamic_viscosity_t<float>;
+using kinematic_viscosity = kinematic_viscosity_t<float>;
+using heat_capacity = heat_capacity_t<float>;
+using specific_heat_capacity = specific_heat_capacity_t<float>;
+using thermal_conductivity = thermal_conductivity_t<float>;
+using electric_field_strength = electric_field_strength_t<float>;
+using electric_displacement = electric_displacement_t<float>;
+using permittivity = permittivity_t<float>;
+using permeability = permeability_t<float>;
+using molar_energy = molar_energy_t<float>;
+using molar_entropy = molar_entropy_t<float>;
+using exposure = exposure_t<float>;
+using dose_equivalent = dose_equivalent_t<float>;
+using catalytic_activity = catalytic_activity_t<float>;
+using wave_number = wave_number_t<float>;
 
 } // namespace units
 
-// TODO add namespace constants_d for double precision constants
+// TODO add namespace constants_d for double precision constants?
 namespace constants {
 
 // Mathematical constants
