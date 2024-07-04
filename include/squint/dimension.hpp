@@ -3,8 +3,6 @@
  * @author Brendan Barnes
  * @brief Compile-time dimensional types. Used to define quantity types
  *
- * @copyright Copyright (c) 2022
- *
  */
 #ifndef SQUINT_DIMENSION_HPP
 #define SQUINT_DIMENSION_HPP
