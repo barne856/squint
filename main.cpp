@@ -4,7 +4,9 @@
 using namespace squint::units;
 
 int main() {
-    auto l = length(1.0f);
+    auto l = length(1.0f)*2;
+    float test = float(l);
+    // float test = l; // compile error
     std::cout << l << std::endl;
     std::cout << l.as<feet_t>() << std::endl;
     auto s = squint::units::time(1.0f);
