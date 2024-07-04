@@ -3,42 +3,31 @@ cmake_minimum_required(VERSION 3.28)
 ## Project Settings
 project(SQUINT)
 set(CMAKE_CXX_STANDARD 23)
-include_directories("./include")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Define an INTERFACE library target
-add_library(squint INTERFACE)
+include(ExternalProject)
+find_package(Git REQUIRED)
 
-# Add include directories
-target_include_directories(squint
-    INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+ExternalProject_Add(
+    doctest
+    PREFIX ${CMAKE_BINARY_DIR}/doctest
+    GIT_REPOSITORY https://github.com/doctest/doctest.git
+    TIMEOUT 10
+    UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    LOG_DOWNLOAD ON
 )
 
-## Find or fetch Catch2
-include(FetchContent)
-FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.0.1 # or a later version
-)
+# Expose required variable (DOCTEST_INCLUDE_DIR) to parent scope
+ExternalProject_Get_Property(doctest source_dir)
+set(DOCTEST_INCLUDE_DIR ${source_dir}/doctest CACHE INTERNAL "Path to include folder for doctest")
 
-# Disable Catch2 self-tests
-set(BUILD_TESTING OFF)
+# add it globally
+include_directories(${DOCTEST_INCLUDE_DIR} "include")
 
-FetchContent_MakeAvailable(Catch2)
-
-# # TODO, tests are not working on MSVC, but work with clang
-# ## Create the test executable
-# add_executable(tests tests/tests.cpp)
-# target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
-# 
-# ## Discover tests
-# include(CTest)
-# include(Catch)
-# catch_discover_tests(tests)
-
-# Create the sample executable
-add_executable(sample2 tests/samples/sample2.cpp)
-add_executable(sample1 tests/samples/sample1.cpp)
+# Make test executable
+add_executable(quantity_tests tests/quantity_tests.cpp)
+# target_compile_features(quantity_tests PRIVATE cxx_std_17)
+target_link_libraries(quantity_tests)

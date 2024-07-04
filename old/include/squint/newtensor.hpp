@@ -1,4 +1,3 @@
-#include "squint/quantity.hpp"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -17,7 +16,18 @@
 #include <utility>
 #include <vector>
 
+#include "squint/dimension.hpp"
+
 namespace squint {
+
+template <typename T, dimensional D> class quantity {
+  public:
+    using value_type = T;     // data type of the element
+    using dimension_type = D; // dimension of the quantity
+    constexpr quantity() = default;
+};
+
+
 template <typename T> struct quantity_traits {
     using dimension_type = dimensions::dimensionless;
     static constexpr bool is_quantity = false;
@@ -29,7 +39,7 @@ template <typename T, dimensional D> struct quantity_traits<quantity<T, D>> {
 };
 
 template <typename T>
-concept Quantitative = quantity_traits<T>::is_quantity;
+concept quantitative = quantity_traits<T>::is_quantity;
 
 template <class Derived, typename T, typename ShapeType> class tensor_base_crtp {
   protected:
