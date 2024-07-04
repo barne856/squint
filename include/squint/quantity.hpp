@@ -29,6 +29,15 @@ template <typename T> constexpr T int_pow(T base, int exp) {
     }
     return result;
 }
+// Constexpr square root function
+template <typename T> constexpr T sqrt_constexpr(T x, T curr, T prev) {
+    return curr == prev ? curr : sqrt_constexpr(x, (curr + x / curr) / 2, curr);
+}
+
+template <typename T> constexpr T sqrt_constexpr(T x) {
+    return x >= 0 && x < std::numeric_limits<T>::infinity() ? sqrt_constexpr(x, x, T(0))
+                                                            : std::numeric_limits<T>::quiet_NaN();
+}
 } // namespace detail
 
 template <typename T>
@@ -135,10 +144,16 @@ template <arithmetic T, dimensional D> class quantity {
 
     // Root method
     template <int N> auto root() const {
-        static_assert(N != 0, "Cannot take 0th root");
+        static_assert(N > 0, "Cannot take 0th root");
         using new_dimension = root_t<D, N>;
         // Note: This is not constexpr, as there's no general constexpr nth root
         return quantity<T, new_dimension>(std::pow(value_, T(1) / N));
+    }
+
+    // Square root method
+    constexpr auto sqrt() const {
+        using new_dimension = root_t<D, 2>;
+        return quantity<T, new_dimension>(detail::sqrt_constexpr(value_));
     }
 
   private:
