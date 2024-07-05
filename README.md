@@ -1,149 +1,272 @@
-# SQUINT - Static Quantities in Tensors
+# Squint C++ Library
 
-SQUINT is a header only C++ library for compile-time physical quantities and tensors. The library also contains some helpful linear algebra, numerical integration, and root finding / optimization algorithms (including autodiff and numerical differentiation) using these abstractions.
+## Overview
 
-SQUINT allows for strict compile-time checking of the dimensions of phyical quantities such that formulas you implement make physical sense. These quantities can also be used as elements of tensors so that formulas involving vectors and matricies can also be statically type checked. The library's main purpose is for use in the implementation of physical simulations and 3D rendering where keeping track of physical dimensions can be important and algorithms can be more elegantly implemented using concepts from linear algebra.
+Squint is a C++ library that provides compile-time dimensional analysis and unit conversion capabilities. It allows developers to work with physical quantities in a type-safe manner, preventing common errors related to unit mismatches and improving code readability and maintainability.
 
-Below is example code of a statically type checked formula involving tensors of physical quantites.
+## Project Map
+
+### Directory Structure
+
+```
+squint/
+|-- include/
+|   |-- squint/
+|       |-- dimension.hpp
+|       |-- quantity.hpp
+```
+
+### File Contents
+
+include/squint/dimension.hpp
+
+- Defines the squint namespace
+- Implements compile-time dimensional types
+- Contains:
+  - `rational` concept
+  - `dimensional` concept
+  - `dimension` struct
+  - `dim_mult`, `dim_div`, `dim_pow`, `dim_root` structs
+  - `dimensions` namespace with common dimension definitions
+
+include/squint/quantity.hpp
+
+- Builds on dimension.hpp
+- Implements compile-time quantity types
+- Contains:
+  - `quantity` class template
+  - `units` namespace with various unit types
+  - `constants` namespace with mathematical and physical constants
+
+CMakeLists.txt
+
+- Defines the Squint library as a header-only library
+- Sets up installation rules
+
+## Installation
+
+### Manual Installation
+
+Squint is a header-only library. To use it in your project, follow these steps:
+
+1. Copy the include/squint directory to your project's include path.
+2. Include the necessary headers in your C++ files:
 
 ```cpp
-#include "squint/linalg.hpp"
-using namespace squint;
-using namespace squint::quantities;
-int main()
-{
-    using time = squint::quantities::time;
-    // time matrix
-    tensor<time, 3, 3> A{
-        tensor<time, 1, 3>{1_s, 5_s, 6_s},
-        tensor<time, 1, 3>{8_s, 2_s, 3_s},
-        tensor<time, 1, 3>{3_s, 5_s, 9_s}};
-    // length column vector
-    tensor<length, 3> b{1_m, 2_m, 3_m};
-    // velocity column vector
-    auto x = b / A; // operator/ solves the general linear least squares problem
-    // print the solution in feet per second
-    for (const velocity &vi : x)
-        std::cout << vi.as_fps() << std::endl;
+#include <squint/quantity.hpp>
+```
+
+### Incorporating into a CMake Project
+
+To use Squint in your CMake project using FetchContent, follow these steps:
+
+1. In your project's `CMakeLists.txt`, add the following near the top of the file:
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+    squint
+    GIT_REPOSITORY https://github.com/barne856/squint.git
+    GIT_TAG main  # or a specific tag/commit
+)
+
+FetchContent_MakeAvailable(squint)
+```
+
+2. After the FetchContent commands, you can link your targets with squint:
+
+```cmake
+add_executable(your_target main.cpp)
+target_link_libraries(your_target PRIVATE squint::squint)
+```
+
+3. In your C++ files, include the Squint headers:
+
+```cpp
+#include <squint/quantity.hpp>
+```
+
+## Usage
+
+### Example 1: Basic Quantity Operations
+
+```cpp
+#include <squint/quantity.hpp>
+#include <iostream>
+
+int main() {
+    using namespace squint::units;
+    
+    auto distance = length::meters(100.0);
+    auto time = time::seconds(10.0);
+    
+    auto velocity = distance / time;
+    
+    std::cout << "Velocity: " << velocity.value() << " m/s" << std::endl;
+    
+    auto speed_kph = velocity.as<kilometers_per_hour_t>();
+    std::cout << "Speed: " << speed_kph << " km/h" << std::endl;
+    
     return 0;
 }
 ```
 
-## Dependencies
-
-- C++20 compiler
-- Intel MKL (optional)
-
-## How to Build
-
-SQUINT has no required external dependencies other than the C++20 standard library. Simply include the header files in your project if you only need the physical quantities and tensor data structures. The library can optionally be linked with Intel's Math Kernel Libray (MKL) to speed up some operations. It is highly recommended to link with MKL if you will use the library to perform large linear algrebra computations because little care has been taken to make the non-MKL implementaiton of these algorithms efficient.
-
-An example CMakeLists.txt is included that builds the tests and links with MKL if you set the CMake flag `USE_MKL`.
-
-## Constructors
-
-Tensors are stored internally in column major order. You can create a matrix by supplying an initalizer list of elements in column major order.
+### Example 2: Using Physical Constants
 
 ```cpp
-tensor<double, 3, 3> A{1,2,3,4,5,6,7,8,9};
-```
+#include <squint/quantity.hpp>
+#include <iostream>
 
-Alternativly, you can provide an initalizer list of equal sized tensors as long as the shapes and amounts exactally fit the shape of the new tensor. The elements are assigned as blocks again in column major order. For example, to construct a 3x3 matrix from 3 1x3 row vectors:
-
-```cpp
-tensor<double, 3, 3> B{
-    tensor<double, 1, 3>{1,4,7},
-    tensor<double, 1, 3>{2,5,8},
-    tensor<double, 1, 3>{3,6,9},
-};
-// A == B will be true
-```
-
-Or, to construct the same matrix again using column vectors:
-
-```cpp
-tensor<double, 3, 3> C{
-    tensor<double, 3>{1,2,3},
-    tensor<double, 3>{4,5,6},
-    tensor<double, 3>{7,8,9},
-};
-// B == C will be true
-```
-
-## Indexing
-
-Indexing tensors works similarly to multidimensional arrays:
-
-```cpp
-tensor<double, 1, 3> row0 = A[0]; // get zeroth row of A
-tensor<double> elem01 = row0[1]; // get first element of row
-```
-
-You can also index by block:
-
-```cpp
-// get a 2x2 block offset by 1,1
-tensor<double, 2, 2> block = A.at<2,2>(1,1);
-```
-
-You can also iterate over all the elements of a tensor:
-
-```cpp
-for(auto& elem : A)
-{
-    elem*=2;
+int main() {
+    using namespace squint::constants;
+    
+    auto c = si_constants<double>::c;
+    std::cout << "Speed of light: " << c.value() << " m/s" << std::endl;
+    
+    auto G = si_constants<double>::G;
+    std::cout << "Gravitational constant: " << G.value() << " m^3 kg^-1 s^-2" << std::endl;
+    
+    return 0;
 }
 ```
 
-Or, iterate over sub-matrices or blocks of a tensor:
+## Features
+
+### Dimensional Analysis
+
+- Compile-time checking of dimensional consistency
+- Support for all seven SI base dimensions (length, time, mass, temperature, electric current, amount of substance, luminous intensity)
+- Operations on dimensions: multiplication, division, power, and root
+- Predefined dimensions for common physical quantities (velocity, acceleration, force, energy, etc.)
+
+### Quantity System
+
+- Type-safe representation of physical quantities
+- Arithmetic operations: addition, subtraction, multiplication, division
+- Comparison operations
+- Power and root operations
+- Unit conversions
+- Support for different underlying value types (int, float, double)
+
+### Error Checking
+
+- Optional compile-time and runtime error checking
+- Detects and prevents common errors such as:
+  - Integer overflow
+  - Division by zero
+  - Floating-point underflow
+
+### Constants
+
+- Mathematical constants (pi, e, sqrt(2), etc.)
+- Physical constants (speed of light, Planck constant, gravitational constant, etc.)
+
+### Unit Conversions
+
+- Built-in conversions for common units:
+  - Length: meters, feet, inches, kilometers, miles
+  - Time: seconds, minutes, hours, days
+  - Temperature: Kelvin, Celsius, Fahrenheit
+  - Mass: kilograms, grams, pounds
+  - Velocity: meters per second, kilometers per hour, miles per hour
+  - Area: square meters, square feet, acres
+  - Volume: cubic meters, liters, gallons
+  - Force: newtons, pounds-force
+  - Pressure: pascals, bars, psi
+  - Energy: joules, kilowatt-hours
+  - Power: watts, horsepower
+
+## Advanced Usage
+
+### Working with Mixed types
+
+Squint supports operations between quantities with different underlying types (e.g., int, float, double). The result type is determined by the usual C++ type promotion rules.
 
 ```cpp
-for(const auto& row : A.block<1,3>())
-{
-    std::cout << row << std::endl;
-}
+quantity<double, length> l_double(5.0);
+quantity<float, length> l_float(3.0F);
+quantity<int, length> l_int(2);
+
+auto result = l_double + l_float + l_int; // result is quantity<double, length>
 ```
 
-For convience, there are cols() and rows() methods that can be used for tensors of order <= 2:
+### Error Checking
+
+Squint provides two levels of error checking:
+
+1. `error_checking_disabled` (default): No runtime checks are performed.
+2. `error_checking_enabled`: Runtime checks for overflow, division by zero, and underflow are performed.
+
+You can specify the error checking mode when declaring a quantity:
 
 ```cpp
-for(const auto& row : A.rows())
-{
-    std::cout << row << std::endl;
-}
+quantity<int, length, error_checking_enabled> safe_length(5);
+quantity<int, length, error_checking_disabled> fast_length(5);
 ```
 
-## Operators
+### Working with Constants
 
-Most of the math operators are in the `linalg.hpp` header. When you use dimensionful quantities as elements to tensors, the operators will deduce the resultant types.
+Squint provides a set of mathematical and physical constants that can be used in calculations:
 
 ```cpp
-quantity<double, time> t{1};
-quantity<double, length> x{1};
-quantity<double, velocity> v = x/t; // length/time -> velocity
-auto A = tensor<quantity<double, length>, 4,4>::I(); // identity matrix
-auto A_inv = inv(A); // A_inv has dimension length^(-1)
+auto circle_area = constants::math_constants<double>::pi * length_t<double>::meters(2.0).pow<2>();
+auto energy = mass_t<double>::kilograms(1.0) * constants::si_constants<double>::c.pow<2>();
 ```
 
-## Dynamic Shape Tensors
+## API Reference
 
-All operations for tensors have corresponding run-time equivalents. Typically the API for these methods is the same only the compile-time arguments in the `<>` brackets are instead run time arguments to the function calls. This allows for tensors that are too large to fit on the stack or need to change shape at run-time.
+`squint::quantity<T, D, ErrorChecking>`
 
-Dynamic Shape Tensors are created and reshaped like so:
+The `quantity` class template is the core of the squint library, representing a physical quantity with a value and a dimension.
+
+Template Parameters
+
+- `T`: The underlying arithmetic type (e.g., `float`, `double`)
+- `D`: The dimension type
+- `ErrorChecking`: Error checking policy (`error_checking_enabled` or `error_checking_disabled`)
+
+Methods
+
+- `constexpr T value() const noexcept`: Returns the underlying value of the quantity
+- `template <template <typename, typename> typename TargetUnit, typename TargetErrorChecking = ErrorChecking> constexpr auto as() const`: Converts the quantity to a different unit
+- `template <int N> constexpr auto pow() const`: Raises the quantity to the power of N
+- `template <int N> auto root() const`: Takes the Nth root of the quantity
+- `constexpr auto sqrt() const`: Takes the square root of the quantity
+
+Operators
+
+- Arithmetic operators (`+`, `-`, `*`, `/`)
+- Comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`)
+
+`squint::units` Namespace
+
+The `units` namespace contains various unit types and conversion functions. Some of the key unit types include:
+
+- `length_t<T, ErrorChecking>`
+- `time_t<T, ErrorChecking>`
+- `mass_t<T, ErrorChecking>`
+- `temperature_t<T, ErrorChecking>`
+- `velocity_t<T, ErrorChecking>`
+- `acceleration_t<T, ErrorChecking>`
+- `force_t<T, ErrorChecking>`
+- `energy_t<T, ErrorChecking>`
+- `power_t<T, ErrorChecking>`
+
+Each unit type provides static methods for creating quantities in different units. For example:
 
 ```cpp
-// create a 4x4 matrix filled with ones.
-tensor<double, dynamic_shape> ones({4, 4}, 1);
-A.reshape({8,2}); // reshape to 8x2 matrix
+auto len = length_t<double>::meters(5.0);
+auto spd = velocity_t<double>::kilometers_per_hour(60.0);
 ```
 
-## Accessing Data
-A pointer to the underlying data of a tensor can be accessed through the `data()` method. For fixed size and dynamic sized tensors, the data is guaranteed to be contiguous and stored in column major order. If the underlying data type of the tensor is a `quantity`, a pointer to a `quantity` is returned. `quantity` pointers can be explicitly converted their underlying type (usually float or double) using a `static_cast` or C style cast.
+`squint::constants` Namespace
 
-A tensor of fixed size tensors is also guaranteed to have all its `data()` stored contiguously with no overhead of virtual function tables or other member variables and the size of a fixed size tensor is equal to the size of its elements.
+The `constants` namespace provides template structs with various mathematical and physical constants:
 
-## Tensor Refs
-`tensor_ref`s are returned from some operations on tensors such as indexing or transposing. These reference tensors which store the raw data, but at different strides and offsets from the main tensor. The `data()` of `tensor_ref`s are not necessarily contiguous or stored in column major order. You must copy the results to a new `tensor` by using the `copy()` method or by using a constructor for a `tensor` to have this guarantee.
+- `math_constants<T>`
+- `si_constants<T>`
+- `astro_constants<T>`
+- `atomic_constants<T>`
 
-## Performance Limitations
-Performance of linear algebra operations are similar to what you would expect from BLAS and LAPACKE for single unfused operations. Note that indexing dynamic shape tensors and tensor_refs with the `operator[]` is quite slow since the location of the elements must be computed at run-time. It is best to not index dynamic shape tensors in hot parts of your code. For similar reasons, iterators of tensors can be slower than iterators over the flat array.
+These can be used to access constants like π, speed of light, gravitational constant, etc.

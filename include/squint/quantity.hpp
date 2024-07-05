@@ -582,6 +582,9 @@ struct velocity_t : unit_t<T, dimensions::velocity, ErrorChecking> {
     static constexpr velocity_t<T, ErrorChecking> miles_per_hour(T value) {
         return velocity_t<T, ErrorChecking>(value * T(0.44704));
     }
+    static constexpr velocity_t<T, ErrorChecking> feet_per_second(T value) {
+        return velocity_t<T, ErrorChecking>(value * T(3.28084));
+    }
 };
 
 template <typename T, typename ErrorChecking = error_checking_disabled>
@@ -597,6 +600,14 @@ struct miles_per_hour_t : velocity_t<T, ErrorChecking> {
     using velocity_t<T, ErrorChecking>::velocity_t;
     static constexpr T convert_to(const velocity_t<T, ErrorChecking> &v, const miles_per_hour_t & /*unused*/) {
         return v.value() / T(0.44704);
+    }
+};
+
+template <typename T, typename ErrorChecking = error_checking_disabled>
+struct feet_per_second_t : velocity_t<T, ErrorChecking> {
+    using velocity_t<T, ErrorChecking>::velocity_t;
+    static constexpr T convert_to(const velocity_t<T, ErrorChecking> &v, const feet_per_second_t & /*unused*/) {
+        return v.value() / T(3.28084);
     }
 };
 

@@ -22,7 +22,7 @@ def write_combined_file(output_file, combined_content):
         f.write(combined_content)
 
 # Specify the folder path and file extensions to include
-folder_path = "./src/include"
+folder_path = "./tests"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt']
 
 # Specify the subdirectories to exclude
