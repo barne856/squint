@@ -27,28 +27,26 @@ template <typename Derived, typename T> class tensor_view_base : public tensor_b
 };
 
 // View class for fixed_tensor
-// TODO, should satisfy fixed_shape_tensor concept, no shape_ member variable
 template <typename T, layout L, std::size_t... Dims>
 class fixed_tensor_view : public tensor_view_base<fixed_tensor_view<T, L, Dims...>, T> {
-    std::array<std::size_t, sizeof...(Dims)> shape_;
-
   public:
     fixed_tensor_view(T *data, std::array<std::size_t, sizeof...(Dims)> strides)
-        : tensor_view_base<fixed_tensor_view, T>(data, std::vector<std::size_t>(strides.begin(), strides.end()), L),
-          shape_{Dims...} {}
+        : tensor_view_base<fixed_tensor_view, T>(data, std::vector<std::size_t>(strides.begin(), strides.end()), L) {}
 
     static constexpr std::size_t rank() { return sizeof...(Dims); }
     static constexpr std::size_t size() { return (Dims * ...); }
-    constexpr std::vector<std::size_t> shape() const { return std::vector<std::size_t>(shape_.begin(), shape_.end()); }
-    // Implement at() method
-    template <typename... Indices> const T &at(Indices... indices) const {
+    static constexpr auto constexpr_shape() { return std::array<std::size_t, sizeof...(Dims)>{Dims...}; }
+    constexpr std::vector<std::size_t> shape() const { return std::vector<std::size_t>{Dims...}; }
+
+    template <typename... Indices>
+    constexpr const T &at(Indices... indices) const {
         static_assert(sizeof...(Indices) == sizeof...(Dims), "Incorrect number of indices");
         return this->data_[calculate_offset(std::index_sequence_for<Indices...>{}, indices...)];
     }
 
   private:
     template <std::size_t... Is, typename... Indices>
-    std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) const {
+    constexpr std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) const {
         return ((indices * this->strides_[Is]) + ...);
     }
 };
