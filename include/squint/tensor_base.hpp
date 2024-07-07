@@ -105,7 +105,7 @@ public:
                     constexpr size_t rank = Derived::rank();
                     os << unpack_indices(indices, std::make_index_sequence<rank>{})(derived);
                 } else {
-                    os << derived.at(indices);
+                    os << derived.at_impl(indices);
                 }
                 return;
             }

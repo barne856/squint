@@ -36,6 +36,7 @@ template <typename T> class dynamic_tensor : public tensor_base<dynamic_tensor<T
     constexpr std::size_t size() const { return data_.size(); }
     constexpr std::vector<std::size_t> shape() const { return shape_; }
     constexpr layout get_layout() const { return layout_; }
+    std::vector<std::size_t> strides() const { return calculate_strides(); }
 
     T &at_impl(const std::vector<size_t> &indices) { return data_[calculate_index(indices)]; }
 
@@ -52,12 +53,12 @@ template <typename T> class dynamic_tensor : public tensor_base<dynamic_tensor<T
         shape_ = std::move(new_shape);
     }
 
-    dynamic_tensor_view<T> view() {
-        return dynamic_tensor_view<T>(this->data(), this->shape(), calculate_strides(), this->get_layout());
+    auto view() {
+        return make_dynamic_tensor_view(*this);
     }
 
-    dynamic_tensor_view<const T> view() const {
-        return dynamic_tensor_view<const T>(this->data(), this->shape(), calculate_strides(), this->get_layout());
+    auto view() const {
+        return make_dynamic_tensor_view(*this);
     }
 
   private:

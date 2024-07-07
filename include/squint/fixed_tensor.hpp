@@ -55,12 +55,12 @@ class fixed_tensor : public tensor_base<fixed_tensor<T, L, Dims...>, T> {
     constexpr T *data() { return data_.data(); }
     constexpr const T *data() const { return data_.data(); }
 
-    constexpr fixed_tensor_view<T, L, Dims...> view() {
-        return fixed_tensor_view<T, L, Dims...>(this->data(), calculate_strides());
+    constexpr auto view() {
+        return make_fixed_tensor_view(*this);
     }
 
-    constexpr fixed_tensor_view<const T, L, Dims...> view() const {
-        return fixed_tensor_view<const T, L, Dims...>(this->data(), calculate_strides());
+    constexpr auto view() const {
+        return make_fixed_tensor_view(*this);
     }
 
   private:

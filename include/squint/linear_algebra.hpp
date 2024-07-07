@@ -12,31 +12,6 @@ namespace squint {
 // Linear algebra mixin
 template <typename Derived> class linear_algebra_mixin {
   public:
-    // Transpose method
-    constexpr auto transpose() const {
-        const auto &derived = static_cast<const Derived &>(*this);
-        if constexpr (fixed_shape_tensor<Derived>) {
-            constexpr auto original_shape = Derived::constexpr_shape();
-            constexpr auto transposed_shape = [&original_shape] {
-                std::array<std::size_t, original_shape.size()> result;
-                for (std::size_t i = 0; i < original_shape.size(); ++i) {
-                    result[i] = original_shape[original_shape.size() - 1 - i];
-                }
-                return result;
-            }();
-            return fixed_tensor_view<typename Derived::value_type, derived.get_layout(), transposed_shape[0],
-                                     transposed_shape[1]>(const_cast<typename Derived::value_type *>(derived.data()),
-                                                          calculate_transposed_strides(original_shape));
-        } else {
-            auto shape = derived.shape();
-            std::reverse(shape.begin(), shape.end());
-            std::vector<std::size_t> strides = calculate_transposed_strides(shape);
-            return dynamic_tensor_view<typename Derived::value_type>(
-                const_cast<typename Derived::value_type *>(derived.data()), std::move(shape), std::move(strides),
-                derived.get_layout());
-        }
-    }
-
     // Element-wise addition
     template <tensor OtherDerived> constexpr auto operator+(const linear_algebra_mixin<OtherDerived> &other) const {
         const auto &a = static_cast<const Derived &>(*this);
@@ -80,19 +55,6 @@ template <typename Derived> class linear_algebra_mixin {
             }
             return result;
         }
-    }
-
-  private:
-    // Helper function to calculate transposed strides
-    template <typename Shape> static constexpr auto calculate_transposed_strides(const Shape &shape) {
-        std::array<std::size_t, std::tuple_size<Shape>::value> strides;
-        std::size_t stride = 1;
-        for (int i = shape.size() - 1; i >= 0; --i) {
-            strides[i] = stride;
-            stride *= shape[i];
-        }
-        std::reverse(strides.begin(), strides.end());
-        return strides;
     }
 };
 
