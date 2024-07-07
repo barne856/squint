@@ -23,6 +23,7 @@ concept tensor = requires(T t) {
     { t.rank() } -> std::convertible_to<std::size_t>;
     { t.size() } -> std::convertible_to<std::size_t>;
     { t.shape() } -> std::same_as<std::vector<std::size_t>>;
+    { t.get_layout() } -> std::same_as<layout>;
     { t[0] } -> std::convertible_to<typename T::value_type>;
 };
 
@@ -46,6 +47,7 @@ public:
     constexpr std::size_t rank() const { return static_cast<const Derived *>(this)->rank(); }
     constexpr std::size_t size() const { return static_cast<const Derived *>(this)->size(); }
     constexpr std::vector<std::size_t> shape() const { return static_cast<const Derived *>(this)->shape(); }
+    constexpr layout get_layout() const { return static_cast<const Derived *>(this)->get_layout(); }
 
     // Multidimensional subscript operator (C++23)
     template <typename... Indices>

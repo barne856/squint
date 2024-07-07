@@ -99,9 +99,16 @@ class fixed_tensor : public tensor_base<fixed_tensor<T, L, Dims...>, T> {
         std::array<std::size_t, sizeof...(Dims)> strides;
         std::size_t stride = 1;
         constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-        for (int i = sizeof...(Dims) - 1; i >= 0; --i) {
-            strides[i] = stride;
-            stride *= dims[i];
+        if constexpr (L == layout::row_major) {
+            for (int i = sizeof...(Dims) - 1; i >= 0; --i) {
+                strides[i] = stride;
+                stride *= dims[i];
+            }
+        } else { // column_major
+            for (size_t i = 0; i < sizeof...(Dims); ++i) {
+                strides[i] = stride;
+                stride *= dims[i];
+            }
         }
         return strides;
     }
