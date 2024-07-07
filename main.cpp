@@ -35,6 +35,14 @@ int main() {
     }
     std::cout << '\n';
 
+    for (const auto &value : A) {
+        std::cout << value << ' ';
+    }
+
+    for (const auto &value : B) {
+        std::cout << value << ' ';
+    }
+
     dynamic_tensor<double> Ad({4, 4}, layout::column_major);
     Ad[0, 0] = 1;
     Ad[0, 1] = 2;
@@ -61,6 +69,13 @@ int main() {
         std::cout << s << ' ';
     }
     std::cout << '\n';
+
+    for (const auto &value : Ad) {
+        std::cout << value << ' ';
+    }
+    for (const auto &value : Bd) {
+        std::cout << value << ' ';
+    }
 
     return 0;
 }

@@ -1,7 +1,7 @@
 #ifndef SQUINT_TENSOR_VIEW_HPP
 #define SQUINT_TENSOR_VIEW_HPP
 
-#include "squint/tensor_base.hpp"
+#include "squint/iterable_tensor.hpp"
 #include <array>
 #include <numeric>
 #include <stdexcept>
@@ -12,8 +12,11 @@ namespace squint {
 
 // Forward declarations
 template <typename T, layout L, std::size_t... Dims> class fixed_tensor;
-template <typename T, layout L, typename Strides, std::size_t... Dims> class fixed_tensor_view;
 template <typename T> class dynamic_tensor;
+template <typename T, layout L, typename Strides, std::size_t... Dims> class fixed_tensor_view;
+template <typename T, layout L, typename Strides, std::size_t... Dims> class const_fixed_tensor_view;
+template <typename T> class dynamic_tensor_view;
+template <typename T> class const_dynamic_tensor_view;
 
 // Compile-time utilities
 template <std::size_t... Is> using index_sequence = std::index_sequence<Is...>;
@@ -48,13 +51,8 @@ template <layout L, typename Strides, std::size_t... Dims> struct compile_time_v
     }();
 };
 
-struct slice {
-    std::size_t start;
-    std::size_t size;
-};
-
 // Base class for all tensor views
-template <typename Derived, typename T> class tensor_view_base : public tensor_base<Derived, T> {
+template <typename Derived, typename T> class tensor_view_base : public iterable_tensor<Derived, T> {
   protected:
     T *data_;
 
@@ -102,7 +100,7 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T> {
   protected:
     template <std::size_t... Is, typename... Indices>
     static constexpr std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) {
-        return ((indices * Strides::value[Is]) + ...);
+        return ((indices * Strides::value[Is]) + ... + 0);
     }
 
     std::size_t calculate_offset_runtime(const std::vector<std::size_t> &indices) const {
@@ -120,11 +118,11 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T> {
   private:
     template <std::size_t... NewDims, std::size_t... Is, typename... Slices>
     constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Slices... slices) const {
-        T *new_data = data_ + (... + (std::get<Is>(std::forward_as_tuple(slices...)).start * Strides::value[Is]));
+        T *new_data = data_ + (0 + ... + (std::get<Is>(std::forward_as_tuple(slices...)).start * Strides::value[Is]));
 
         using new_strides = compile_time_view_strides<L, Strides, NewDims...>;
 
-        return fixed_tensor_view<T, L, new_strides, NewDims...>(new_data);
+        return const_fixed_tensor_view<T, L, new_strides, NewDims...>(new_data);
     }
 };
 
@@ -152,6 +150,23 @@ class fixed_tensor_view
     using base_type::at_impl;
 
     T &at_impl(const std::vector<std::size_t> &indices) { return const_cast<T &>(base_type::at_impl(indices)); }
+
+    template <std::size_t... NewDims, typename... Slices> constexpr auto subview(Slices... slices) {
+        static_assert(sizeof...(NewDims) == sizeof...(Slices), "Number of new dimensions must match number of slices");
+        static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many slice arguments");
+        return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, slices...);
+    }
+
+  private:
+    using base_type::data_;
+    template <std::size_t... NewDims, std::size_t... Is, typename... Slices>
+    constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Slices... slices) {
+        T *new_data = data_ + (0 + ... + (std::get<Is>(std::forward_as_tuple(slices...)).start * Strides::value[Is]));
+
+        using new_strides = compile_time_view_strides<L, Strides, NewDims...>;
+
+        return fixed_tensor_view<T, L, new_strides, NewDims...>(new_data);
+    }
 };
 
 // Const fixed tensor view
@@ -198,7 +213,7 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
 
     const T &at_impl(const std::vector<std::size_t> &indices) const { return data_[calculate_offset(indices)]; }
 
-    template <typename... Slices> Derived subview(Slices... slices) const {
+    template <typename... Slices> auto subview(Slices... slices) const {
         static_assert(sizeof...(Slices) <= std::numeric_limits<std::size_t>::max(), "Too many slice arguments");
         return create_subview(slices...);
     }
@@ -216,18 +231,6 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
         return offset;
     }
 
-  private:
-    template <typename... Slices> Derived create_subview(Slices... slices) const {
-        std::vector<std::size_t> new_shape;
-        std::vector<std::size_t> new_strides;
-        T *new_data = data_;
-
-        std::size_t i = 0;
-        (process_slice(slices, new_shape, new_strides, new_data, i), ...);
-
-        return Derived(new_data, std::move(new_shape), std::move(new_strides), layout_);
-    }
-
     template <typename Slice>
     void process_slice(const Slice &slice, std::vector<std::size_t> &new_shape, std::vector<std::size_t> &new_strides,
                        T *&new_data, std::size_t &i) const {
@@ -243,6 +246,18 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
             new_data += slice.start * strides_[i];
         }
         ++i;
+    }
+
+  private:
+    template <typename... Slices> auto create_subview(Slices... slices) const {
+        std::vector<std::size_t> new_shape;
+        std::vector<std::size_t> new_strides;
+        T *new_data = data_;
+
+        std::size_t i = 0;
+        (process_slice(slices, new_shape, new_strides, new_data, i), ...);
+
+        return const_dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), layout_);
     }
 };
 
@@ -265,6 +280,24 @@ template <typename T> class dynamic_tensor_view : public dynamic_tensor_view_bas
     using base_type::at_impl;
 
     T &at_impl(const std::vector<std::size_t> &indices) { return const_cast<T &>(base_type::at_impl(indices)); }
+
+    // Non-const version of subview
+    template <typename... Slices> auto subview(Slices... slices) {
+        static_assert(sizeof...(Slices) <= std::numeric_limits<std::size_t>::max(), "Too many slice arguments");
+        return create_subview(slices...);
+    }
+
+  private:
+    template <typename... Slices> auto create_subview(Slices... slices) {
+        std::vector<std::size_t> new_shape;
+        std::vector<std::size_t> new_strides;
+        T *new_data = base_type::data_;
+
+        std::size_t i = 0;
+        (base_type::process_slice(slices, new_shape, new_strides, new_data, i), ...);
+
+        return const_dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), base_type::layout_);
+    }
 };
 
 // Const dynamic tensor view

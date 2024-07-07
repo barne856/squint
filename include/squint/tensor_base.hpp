@@ -2,9 +2,9 @@
 #define SQUINT_TENSOR_BASE_HPP
 
 #include <cstddef>
-#include <vector>
-#include <iostream>
 #include <functional>
+#include <iostream>
+#include <vector>
 
 namespace squint {
 
@@ -15,6 +15,12 @@ enum class layout { row_major, column_major };
 template <typename T> class tensor_view;
 template <typename T, layout L, std::size_t... Dims> class fixed_tensor;
 template <typename T> class dynamic_tensor;
+
+// Tensor slice
+struct slice {
+    std::size_t start;
+    std::size_t size;
+};
 
 // Tensor concept
 template <typename T>
@@ -27,21 +33,20 @@ concept tensor = requires(T t) {
     { t[0] } -> std::convertible_to<typename T::value_type>;
 };
 
-template<typename T>
+template <typename T>
 concept has_constexpr_shape = requires(T t) {
     { T::constexpr_shape() } -> std::same_as<std::array<std::size_t, T::rank()>>;
 };
 
-template<typename T>
+template <typename T>
 concept fixed_shape_tensor = tensor<T> && has_constexpr_shape<T>;
 
-template<typename T>
+template <typename T>
 concept dynamic_shape_tensor = tensor<T> && !has_constexpr_shape<T>;
 
 // Base tensor class using CRTP
-template <typename Derived, typename T>
-class tensor_base {
-public:
+template <typename Derived, typename T> class tensor_base {
+  public:
     using value_type = T;
 
     constexpr std::size_t rank() const { return static_cast<const Derived *>(this)->rank(); }
@@ -50,23 +55,19 @@ public:
     constexpr layout get_layout() const { return static_cast<const Derived *>(this)->get_layout(); }
 
     // Multidimensional subscript operator (C++23)
-    template <typename... Indices>
-    constexpr T &operator[](Indices... indices) {
+    template <typename... Indices> constexpr T &operator[](Indices... indices) {
         return static_cast<Derived *>(this)->at(indices...);
     }
 
-    template <typename... Indices>
-    constexpr const T &operator[](Indices... indices) const {
+    template <typename... Indices> constexpr const T &operator[](Indices... indices) const {
         return static_cast<const Derived *>(this)->at(indices...);
     }
 
-    template <typename... Indices>
-    constexpr T &at(Indices... indices) {
+    template <typename... Indices> constexpr T &at(Indices... indices) {
         return static_cast<Derived *>(this)->at(std::vector<size_t>{static_cast<size_t>(indices)...});
     }
 
-    template <typename... Indices>
-    constexpr const T &at(Indices... indices) const {
+    template <typename... Indices> constexpr const T &at(Indices... indices) const {
         return static_cast<const Derived *>(this)->at(std::vector<size_t>{static_cast<size_t>(indices)...});
     }
 
@@ -81,9 +82,9 @@ public:
     virtual const T *data() const = 0;
 
     // Helper function to recursively unpack indices for fixed tensors
-    template<size_t... Is>
-    static constexpr auto unpack_indices(const std::vector<size_t>& indices, std::index_sequence<Is...> /*unused*/) {
-        return [&](const auto& derived) { return derived.at(indices[Is]...); };
+    template <size_t... Is>
+    static constexpr auto unpack_indices(const std::vector<size_t> &indices, std::index_sequence<Is...> /*unused*/) {
+        return [&](const auto &derived) { return derived.at(indices[Is]...); };
     }
 
     // Output stream operator
@@ -99,7 +100,8 @@ public:
         os << "], data=";
 
         // Helper function to recursively print tensor data
-        std::function<void(size_t, std::vector<size_t> &)> print_data = [&](size_t depth, std::vector<size_t> &indices) {
+        std::function<void(size_t, std::vector<size_t> &)> print_data = [&](size_t depth,
+                                                                            std::vector<size_t> &indices) {
             if (depth == shape.size()) {
                 if constexpr (fixed_shape_tensor<Derived>) {
                     constexpr size_t rank = Derived::rank();

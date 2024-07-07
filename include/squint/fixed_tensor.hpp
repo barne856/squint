@@ -1,6 +1,7 @@
 #ifndef SQUINT_FIXED_TENSOR_HPP
 #define SQUINT_FIXED_TENSOR_HPP
 
+#include "squint/iterable_tensor.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <array>
@@ -9,7 +10,7 @@ namespace squint {
 
 // Fixed tensor implementation
 template <typename T, layout L, std::size_t... Dims>
-class fixed_tensor : public tensor_base<fixed_tensor<T, L, Dims...>, T> {
+class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
     static constexpr std::size_t total_size = (Dims * ...);
     std::array<T, total_size> data_;
 
@@ -55,12 +56,12 @@ class fixed_tensor : public tensor_base<fixed_tensor<T, L, Dims...>, T> {
     constexpr T *data() { return data_.data(); }
     constexpr const T *data() const { return data_.data(); }
 
-    constexpr auto view() {
-        return make_fixed_tensor_view(*this);
-    }
+    constexpr auto view() { return make_fixed_tensor_view(*this); }
 
-    constexpr auto view() const {
-        return make_fixed_tensor_view(*this);
+    constexpr auto view() const { return make_fixed_tensor_view(*this); }
+
+    template <std::size_t... NewDims, typename... Slices> constexpr auto subview(Slices... slices) const {
+        return view().subview(slices...);
     }
 
   private:

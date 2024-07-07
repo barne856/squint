@@ -1,6 +1,7 @@
 #ifndef SQUINT_DYNAMIC_TENSOR_HPP
 #define SQUINT_DYNAMIC_TENSOR_HPP
 
+#include "squint/iterable_tensor.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <numeric>
@@ -9,7 +10,7 @@
 namespace squint {
 
 // Dynamic tensor implementation
-template <typename T> class dynamic_tensor : public tensor_base<dynamic_tensor<T>, T> {
+template <typename T> class dynamic_tensor : public iterable_tensor<dynamic_tensor<T>, T> {
     std::vector<T> data_;
     std::vector<std::size_t> shape_;
     layout layout_;
@@ -53,13 +54,9 @@ template <typename T> class dynamic_tensor : public tensor_base<dynamic_tensor<T
         shape_ = std::move(new_shape);
     }
 
-    auto view() {
-        return make_dynamic_tensor_view(*this);
-    }
+    auto view() { return make_dynamic_tensor_view(*this); }
 
-    auto view() const {
-        return make_dynamic_tensor_view(*this);
-    }
+    auto view() const { return make_dynamic_tensor_view(*this); }
 
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
