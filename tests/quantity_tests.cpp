@@ -412,7 +412,7 @@ TEST_CASE("Quantity Operations with Constants") {
 
 TEST_CASE("Error Handling and Edge Cases") {
     SUBCASE("Integer Overflow") {
-        using checked_int_length = quantity<int, dimensions::length, error_checking_enabled>;
+        using checked_int_length = quantity<int, dimensions::length, error_checking::enabled>;
 
         SUBCASE("Addition") {
             checked_int_length max_length(std::numeric_limits<int>::max());
@@ -442,7 +442,7 @@ TEST_CASE("Error Handling and Edge Cases") {
     }
 
     SUBCASE("Division by Zero") {
-        using checked_double_length = quantity<double, dimensions::length, error_checking_enabled>;
+        using checked_double_length = quantity<double, dimensions::length, error_checking::enabled>;
         checked_double_length length(10.0);
 
         CHECK_THROWS_AS(length / 0.0, std::domain_error);
@@ -451,7 +451,7 @@ TEST_CASE("Error Handling and Edge Cases") {
     }
 
     SUBCASE("Floating-Point Underflow") {
-        using checked_float_length = quantity<float, dimensions::length, error_checking_enabled>;
+        using checked_float_length = quantity<float, dimensions::length, error_checking::enabled>;
         checked_float_length tiny_length(std::numeric_limits<float>::min());
 
         CHECK_THROWS_AS(tiny_length / std::numeric_limits<float>::max(), std::underflow_error);
@@ -506,10 +506,10 @@ TEST_CASE("Error Handling and Edge Cases") {
 }
 
 TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
-    using checked_double_length = quantity<double, dimensions::length, error_checking_enabled>;
-    using unchecked_double_length = quantity<double, dimensions::length, error_checking_disabled>;
-    using checked_int_length = quantity<int, dimensions::length, error_checking_enabled>;
-    using unchecked_int_length = quantity<int, dimensions::length, error_checking_disabled>;
+    using checked_double_length = quantity<double, dimensions::length, error_checking::enabled>;
+    using unchecked_double_length = quantity<double, dimensions::length, error_checking::disabled>;
+    using checked_int_length = quantity<int, dimensions::length, error_checking::enabled>;
+    using unchecked_int_length = quantity<int, dimensions::length, error_checking::disabled>;
 
     SUBCASE("Addition with mixed error checking") {
         checked_double_length checked(5.0);
@@ -545,11 +545,11 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
         CHECK(result.value() == doctest::Approx(15.0));
         CHECK(std::is_same_v<decltype(result)::dimension_type, mult_t<dimensions::length, dimensions::length>>);
         CHECK(std::is_same_v<decltype(result)::value_type, double>);
-        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
 
         result = unchecked * checked;
         CHECK(result.value() == doctest::Approx(15.0));
-        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
     }
 
     SUBCASE("Division with mixed error checking") {
@@ -560,11 +560,11 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
         CHECK(result.value() == doctest::Approx(2.0));
         CHECK(std::is_same_v<decltype(result)::dimension_type, dimensions::dimensionless>);
         CHECK(std::is_same_v<decltype(result)::value_type, double>);
-        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking_enabled>>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking::enabled>>);
 
         result = unchecked / checked;
         CHECK(result.value() == doctest::Approx(0.5));
-        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking_enabled>>);
+        CHECK(std::is_same_v<decltype(result), quantity<double, dimensions::dimensionless, error_checking::enabled>>);
     }
 
     SUBCASE("Scalar operations with mixed error checking") {
@@ -587,7 +587,7 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
         CHECK(result4.value() == doctest::Approx(2.0));
         CHECK(std::is_same_v<decltype(result4)::dimension_type, inv_t<dimensions::length>>);
         CHECK(std::is_same_v<decltype(result4)::value_type, double>);
-        CHECK(std::is_same_v<decltype(result4), quantity<double, inv_t<dimensions::length>, error_checking_disabled>>);
+        CHECK(std::is_same_v<decltype(result4), quantity<double, inv_t<dimensions::length>, error_checking::disabled>>);
     }
 
     SUBCASE("Error checking behavior") {
@@ -614,6 +614,6 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
 
         auto result2 = unchecked_int * checked_double;
         CHECK(result2.value() == doctest::Approx(15.0));
-        CHECK(std::is_same_v<decltype(result2), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking_enabled>>);
+        CHECK(std::is_same_v<decltype(result2), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
     }
 }

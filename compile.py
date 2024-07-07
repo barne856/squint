@@ -28,11 +28,11 @@ def write_combined_file(output_file, combined_content):
         f.write(combined_content)
 
 # Specify the folder path and file extensions to include
-folder_path = "./include"
+folder_path = "./"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt']
 
 # Specify the subdirectories to exclude
-excluded_subdirs = ['build', 'tests']
+excluded_subdirs = ['build', 'tests', 'old']
 
 # Specify the output file path
 output_file = "combined_files.txt"

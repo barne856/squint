@@ -78,6 +78,12 @@ public:
     virtual T *data() = 0;
     virtual const T *data() const = 0;
 
+    // Helper function to recursively unpack indices for fixed tensors
+    template<size_t... Is>
+    static constexpr auto unpack_indices(const std::vector<size_t>& indices, std::index_sequence<Is...> /*unused*/) {
+        return [&](const auto& derived) { return derived.at(indices[Is]...); };
+    }
+
     // Output stream operator
     friend std::ostream &operator<<(std::ostream &os, const tensor_base &tensor) {
         const Derived &derived = static_cast<const Derived &>(tensor);
@@ -91,24 +97,28 @@ public:
         os << "], data=";
 
         // Helper function to recursively print tensor data
-        std::function<void(size_t, const std::vector<size_t> &)> print_data = [&](size_t depth,
-                                                                                  const std::vector<size_t> &indices) {
+        std::function<void(size_t, std::vector<size_t> &)> print_data = [&](size_t depth, std::vector<size_t> &indices) {
             if (depth == shape.size()) {
-                os << derived.at(indices);
+                if constexpr (fixed_shape_tensor<Derived>) {
+                    constexpr size_t rank = Derived::rank();
+                    os << unpack_indices(indices, std::make_index_sequence<rank>{})(derived);
+                } else {
+                    os << derived.at(indices);
+                }
                 return;
             }
             os << "[";
             for (size_t i = 0; i < shape[depth]; ++i) {
-                std::vector<size_t> new_indices = indices;
-                new_indices.push_back(i);
-                print_data(depth + 1, new_indices);
+                indices[depth] = i;
+                print_data(depth + 1, indices);
                 if (i < shape[depth] - 1)
                     os << ", ";
             }
             os << "]";
         };
 
-        print_data(0, {});
+        std::vector<size_t> indices(shape.size(), 0);
+        print_data(0, indices);
         os << ")";
         return os;
     }
