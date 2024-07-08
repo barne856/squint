@@ -49,8 +49,10 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     const T *data() const { return data_.data(); }
 
     void reshape(std::vector<std::size_t> new_shape) {
-        if (std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>()) != data_.size()) {
-            throw std::invalid_argument("New shape must have the same total size");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>()) != data_.size()) {
+                throw std::invalid_argument("New shape must have the same total size");
+            }
         }
         shape_ = std::move(new_shape);
     }
@@ -75,8 +77,15 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
 
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
-        if (indices.size() != shape_.size()) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (indices.size() != shape_.size()) {
+                throw std::invalid_argument("Incorrect number of indices");
+            }
+            for (size_t i = 0; i < indices.size(); ++i) {
+                if (indices[i] >= shape_[i]) {
+                    throw std::out_of_range("Index out of range");
+                }
+            }
         }
 
         size_t index = 0;

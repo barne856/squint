@@ -73,21 +73,27 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     constexpr T *data() { return data_.data(); }
     constexpr const T *data() const { return data_.data(); }
 
+    template <std::size_t... NewDims> auto reshape() {
+        static_assert((NewDims * ...) == total_size, "New shape must have the same total size");
+        using initial_strides = compile_time_strides<L, NewDims...>;
+        return fixed_tensor_view<T, L, initial_strides, ErrorChecking, NewDims...>(data());
+    }
+
+    template <std::size_t... NewDims> auto reshape() const {
+        static_assert((NewDims * ...) == total_size, "New shape must have the same total size");
+        using initial_strides = compile_time_strides<L, NewDims...>;
+        return const_fixed_tensor_view<T, L, initial_strides, ErrorChecking, NewDims...>(data());
+    }
+
     constexpr auto view() { return make_fixed_tensor_view(*this); }
 
     constexpr auto view() const { return make_fixed_tensor_view(*this); }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, NewDims}...});
-        }
         return view().template subview<NewDims...>(slices...);
     }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, NewDims}...});
-        }
         return view().template subview<NewDims...>(slices...);
     }
 

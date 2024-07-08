@@ -369,7 +369,7 @@ TEST_CASE("Dynamic Tensor Subview Iteration") {
 
 TEST_CASE("Tensor Reshape") {
     SUBCASE("Dynamic tensor reshape (column major)") {
-        dynamic_tensor<int, error_checking::disabled> t({2, 3});
+        dynamic_tensor<int, error_checking::enabled> t({2, 3});
         for (int i = 0; i < 6; ++i) {
             t[i / 3, i % 3] = i + 1;
         }
@@ -384,7 +384,7 @@ TEST_CASE("Tensor Reshape") {
     }
 
     SUBCASE("Dynamic tensor reshape (row major)") {
-        dynamic_tensor<int, error_checking::disabled> t({2, 3}, layout::row_major);
+        dynamic_tensor<int, error_checking::enabled> t({2, 3}, layout::row_major);
         for (int i = 0; i < 6; ++i) {
             t[i / 3, i % 3] = i + 1;
         }
@@ -396,6 +396,36 @@ TEST_CASE("Tensor Reshape") {
         CHECK(t[2, 1] == 6);
 
         CHECK_THROWS_AS(t.reshape({2, 2}), std::invalid_argument);
+    }
+
+    SUBCASE("Fixed tensor reshape (column major)") {
+        fixed_tensor<int, layout::column_major, error_checking::disabled, 2, 3> t;
+        for (int i = 0; i < 6; ++i) {
+            t[i / 3, i % 3] = i + 1;
+        }
+
+        auto reshaped_t = t.reshape<3, 2>();
+        CHECK(reshaped_t.shape() == std::vector<std::size_t>{3, 2});
+        CHECK(reshaped_t[0, 0] == 1);
+        CHECK(reshaped_t[1, 1] == 3);
+        CHECK(reshaped_t[2, 1] == 6);
+
+        // t.reshape<2,2>(); // this line should not compile
+    }
+
+    SUBCASE("Fixed tensor reshape (row major)") {
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t;
+        for (int i = 0; i < 6; ++i) {
+            t[i / 3, i % 3] = i + 1;
+        }
+
+        auto reshaped_t = t.reshape<3, 2>();
+        CHECK(reshaped_t.shape() == std::vector<std::size_t>{3, 2});
+        CHECK(reshaped_t[0, 0] == 1);
+        CHECK(reshaped_t[1, 1] == 4);
+        CHECK(reshaped_t[2, 1] == 6);
+
+        // t.reshape<2,2>(); // this line should not compile
     }
 }
 

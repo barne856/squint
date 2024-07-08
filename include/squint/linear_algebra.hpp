@@ -19,8 +19,10 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         const auto &a = static_cast<const Derived &>(*this);
         const auto &b = static_cast<const OtherDerived &>(other);
 
-        if (a.shape() != b.shape()) {
-            throw std::invalid_argument("Incompatible shapes for addition");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (a.shape() != b.shape()) {
+                throw std::invalid_argument("Incompatible shapes for addition");
+            }
         }
 
         if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<OtherDerived>) {

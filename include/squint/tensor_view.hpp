@@ -96,8 +96,8 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
     }
 
     const T &at_impl(const std::vector<std::size_t> &indices) const {
-        if (indices.size() != sizeof...(Dims)) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_bounds(indices);
         }
         return data_[calculate_offset_runtime(indices)];
     }
@@ -120,8 +120,8 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
     }
 
     std::size_t calculate_offset_runtime(const std::vector<std::size_t> &indices) const {
-        if (indices.size() != sizeof...(Dims)) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_bounds(indices);
         }
 
         std::size_t offset = 0;
@@ -271,8 +271,8 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
 
   protected:
     std::size_t calculate_offset(const std::vector<std::size_t> &indices) const {
-        if (indices.size() != rank()) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_bounds(indices);
         }
 
         std::size_t offset = 0;
@@ -285,8 +285,10 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
     template <typename Slice>
     void process_slice(const Slice &slice, std::vector<std::size_t> &new_shape, std::vector<std::size_t> &new_strides,
                        T *&new_data, std::size_t &i) const {
-        if (i >= rank()) {
-            throw std::out_of_range("Too many slice arguments");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (i >= rank()) {
+                throw std::out_of_range("Too many slice arguments");
+            }
         }
 
         if constexpr (std::is_integral_v<Slice>) {
