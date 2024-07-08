@@ -75,6 +75,25 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
 
   public:
     using tensor_view_base<Derived, T, ErrorChecking>::tensor_view_base;
+    template <tensor OtherTensor> auto &operator=(const OtherTensor &other) {
+        constexpr auto this_shape = std::array<std::size_t, sizeof...(Dims)>({Dims...});
+        constexpr auto other_shape = OtherTensor::constexpr_shape();
+        constexpr auto min_rank = std::min(sizeof...(Dims), other_shape.size());
+
+        // Compile-time check for matching dimensions
+        static_assert(
+            [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                return ((Is >= min_rank || this_shape[Is] == other_shape[Is]) && ...);
+            }(std::make_index_sequence<sizeof...(Dims)>{}),
+            "Incompatible shape for assignment: dimensions must match where they overlap");
+
+        auto this_it = static_cast<Derived *>(this)->begin();
+        auto other_it = other.begin();
+        for (; this_it != static_cast<Derived *>(this)->end(); ++this_it, ++other_it) {
+            *this_it = *other_it;
+        }
+        return *static_cast<Derived *>(this);
+    }
 
     static constexpr std::size_t rank() { return sizeof...(Dims); }
     static constexpr std::size_t size() { return (Dims * ...); }
@@ -113,6 +132,12 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
 
     constexpr auto view() const { return *this; }
 
+    template <std::size_t... NewDims> auto reshape() const {
+        static_assert((NewDims * ...) == size(), "New shape must have the same total size");
+        using new_strides = compile_time_strides<L, NewDims...>;
+        return const_fixed_tensor_view<T, L, new_strides, ErrorChecking, NewDims...>(data_);
+    }
+
   protected:
     template <std::size_t... Is, typename... Indices>
     static constexpr std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) {
@@ -150,6 +175,7 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
                                              ErrorChecking, Dims...>;
 
   public:
+    using base_type::operator=;
     using base_type::base_type;
     using base_type::get_layout;
     using base_type::rank;
@@ -179,6 +205,12 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
 
     constexpr auto view() const { return *this; }
 
+    template <std::size_t... NewDims> auto reshape() {
+        static_assert((NewDims * ...) == size(), "New shape must have the same total size");
+        using new_strides = compile_time_strides<L, NewDims...>;
+        return fixed_tensor_view<T, L, new_strides, ErrorChecking, NewDims...>(data_);
+    }
+
   private:
     using base_type::data_;
     template <std::size_t... NewDims, std::size_t... Is, typename... Slices>
@@ -200,6 +232,7 @@ class const_fixed_tensor_view
                                              Strides, ErrorChecking, Dims...>;
 
   public:
+    using base_type::operator=;
     using base_type::at;
     using base_type::at_impl;
     using base_type::base_type;
@@ -222,6 +255,27 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
     using tensor_view_base<Derived, T, ErrorChecking>::data_;
 
   public:
+    using tensor_view_base<Derived, T, ErrorChecking>::tensor_view_base;
+    template <tensor OtherTensor> auto &operator=(const OtherTensor &other) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            // dimensions must match where they overlap
+            auto this_shape = shape();
+            auto other_shape = other.shape();
+            auto min_rank = std::min(this_shape.size(), other_shape.size());
+
+            if (!std::equal(this_shape.begin(), this_shape.begin() + min_rank, other_shape.begin())) {
+                throw std::invalid_argument(
+                    "Incompatible shape for assignment: dimensions must match where they overlap");
+            }
+        }
+
+        auto this_it = static_cast<Derived *>(this)->begin();
+        auto other_it = other.begin();
+        for (; this_it != static_cast<Derived *>(this)->end(); ++this_it, ++other_it) {
+            *this_it = *other_it;
+        }
+        return *static_cast<Derived *>(this);
+    }
     dynamic_tensor_view_base(T *data, std::vector<std::size_t> shape, std::vector<std::size_t> strides, layout l)
         : tensor_view_base<Derived, T, ErrorChecking>(data), shape_(std::move(shape)), strides_(std::move(strides)),
           layout_(l) {}
@@ -321,6 +375,7 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     using base_type = dynamic_tensor_view_base<dynamic_tensor_view<T, ErrorChecking>, T, ErrorChecking>;
 
   public:
+    using base_type::operator=;
     using base_type::base_type;
     using base_type::get_layout;
     using base_type::rank;
@@ -365,6 +420,15 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
 
     constexpr auto view() { return *this; }
 
+    void reshape(std::vector<std::size_t> new_shape) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>()) != base_type::size()) {
+                throw std::invalid_argument("New shape must have the same total size");
+            }
+        }
+        base_type::shape_ = std::move(new_shape);
+    }
+
   private:
     template <typename... Slices> auto create_subview(Slices... slices) {
         std::vector<std::size_t> new_shape;
@@ -386,6 +450,7 @@ class const_dynamic_tensor_view
     using base_type = dynamic_tensor_view_base<const_dynamic_tensor_view<T, ErrorChecking>, const T, ErrorChecking>;
 
   public:
+    using base_type::operator=;
     using base_type::at;
     using base_type::at_impl;
     using base_type::base_type;

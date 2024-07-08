@@ -22,6 +22,88 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
         data_.resize(total_size);
     }
+    // Construct from vector of elements
+    dynamic_tensor(std::vector<std::size_t> shape, const std::vector<T> &elements, layout layout = layout::column_major)
+        : shape_(std::move(shape)), layout_(layout) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (elements.size() != std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>())) {
+                throw std::invalid_argument("Number of elements must match total size");
+            }
+        }
+        data_ = elements;
+    }
+    // Fill the tensor with a single value
+    dynamic_tensor(std::vector<std::size_t> shape, const T &value, layout layout = layout::column_major)
+        : shape_(std::move(shape)), layout_(layout) {
+        std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
+        data_.resize(total_size, value);
+    }
+
+    // Construct from a tensor block
+    template <tensor BlockTensor>
+    dynamic_tensor(std::vector<std::size_t> shape, const BlockTensor &block)
+        : shape_(std::move(shape)), layout_(block.get_layout()) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (block.size() == 0) {
+                throw std::invalid_argument("Block must have non-zero size");
+            }
+            // blocks must evenly divide the dimensions of the tensor
+            auto min_rank = std::min(shape_.size(), block.shape().size());
+            for (std::size_t i = 0; i < min_rank; ++i) {
+                if (shape_[i] % block.shape()[i] != 0) {
+                    throw std::invalid_argument("Block dimensions must evenly divide tensor dimensions");
+                }
+            }
+        }
+
+        std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
+        data_.resize(total_size);
+
+        auto iter = this->subviews(block.shape()).begin();
+        std::size_t num_repeats = total_size / block.size();
+        for (std::size_t i = 0; i < num_repeats; ++i) {
+            *iter = block;
+            ++iter;
+        }
+    }
+
+    // Construct from a vector of tensor blocks or views
+    template <tensor BlockTensor>
+    dynamic_tensor(const std::vector<BlockTensor> &blocks)
+        : shape_(calculate_new_shape(blocks)), layout_(blocks[0].get_layout()) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (blocks.empty()) {
+                throw std::invalid_argument("Cannot construct from empty vector of blocks");
+            }
+        }
+
+        std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
+        data_.resize(total_size);
+
+        auto iter = this->subviews(blocks[0].shape()).begin();
+        for (const auto &block : blocks) {
+            if constexpr (ErrorChecking == error_checking::enabled) {
+                if (block.size() == 0) {
+                    throw std::invalid_argument("Block must have non-zero size");
+                }
+                if (block.size() != blocks[0].size()) {
+                    throw std::invalid_argument("All blocks must have the same size");
+                }
+                if (block.shape().size() != blocks[0].shape().size()) {
+                    throw std::invalid_argument("All blocks must have the same rank");
+                }
+                if (block.shape() != blocks[0].shape()) {
+                    throw std::invalid_argument("All blocks must have the same shape");
+                }
+                if (block.get_layout() != layout_) {
+                    throw std::invalid_argument("All blocks must have the same layout");
+                }
+            }
+
+            *iter = block;
+            ++iter;
+        }
+    }
 
     // Copy constructor
     dynamic_tensor(const dynamic_tensor &) = default;
@@ -121,6 +203,21 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
             }
         }
         return strides;
+    }
+
+    // Helper function to calculate the new shape for a vector of blocks
+    template <tensor BlockTensor>
+    std::vector<std::size_t> calculate_new_shape(const std::vector<BlockTensor> &blocks) const {
+        if (blocks.empty()) {
+            return {};
+        }
+        // the shape is the shape of the blocks times the number of blocks
+        std::vector<std::size_t> new_shape = blocks[0].shape();
+        for (auto &dim : new_shape) {
+            dim *= blocks.size();
+        }
+
+        return new_shape;
     }
 };
 

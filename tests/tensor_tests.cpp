@@ -24,6 +24,41 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
         CHECK(t[1, 2] == 6);
     }
 
+    SUBCASE("Constructor with value") {
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{3};
+        CHECK(t[0, 0] == 3);
+        CHECK(t[0, 1] == 3);
+        CHECK(t[0, 2] == 3);
+        CHECK(t[1, 0] == 3);
+        CHECK(t[1, 1] == 3);
+        CHECK(t[1, 2] == 3);
+    }
+
+    SUBCASE("Constructor with tensor block") {
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block{{1, 2}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{t_block};
+        CHECK(t[0, 0] == 1);
+        CHECK(t[0, 1] == 1);
+        CHECK(t[0, 2] == 1);
+        CHECK(t[1, 0] == 2);
+        CHECK(t[1, 1] == 2);
+        CHECK(t[1, 2] == 2);
+    }
+
+    SUBCASE("Constructor with array of blocks") {
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block1{{1, 2}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block2{{3, 4}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block3{{5, 6}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{
+            std::array{t_block1, t_block2, t_block3}};
+        CHECK(t[0, 0] == 1);
+        CHECK(t[0, 1] == 3);
+        CHECK(t[0, 2] == 5);
+        CHECK(t[1, 0] == 2);
+        CHECK(t[1, 1] == 4);
+        CHECK(t[1, 2] == 6);
+    }
+
     SUBCASE("Copy constructor") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2(t1);
@@ -184,6 +219,56 @@ TEST_CASE("Dynamic Tensor Creation and Basic Operations") {
     SUBCASE("Constructor with shape and layout") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3}, layout::row_major);
         CHECK(t.get_layout() == layout::row_major);
+    }
+
+    SUBCASE("Constructor with vector of elements") {
+        dynamic_tensor<int, error_checking::disabled> t({2, 3}, std::vector{1, 2, 3, 4, 5, 6});
+        CHECK(t[0, 0] == 1);
+        CHECK(t[1, 0] == 2);
+        CHECK(t[0, 1] == 3);
+        CHECK(t[1, 1] == 4);
+        CHECK(t[0, 2] == 5);
+        CHECK(t[1, 2] == 6);
+    }
+
+    SUBCASE("Constructor with value") {
+        dynamic_tensor<int, error_checking::disabled> t({2, 3}, 3);
+        CHECK(t[0, 0] == 3);
+        CHECK(t[0, 1] == 3);
+        CHECK(t[0, 2] == 3);
+        CHECK(t[1, 0] == 3);
+        CHECK(t[1, 1] == 3);
+        CHECK(t[1, 2] == 3);
+    }
+
+    SUBCASE("Constructor with tensor block") {
+        dynamic_tensor<int, error_checking::disabled> t_block({2, 1});
+        t_block[0, 0] = 1;
+        t_block[1, 0] = 2;
+        dynamic_tensor<int, error_checking::disabled> t({2, 2}, t_block);
+        CHECK(t[0, 0] == 1);
+        CHECK(t[0, 1] == 1);
+        CHECK(t[1, 0] == 2);
+        CHECK(t[1, 1] == 2);
+    }
+
+    SUBCASE("Constructor with array of blocks") {
+        dynamic_tensor<int, error_checking::disabled> t_block1({2, 1});
+        t_block1[0, 0] = 1;
+        t_block1[1, 0] = 2;
+        dynamic_tensor<int, error_checking::disabled> t_block2({2, 1});
+        t_block2[0, 0] = 3;
+        t_block2[1, 0] = 4;
+        dynamic_tensor<int, error_checking::disabled> t_block3({2, 1});
+        t_block3[0, 0] = 5;
+        t_block3[1, 0] = 6;
+        dynamic_tensor<int, error_checking::disabled> t(std::vector{t_block1, t_block2, t_block3});
+        CHECK(t[0, 0] == 1);
+        CHECK(t[1, 0] == 2);
+        CHECK(t[0, 1] == 3);
+        CHECK(t[1, 1] == 4);
+        CHECK(t[0, 2] == 5);
+        CHECK(t[1, 2] == 6);
     }
 
     SUBCASE("Copy constructor") {
