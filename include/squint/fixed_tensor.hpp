@@ -25,6 +25,11 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
     static constexpr std::size_t rank() { return sizeof...(Dims); }
     static constexpr std::size_t size() { return total_size; }
     static constexpr layout get_layout() { return L; }
+    static constexpr std::vector<std::size_t> strides() {
+        auto strides_array = calculate_strides();
+        return std::vector<std::size_t>(std::begin(strides_array), std::end(strides_array));
+    }
+    static constexpr auto constexpr_strides() { return calculate_strides(); }
     static constexpr auto constexpr_shape() { return std::array<std::size_t, sizeof...(Dims)>{Dims...}; }
     constexpr std::vector<std::size_t> shape() const { return {Dims...}; }
 
@@ -60,7 +65,11 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
 
     constexpr auto view() const { return make_fixed_tensor_view(*this); }
 
-    template <std::size_t... NewDims, typename... Slices> constexpr auto subview(Slices... slices) const {
+    template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) {
+        return view().subview(slices...);
+    }
+
+    template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
         return view().subview(slices...);
     }
 
@@ -70,8 +79,9 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
         constexpr std::array<size_t, sizeof...(Dims)> dims = {Dims...};
         size_t index = 0;
         size_t stride = 1;
-        ((index += (L == layout::row_major ? (sizeof...(Dims) - 1 - Is) : Is) < sizeof...(Dims) - 1 ? indices * stride
-                                                                                                    : indices * stride,
+        ((index += (L == layout::row_major ? std::get<sizeof...(Dims) - 1 - Is>(std::forward_as_tuple(indices...))
+                                           : std::get<Is>(std::forward_as_tuple(indices...))) *
+                   stride,
           stride *= dims[L == layout::row_major ? sizeof...(Dims) - 1 - Is : Is]),
          ...);
         return index;

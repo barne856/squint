@@ -30,6 +30,7 @@ concept tensor = requires(T t) {
     { t.size() } -> std::convertible_to<std::size_t>;
     { t.shape() } -> std::same_as<std::vector<std::size_t>>;
     { t.get_layout() } -> std::same_as<layout>;
+    { t.strides() } -> std::convertible_to<std::vector<std::size_t>>;
     { t[0] } -> std::convertible_to<typename T::value_type>;
 };
 
@@ -38,11 +39,17 @@ concept has_constexpr_shape = requires(T t) {
     { T::constexpr_shape() } -> std::same_as<std::array<std::size_t, T::rank()>>;
 };
 
+// has constexpr strides
 template <typename T>
-concept fixed_shape_tensor = tensor<T> && has_constexpr_shape<T>;
+concept has_constexpr_strides = requires(T t) {
+    { T::constexpr_strides() } -> std::same_as<std::array<std::size_t, T::rank()>>;
+};
 
 template <typename T>
-concept dynamic_shape_tensor = tensor<T> && !has_constexpr_shape<T>;
+concept fixed_shape_tensor = tensor<T> && has_constexpr_shape<T> && has_constexpr_strides<T>;
+
+template <typename T>
+concept dynamic_shape_tensor = tensor<T> && !has_constexpr_shape<T> && !has_constexpr_strides<T>;
 
 // Base tensor class using CRTP
 template <typename Derived, typename T> class tensor_base {
@@ -52,6 +59,7 @@ template <typename Derived, typename T> class tensor_base {
     constexpr std::size_t rank() const { return static_cast<const Derived *>(this)->rank(); }
     constexpr std::size_t size() const { return static_cast<const Derived *>(this)->size(); }
     constexpr std::vector<std::size_t> shape() const { return static_cast<const Derived *>(this)->shape(); }
+    constexpr std::vector<std::size_t> strides() const { return static_cast<const Derived *>(this)->strides(); }
     constexpr layout get_layout() const { return static_cast<const Derived *>(this)->get_layout(); }
 
     // Multidimensional subscript operator (C++23)

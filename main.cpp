@@ -8,7 +8,7 @@
 int main() {
     using namespace squint;
 
-    fixed_tensor<double, layout::column_major, 4, 4> A;
+    fixed_tensor<double, layout::row_major, 4, 4> A;
     A[0, 0] = 1;
     A[0, 1] = 2;
     A[1, 0] = 3;
@@ -30,20 +30,18 @@ int main() {
     std::cout << "B:\n" << B << '\n';
     auto C = B.subview<2, 2>(slice{2, 2}, slice{2, 2});
     std::cout << "C:\n" << C << '\n';
-    for (const auto &s : C.strides()) {
-        std::cout << s << ' ';
-    }
-    std::cout << '\n';
 
-    for (const auto &value : A) {
-        std::cout << value << ' ';
+    std::cout << "Iterate over A:\n";
+    for (const auto &x : A) {
+        std::cout << x << ' ';
     }
 
-    for (const auto &value : B) {
-        std::cout << value << ' ';
+    std::cout << "Subviews of A:\n";
+    for (const auto &x : A.subviews<2, 2>()) {
+        std::cout << x << ' ';
     }
 
-    dynamic_tensor<double> Ad({4, 4}, layout::column_major);
+    dynamic_tensor<double> Ad({4, 4}, layout::row_major);
     Ad[0, 0] = 1;
     Ad[0, 1] = 2;
     Ad[1, 0] = 3;
@@ -65,16 +63,15 @@ int main() {
     std::cout << "Bd:\n" << Bd << '\n';
     auto Cd = Bd.subview(slice{2, 2}, slice{2, 2});
     std::cout << "Cd:\n" << Cd << '\n';
-    for (const auto &s : Cd.strides()) {
-        std::cout << s << ' ';
-    }
-    std::cout << '\n';
 
-    for (const auto &value : Ad) {
-        std::cout << value << ' ';
+    std::cout << "Iterate over Ad:\n";
+    for (const auto &x : Ad) {
+        std::cout << x << ' ';
     }
-    for (const auto &value : Bd) {
-        std::cout << value << ' ';
+
+    std::cout << "Subviews of Ad:\n";
+    for (const auto &x : Ad.subviews({2, 2})) {
+        std::cout << x << ' ';
     }
 
     return 0;

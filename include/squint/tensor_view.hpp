@@ -75,8 +75,12 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T> {
     static constexpr std::size_t rank() { return sizeof...(Dims); }
     static constexpr std::size_t size() { return (Dims * ...); }
     static constexpr auto constexpr_shape() { return std::array<std::size_t, sizeof...(Dims)>{Dims...}; }
-    constexpr std::vector<std::size_t> shape() const { return {Dims...}; }
-    static constexpr auto strides() { return Strides::value; }
+    static constexpr std::vector<std::size_t> shape() { return {Dims...}; }
+    static constexpr std::vector<std::size_t> strides() {
+        auto strides_array = Strides::value;
+        return std::vector<std::size_t>(std::begin(strides_array), std::end(strides_array));
+    }
+    static constexpr std::array<std::size_t, sizeof...(Dims)> constexpr_strides() { return Strides::value; }
     static constexpr layout get_layout() { return L; }
 
     template <typename... Indices> constexpr const T &at(Indices... indices) const {
@@ -203,8 +207,8 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
 
     std::size_t rank() const { return shape_.size(); }
     std::size_t size() const { return std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>()); }
-    const std::vector<std::size_t> &shape() const { return shape_; }
-    const std::vector<std::size_t> &strides() const { return strides_; }
+    std::vector<std::size_t> shape() const { return shape_; }
+    std::vector<std::size_t> strides() const { return strides_; }
     layout get_layout() const { return layout_; }
 
     template <typename... Indices> const T &at(Indices... indices) const {
@@ -216,6 +220,20 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
     template <typename... Slices> auto subview(Slices... slices) const {
         static_assert(sizeof...(Slices) <= std::numeric_limits<std::size_t>::max(), "Too many slice arguments");
         return create_subview(slices...);
+    }
+
+    // overload subview with vector of slices
+    auto subview(const std::vector<slice> &slices) const {
+        std::vector<std::size_t> new_shape;
+        std::vector<std::size_t> new_strides;
+        T *new_data = data_;
+
+        std::size_t i = 0;
+        for (const auto &slice : slices) {
+            process_slice(slice, new_shape, new_strides, new_data, i);
+        }
+
+        return const_dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), layout_);
     }
 
   protected:
@@ -287,6 +305,20 @@ template <typename T> class dynamic_tensor_view : public dynamic_tensor_view_bas
         return create_subview(slices...);
     }
 
+    // overload subview with vector of slices
+    auto subview(const std::vector<slice> &slices) {
+        std::vector<std::size_t> new_shape;
+        std::vector<std::size_t> new_strides;
+        T *new_data = base_type::data_;
+
+        std::size_t i = 0;
+        for (const auto &slice : slices) {
+            base_type::process_slice(slice, new_shape, new_strides, new_data, i);
+        }
+
+        return dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), base_type::layout_);
+    }
+
   private:
     template <typename... Slices> auto create_subview(Slices... slices) {
         std::vector<std::size_t> new_shape;
@@ -296,7 +328,7 @@ template <typename T> class dynamic_tensor_view : public dynamic_tensor_view_bas
         std::size_t i = 0;
         (base_type::process_slice(slices, new_shape, new_strides, new_data, i), ...);
 
-        return const_dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), base_type::layout_);
+        return dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), base_type::layout_);
     }
 };
 

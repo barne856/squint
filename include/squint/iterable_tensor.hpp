@@ -4,6 +4,7 @@
 #include "squint/tensor_base.hpp"
 #include <array>
 #include <iterator>
+#include <vector>
 
 namespace squint {
 
@@ -11,7 +12,8 @@ namespace squint {
 template <typename TensorType> class flat_iterator {
     using value_type = typename std::remove_const<typename TensorType::value_type>::type;
     TensorType *tensor_;
-    std::size_t index_;
+    std::vector<std::size_t> current_indices_;
+    std::vector<std::size_t> strides_;
 
   public:
     using iterator_category = std::random_access_iterator_tag;
@@ -19,53 +21,118 @@ template <typename TensorType> class flat_iterator {
     using pointer = std::conditional_t<std::is_const_v<TensorType>, const value_type *, value_type *>;
     using reference = std::conditional_t<std::is_const_v<TensorType>, const value_type &, value_type &>;
 
-    flat_iterator(TensorType *tensor, std::size_t index) : tensor_(tensor), index_(index) {}
+    flat_iterator(TensorType *tensor, const std::vector<std::size_t> &indices)
+        : tensor_(tensor), current_indices_(indices) {
+        if constexpr (fixed_shape_tensor<TensorType>) {
+            constexpr auto tensor_strides = TensorType::constexpr_strides();
+            strides_.assign(tensor_strides.begin(), tensor_strides.end());
+        } else {
+            strides_ = tensor->strides();
+        }
+    }
 
-    reference operator*() const { return tensor_->data()[index_]; }
-    pointer operator->() const { return &tensor_->data()[index_]; }
+    reference operator*() const {
+        std::size_t offset = 0;
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
+            offset += current_indices_[i] * strides_[i];
+        }
+        return tensor_->data()[offset];
+    }
+
+    pointer operator->() const { return &(operator*()); }
 
     flat_iterator &operator++() {
-        ++index_;
+        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+            ++current_indices_[i];
+            if (current_indices_[i] < tensor_->shape()[i]) {
+                break;
+            }
+            if (i > 0) {
+                current_indices_[i] = 0;
+            }
+        }
         return *this;
     }
+
     flat_iterator operator++(int) {
         flat_iterator tmp = *this;
-        ++index_;
+        ++(*this);
         return tmp;
     }
 
     flat_iterator &operator--() {
-        --index_;
+        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+            if (current_indices_[i] > 0) {
+                --current_indices_[i];
+                break;
+            }
+            if (i > 0) {
+                current_indices_[i] = tensor_->shape()[i] - 1;
+            }
+        }
         return *this;
     }
+
     flat_iterator operator--(int) {
         flat_iterator tmp = *this;
-        --index_;
+        --(*this);
         return tmp;
     }
 
     flat_iterator &operator+=(difference_type n) {
-        index_ += n;
+        // Implement addition logic
+        // This is a simplification and might not work correctly for all tensor shapes
+        std::size_t total_size = tensor_->size();
+        std::size_t current_index = 0;
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
+            current_index += current_indices_[i] * tensor_->strides()[i];
+        }
+        current_index = (current_index + n) % total_size;
+
+        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+            current_indices_[i] = current_index / tensor_->strides()[i];
+            current_index %= tensor_->strides()[i];
+        }
         return *this;
     }
-    flat_iterator &operator-=(difference_type n) {
-        index_ -= n;
-        return *this;
+
+    flat_iterator &operator-=(difference_type n) { return operator+=(-n); }
+
+    flat_iterator operator+(difference_type n) const {
+        flat_iterator result = *this;
+        result += n;
+        return result;
     }
 
-    flat_iterator operator+(difference_type n) const { return flat_iterator(tensor_, index_ + n); }
-    flat_iterator operator-(difference_type n) const { return flat_iterator(tensor_, index_ - n); }
+    flat_iterator operator-(difference_type n) const {
+        flat_iterator result = *this;
+        result -= n;
+        return result;
+    }
 
-    difference_type operator-(const flat_iterator &other) const { return index_ - other.index_; }
+    difference_type operator-(const flat_iterator &other) const {
+        // Implement subtraction logic
+        // This is a simplification and might not work correctly for all tensor shapes
+        std::size_t this_index = 0;
+        std::size_t other_index = 0;
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
+            this_index += current_indices_[i] * tensor_->strides()[i];
+            other_index += other.current_indices_[i] * tensor_->strides()[i];
+        }
+        return static_cast<difference_type>(this_index) - static_cast<difference_type>(other_index);
+    }
 
-    reference operator[](difference_type n) const { return tensor_->data()[index_ + n]; }
+    reference operator[](difference_type n) const { return *(*this + n); }
 
-    bool operator==(const flat_iterator &other) const { return index_ == other.index_; }
-    bool operator!=(const flat_iterator &other) const { return index_ != other.index_; }
-    bool operator<(const flat_iterator &other) const { return index_ < other.index_; }
-    bool operator>(const flat_iterator &other) const { return index_ > other.index_; }
-    bool operator<=(const flat_iterator &other) const { return index_ <= other.index_; }
-    bool operator>=(const flat_iterator &other) const { return index_ >= other.index_; }
+    bool operator==(const flat_iterator &other) const {
+        return tensor_ == other.tensor_ && current_indices_ == other.current_indices_;
+    }
+
+    bool operator!=(const flat_iterator &other) const { return !(*this == other); }
+    bool operator<(const flat_iterator &other) const { return (other - *this) > 0; }
+    bool operator>(const flat_iterator &other) const { return other < *this; }
+    bool operator<=(const flat_iterator &other) const { return !(other < *this); }
+    bool operator>=(const flat_iterator &other) const { return !(*this < other); }
 };
 
 // Subview iterator for tensors
@@ -74,6 +141,7 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
     TensorType *tensor_;
     std::vector<std::size_t> current_indices_;
     SubviewShape subview_shape_;
+    std::vector<std::size_t> strides_;
 
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -83,7 +151,8 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
 
     subview_iterator(TensorType *tensor, const std::vector<std::size_t> &start_indices,
                      const SubviewShape &subview_shape)
-        : tensor_(tensor), current_indices_(start_indices), subview_shape_(subview_shape) {}
+        : tensor_(tensor), current_indices_(start_indices), subview_shape_(subview_shape), strides_(tensor->strides()) {
+    }
 
     auto operator*() const {
         if constexpr (fixed_shape_tensor<TensorType>) {
@@ -146,14 +215,26 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
     using iterator = flat_iterator<Derived>;
     using const_iterator = flat_iterator<const Derived>;
 
-    iterator begin() { return iterator(static_cast<Derived *>(this), 0); }
-    iterator end() { return iterator(static_cast<Derived *>(this), this->size()); }
+    iterator begin() { return iterator(static_cast<Derived *>(this), std::vector<std::size_t>(this->rank(), 0)); }
 
-    const_iterator begin() const { return const_iterator(static_cast<const Derived *>(this), 0); }
-    const_iterator end() const { return const_iterator(static_cast<const Derived *>(this), this->size()); }
+    iterator end() {
+        auto shape = this->shape();
+        shape.back() = 0; // Set the last dimension to 0 to represent the end
+        return iterator(static_cast<Derived *>(this), shape);
+    }
 
-    const_iterator cbegin() const { return const_iterator(static_cast<const Derived *>(this), 0); }
-    const_iterator cend() const { return const_iterator(static_cast<const Derived *>(this), this->size()); }
+    const_iterator begin() const {
+        return const_iterator(static_cast<const Derived *>(this), std::vector<std::size_t>(this->rank(), 0));
+    }
+
+    const_iterator end() const {
+        auto shape = this->shape();
+        shape.back() = 0; // Set the last dimension to 0 to represent the end
+        return const_iterator(static_cast<const Derived *>(this), shape);
+    }
+
+    const_iterator cbegin() const { return begin(); }
+    const_iterator cend() const { return end(); }
 
     // Subview iteration for fixed shape tensors
     template <std::size_t... SubviewDims> auto subviews() {

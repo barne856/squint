@@ -58,6 +58,10 @@ template <typename T> class dynamic_tensor : public iterable_tensor<dynamic_tens
 
     auto view() const { return make_dynamic_tensor_view(*this); }
 
+    template <typename... Slices> auto subview(Slices... slices) { return view().subview(slices...); }
+
+    template <typename... Slices> auto subview(Slices... slices) const { return view().subview(slices...); }
+
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
         if (indices.size() != shape_.size()) {
