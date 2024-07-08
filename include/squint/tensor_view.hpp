@@ -46,7 +46,7 @@ template <layout L, typename Strides, std::size_t... Dims> struct compile_time_v
         std::array<std::size_t, new_rank> strides{};
         std::size_t j = 0;
         std::size_t i = 0;
-        (((Dims > 1 ? (strides[j++] = Strides::value[i]) : 0), ++i), ...);
+        (((Dims > 0 ? (strides[j++] = Strides::value[i]) : 0), ++i), ...);
         return strides;
     }();
 };
