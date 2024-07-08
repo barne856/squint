@@ -101,6 +101,8 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T> {
         return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, slices...);
     }
 
+    constexpr auto view() const { return *this; }
+
   protected:
     template <std::size_t... Is, typename... Indices>
     static constexpr std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) {
@@ -160,6 +162,8 @@ class fixed_tensor_view
         static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many slice arguments");
         return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, slices...);
     }
+
+    constexpr auto view() const { return *this; }
 
   private:
     using base_type::data_;
@@ -235,6 +239,8 @@ template <typename Derived, typename T> class dynamic_tensor_view_base : public 
 
         return const_dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), layout_);
     }
+
+    constexpr auto view() const { return *this; }
 
   protected:
     std::size_t calculate_offset(const std::vector<std::size_t> &indices) const {
@@ -318,6 +324,8 @@ template <typename T> class dynamic_tensor_view : public dynamic_tensor_view_bas
 
         return dynamic_tensor_view<T>(new_data, std::move(new_shape), std::move(new_strides), base_type::layout_);
     }
+
+    constexpr auto view() { return *this; }
 
   private:
     template <typename... Slices> auto create_subview(Slices... slices) {

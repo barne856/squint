@@ -217,7 +217,7 @@ class fixed_subview_iterator : public subview_iterator_base<TensorType> {
 
   private:
     template <std::size_t... Is> auto make_subview(std::index_sequence<Is...> /*unused*/) const {
-        return this->tensor_->view().template subview<SubviewDims...>(
+        return this->tensor_->template subview<SubviewDims...>(
             slice{this->current_indices_[Is], this->subview_shape_[Is]}...);
     }
 };
@@ -248,7 +248,7 @@ class const_fixed_subview_iterator : public subview_iterator_base<const TensorTy
 
   private:
     template <std::size_t... Is> auto make_subview(std::index_sequence<Is...> /*unused*/) const {
-        return this->tensor_->view().template subview<SubviewDims...>(
+        return this->tensor_->template subview<SubviewDims...>(
             slice{this->current_indices_[Is], this->subview_shape_[Is]}...);
     }
 };

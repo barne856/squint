@@ -34,4 +34,7 @@ target_link_libraries(quantity_tests)
 add_executable(dimension_tests tests/dimension_tests.cpp)
 target_link_libraries(dimension_tests)
 
+add_executable(tensor_tests tests/tensor_tests.cpp)
+target_link_libraries(tensor_tests)
+
 add_executable(main main.cpp)

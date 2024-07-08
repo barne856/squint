@@ -7,72 +7,23 @@
 
 int main() {
     using namespace squint;
-
-    fixed_tensor<double, layout::row_major, 4, 4> A;
-    A[0, 0] = 1;
-    A[0, 1] = 2;
-    A[1, 0] = 3;
-    A[1, 1] = 4;
-    A[2, 0] = 5;
-    A[2, 1] = 6;
-    A[3, 0] = 7;
-    A[3, 1] = 8;
-    A[0, 2] = 9;
-    A[0, 3] = 10;
-    A[1, 2] = 11;
-    A[1, 3] = 12;
-    A[2, 2] = 13;
-    A[2, 3] = 14;
-    A[3, 2] = 15;
-    A[3, 3] = 16;
-    std::cout << "A:\n" << A << '\n';
-    auto B = A.view();
-    std::cout << "B:\n" << B << '\n';
-    auto C = B.subview<1, 4>(slice{0, 1}, slice{0, 4});
-    std::cout << "C:\n" << C << '\n';
-
-    std::cout << "Iterate over A:\n";
-    for (const auto &x : A) {
-        std::cout << x << ' ';
+    fixed_tensor<int, layout::row_major, 3, 4> t{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+    std::cout << t << std::endl;
+    std::vector<std::vector<int>> subview_values;
+    for (const auto &subview : t.subviews<2, 2>()) {
+        std::vector<int> values;
+        for (const auto &value : subview) {
+            values.push_back(value);
+        }
+        subview_values.push_back(values);
     }
-
-    std::cout << "Subviews of A:\n";
-    for (const auto &x : A.subviews<1, 4>()) {
-        std::cout << x << ' ';
+    for (const auto &values : subview_values) {
+        for (const auto &value : values) {
+            std::cout << std::setw(2) << value << " ";
+        }
+        std::cout << std::endl;
     }
-
-    dynamic_tensor<double> Ad({4, 4}, layout::row_major);
-    Ad[0, 0] = 1;
-    Ad[0, 1] = 2;
-    Ad[1, 0] = 3;
-    Ad[1, 1] = 4;
-    Ad[2, 0] = 5;
-    Ad[2, 1] = 6;
-    Ad[3, 0] = 7;
-    Ad[3, 1] = 8;
-    Ad[0, 2] = 9;
-    Ad[0, 3] = 10;
-    Ad[1, 2] = 11;
-    Ad[1, 3] = 12;
-    Ad[2, 2] = 13;
-    Ad[2, 3] = 14;
-    Ad[3, 2] = 15;
-    Ad[3, 3] = 16;
-    std::cout << "Ad:\n" << Ad << '\n';
-    auto Bd = Ad.view();
-    std::cout << "Bd:\n" << Bd << '\n';
-    auto Cd = Bd.subview(slice{0, 1}, slice{0, 4});
-    std::cout << "Cd:\n" << Cd << '\n';
-
-    std::cout << "Iterate over Ad:\n";
-    for (const auto &x : Ad) {
-        std::cout << x << ' ';
-    }
-
-    std::cout << "Subviews of Ad:\n";
-    for (const auto &x : Ad.subviews({1, 4})) {
-        std::cout << x << ' ';
-    }
+    // subview_values == std::vector<std::vector<int>>{{1, 2, 5, 6}, {3, 4, 7, 8}, {9, 10, 11, 12}};
 
     return 0;
 }

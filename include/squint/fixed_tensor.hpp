@@ -66,11 +66,11 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
     constexpr auto view() const { return make_fixed_tensor_view(*this); }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) {
-        return view().subview(slices...);
+        return view().template subview<NewDims...>(slices...);
     }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
-        return view().subview(slices...);
+        return view().template subview<NewDims...>(slices...);
     }
 
   private:
