@@ -28,7 +28,7 @@ int main() {
     std::cout << "A:\n" << A << '\n';
     auto B = A.view();
     std::cout << "B:\n" << B << '\n';
-    auto C = B.subview<2, 2>(slice{2, 2}, slice{2, 2});
+    auto C = B.subview<1, 4>(slice{0, 1}, slice{0, 4});
     std::cout << "C:\n" << C << '\n';
 
     std::cout << "Iterate over A:\n";
@@ -37,7 +37,7 @@ int main() {
     }
 
     std::cout << "Subviews of A:\n";
-    for (const auto &x : A.subviews<2, 2>()) {
+    for (const auto &x : A.subviews<1, 4>()) {
         std::cout << x << ' ';
     }
 
@@ -61,7 +61,7 @@ int main() {
     std::cout << "Ad:\n" << Ad << '\n';
     auto Bd = Ad.view();
     std::cout << "Bd:\n" << Bd << '\n';
-    auto Cd = Bd.subview(slice{2, 2}, slice{2, 2});
+    auto Cd = Bd.subview(slice{0, 1}, slice{0, 4});
     std::cout << "Cd:\n" << Cd << '\n';
 
     std::cout << "Iterate over Ad:\n";
@@ -70,7 +70,7 @@ int main() {
     }
 
     std::cout << "Subviews of Ad:\n";
-    for (const auto &x : Ad.subviews({2, 2})) {
+    for (const auto &x : Ad.subviews({1, 4})) {
         std::cout << x << ' ';
     }
 

@@ -135,12 +135,77 @@ template <typename TensorType> class flat_iterator {
     bool operator>=(const flat_iterator &other) const { return !(*this < other); }
 };
 
-// Subview iterator for tensors
-template <typename TensorType, typename SubviewShape> class subview_iterator {
+// Fixed subview iterator for tensors
+template <typename TensorType, std::size_t... SubviewDims> class fixed_subview_iterator {
+    using value_type = typename std::remove_const<typename TensorType::value_type>::type;
+    TensorType *tensor_;
+    std::array<std::size_t, sizeof...(SubviewDims)> current_indices_;
+    std::array<std::size_t, sizeof...(SubviewDims)> subview_shape_;
+    std::array<std::size_t, sizeof...(SubviewDims)> strides_;
+
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using pointer = std::conditional_t<std::is_const_v<TensorType>, const value_type *, value_type *>;
+    using reference = std::conditional_t<std::is_const_v<TensorType>, const value_type &, value_type &>;
+
+    fixed_subview_iterator(TensorType *tensor, const std::array<std::size_t, sizeof...(SubviewDims)> &start_indices)
+        : tensor_(tensor), current_indices_(start_indices), subview_shape_{SubviewDims...} {
+        if constexpr (fixed_shape_tensor<TensorType>) {
+            constexpr auto tensor_strides = TensorType::constexpr_strides();
+            std::copy(tensor_strides.begin(), tensor_strides.end(), strides_.begin());
+        } else {
+            auto tensor_strides = tensor->strides();
+            std::copy(tensor_strides.begin(), tensor_strides.end(), strides_.begin());
+        }
+    }
+
+    auto operator*() const { return make_subview(std::make_index_sequence<sizeof...(SubviewDims)>{}); }
+
+    fixed_subview_iterator &operator++() {
+        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+            current_indices_[i] += subview_shape_[i];
+            if (current_indices_[i] < tensor_->shape()[i]) {
+                break;
+            }
+            if (i > 0) {
+                current_indices_[i] = 0;
+            } else {
+                // We've reached the end of the tensor
+                // Set all indices to their end positions
+                for (size_t j = 0; j < current_indices_.size(); ++j) {
+                    current_indices_[j] = tensor_->shape()[j] - (tensor_->shape()[j] % subview_shape_[j]);
+                }
+                break;
+            }
+        }
+        return *this;
+    }
+
+    fixed_subview_iterator operator++(int) {
+        fixed_subview_iterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    bool operator==(const fixed_subview_iterator &other) const {
+        return tensor_ == other.tensor_ && current_indices_ == other.current_indices_;
+    }
+
+    bool operator!=(const fixed_subview_iterator &other) const { return !(*this == other); }
+
+  private:
+    template <std::size_t... Is> auto make_subview(std::index_sequence<Is...>) const {
+        return tensor_->view().template subview<SubviewDims...>(slice{current_indices_[Is], subview_shape_[Is]}...);
+    }
+};
+
+// Dynamic subview iterator for tensors
+template <typename TensorType> class dynamic_subview_iterator {
     using value_type = typename std::remove_const<typename TensorType::value_type>::type;
     TensorType *tensor_;
     std::vector<std::size_t> current_indices_;
-    SubviewShape subview_shape_;
+    std::vector<std::size_t> subview_shape_;
     std::vector<std::size_t> strides_;
 
   public:
@@ -149,64 +214,50 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
     using pointer = std::conditional_t<std::is_const_v<TensorType>, const value_type *, value_type *>;
     using reference = std::conditional_t<std::is_const_v<TensorType>, const value_type &, value_type &>;
 
-    subview_iterator(TensorType *tensor, const std::vector<std::size_t> &start_indices,
-                     const SubviewShape &subview_shape)
+    dynamic_subview_iterator(TensorType *tensor, const std::vector<std::size_t> &start_indices,
+                             const std::vector<std::size_t> &subview_shape)
         : tensor_(tensor), current_indices_(start_indices), subview_shape_(subview_shape), strides_(tensor->strides()) {
     }
 
     auto operator*() const {
-        if constexpr (fixed_shape_tensor<TensorType>) {
-            return fixed_subview();
-        } else {
-            return dynamic_subview();
+        std::vector<slice> slices;
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
+            slices.push_back({current_indices_[i], subview_shape_[i]});
         }
+        return tensor_->subview(slices);
     }
 
-    subview_iterator &operator++() {
+    dynamic_subview_iterator &operator++() {
         for (int i = current_indices_.size() - 1; i >= 0; --i) {
-            current_indices_[i] += get_subview_shape(i);
+            current_indices_[i] += subview_shape_[i];
             if (current_indices_[i] < tensor_->shape()[i]) {
                 break;
             }
             if (i > 0) {
                 current_indices_[i] = 0;
+            } else {
+                // We've reached the end of the tensor
+                // Set all indices to their end positions
+                for (size_t j = 0; j < current_indices_.size(); ++j) {
+                    current_indices_[j] = tensor_->shape()[j] - (tensor_->shape()[j] % subview_shape_[j]);
+                }
+                break;
             }
         }
         return *this;
     }
 
-    subview_iterator operator++(int) {
-        subview_iterator tmp = *this;
+    dynamic_subview_iterator operator++(int) {
+        dynamic_subview_iterator tmp = *this;
         ++(*this);
         return tmp;
     }
 
-    bool operator==(const subview_iterator &other) const {
+    bool operator==(const dynamic_subview_iterator &other) const {
         return tensor_ == other.tensor_ && current_indices_ == other.current_indices_;
     }
 
-    bool operator!=(const subview_iterator &other) const { return !(*this == other); }
-
-  private:
-    template <std::size_t... Is> auto fixed_subview() const {
-        return tensor_->template subview<get_subview_shape(Is)...>(current_indices_[Is]...);
-    }
-
-    auto dynamic_subview() const {
-        std::vector<slice> slices;
-        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
-            slices.push_back({current_indices_[i], get_subview_shape(i)});
-        }
-        return tensor_->subview(slices);
-    }
-
-    constexpr std::size_t get_subview_shape(std::size_t i) const {
-        if constexpr (std::is_array_v<SubviewShape>) {
-            return subview_shape_[i];
-        } else {
-            return subview_shape_[i];
-        }
-    }
+    bool operator!=(const dynamic_subview_iterator &other) const { return !(*this == other); }
 };
 
 // Mixin class for iterable tensors
@@ -242,23 +293,22 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
 
         struct subview_range {
             Derived *tensor;
-            std::array<std::size_t, sizeof...(SubviewDims)> subview_shape;
 
             auto begin() {
-                return subview_iterator<Derived, decltype(subview_shape)>(
-                    tensor, std::vector<std::size_t>(tensor->rank(), 0), subview_shape);
+                return fixed_subview_iterator<Derived, SubviewDims...>(
+                    tensor, std::array<std::size_t, sizeof...(SubviewDims)>());
             }
 
             auto end() {
-                std::vector<std::size_t> end_indices = tensor->shape();
-                for (size_t i = 0; i < end_indices.size(); ++i) {
-                    end_indices[i] -= (end_indices[i] % subview_shape[i]);
-                }
-                return subview_iterator<Derived, decltype(subview_shape)>(tensor, end_indices, subview_shape);
+                std::array<std::size_t, sizeof...(SubviewDims)> end_indices;
+                auto shape = tensor->shape();
+                std::size_t i = 0;
+                ((end_indices[i] = shape[i] - (shape[i] % SubviewDims), ++i), ...);
+                return fixed_subview_iterator<Derived, SubviewDims...>(tensor, end_indices);
             }
         };
 
-        return subview_range{static_cast<Derived *>(this), {SubviewDims...}};
+        return subview_range{static_cast<Derived *>(this)};
     }
 
     // Subview iteration for dynamic shape tensors
@@ -272,8 +322,8 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
             std::vector<std::size_t> subview_shape;
 
             auto begin() {
-                return subview_iterator<Derived, std::vector<std::size_t>>(
-                    tensor, std::vector<std::size_t>(tensor->rank(), 0), subview_shape);
+                return dynamic_subview_iterator<Derived>(tensor, std::vector<std::size_t>(tensor->rank(), 0),
+                                                         subview_shape);
             }
 
             auto end() {
@@ -281,7 +331,7 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
                 for (size_t i = 0; i < end_indices.size(); ++i) {
                     end_indices[i] -= (end_indices[i] % subview_shape[i]);
                 }
-                return subview_iterator<Derived, std::vector<std::size_t>>(tensor, end_indices, subview_shape);
+                return dynamic_subview_iterator<Derived>(tensor, end_indices, subview_shape);
             }
         };
 
