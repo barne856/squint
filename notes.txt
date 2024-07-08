@@ -1,22 +1,9 @@
-TODO: use multidimensional subscript operator to retrun value type when indexing to a scalar instead of tensor of shape 1
-TODO: quantities should be templated instead of length and length_f use length<double> and length<float>
-TODO: literal subscript are not needed - remove. e.g. _m, _yd, etc...
-TODO: move convience types to squint.cpp
+TODO:
 
-Math - Tensor Quantities (TQ)
-	Units
-	Linalg (Scalars, Vectors, Matrices)
-Quntities
-	util (functions, Constants, misc helper functions for math) everything else
-	optimization (root finding, convex optimization, lagrange multipliers)
-Hydraulics - Hydraulic Analysis Library (HAL)
-	Network (links and nodes)
-	Friction
-	Shapes
-	Headloss
-	util (Dimensionless numbers, characteristic lengths)  everything else
-Components (Fully connected networks) new module for each component
-	Opening
-	Passage
-Model (Set of components independent of each other or connected through binding points)
-IO (writing, reading models)
+Add more types of constructors for tensors
+Add a fixed tensor reshape method
+implement linalg/math mixin
+implement quantity math to mirror std::math
+
+Add static methods I(), Diag(), etc
+Add convience types for common matrix and vectors

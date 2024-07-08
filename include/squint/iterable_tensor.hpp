@@ -4,6 +4,7 @@
 #include "squint/tensor_base.hpp"
 #include <array>
 #include <iterator>
+#include <numeric>
 #include <vector>
 
 namespace squint {
@@ -300,7 +301,8 @@ template <typename TensorType> class const_dynamic_subview_iterator : public sub
 };
 
 // Mixin class for iterable tensors
-template <typename Derived, typename T> class iterable_tensor : public tensor_base<Derived, T> {
+template <typename Derived, typename T, error_checking ErrorChecking>
+class iterable_tensor : public tensor_base<Derived, T, ErrorChecking> {
   public:
     using iterator = flat_iterator<Derived>;
     using const_iterator = flat_iterator<const Derived>;
@@ -326,9 +328,24 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
     const_iterator cbegin() const { return begin(); }
     const_iterator cend() const { return end(); }
 
+    // Helper function to check if tensor dimensions are divisible by subview dimensions
+    template <std::size_t... SubviewDims, std::size_t... Is>
+    static constexpr bool dimensions_divisible_helper(const std::array<std::size_t, sizeof...(Is)> &tensor_shape,
+                                                      std::index_sequence<Is...> /*unused*/) {
+        return ((tensor_shape[Is] % SubviewDims == 0) && ...);
+    }
+
     // Subview iteration for fixed shape tensors
     template <std::size_t... SubviewDims> auto subviews() {
         static_assert(sizeof...(SubviewDims) == Derived::rank(), "Subview dimensions must match tensor rank");
+
+        // Get the shape of the tensor
+        constexpr auto tensor_shape = Derived::constexpr_shape();
+
+        // Check if each dimension of the tensor is evenly divisible by the subview dimensions
+        static_assert(dimensions_divisible_helper<SubviewDims...>(tensor_shape,
+                                                                  std::make_index_sequence<sizeof...(SubviewDims)>{}),
+                      "Subview dimensions must evenly divide tensor dimensions");
 
         struct subview_range {
             Derived *tensor;
@@ -354,6 +371,14 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
     template <std::size_t... SubviewDims> auto subviews() const {
         static_assert(sizeof...(SubviewDims) == Derived::rank(), "Subview dimensions must match tensor rank");
 
+        // Get the shape of the tensor
+        constexpr auto tensor_shape = Derived::constexpr_shape();
+
+        // Check if each dimension of the tensor is evenly divisible by the subview dimensions
+        static_assert(dimensions_divisible_helper<SubviewDims...>(tensor_shape,
+                                                                  std::make_index_sequence<sizeof...(SubviewDims)>{}),
+                      "Subview dimensions must evenly divide tensor dimensions");
+
         struct const_subview_range {
             const Derived *tensor;
 
@@ -376,8 +401,15 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
 
     // Subview iteration for dynamic shape tensors
     auto subviews(const std::vector<std::size_t> &subview_shape) {
-        if (subview_shape.size() != this->rank()) {
-            throw std::invalid_argument("Subview dimensions must match tensor rank");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (subview_shape.size() != this->rank()) {
+                throw std::invalid_argument("Subview dimensions must match tensor rank");
+            }
+            // New dimensions must evenly divide old dimensions
+            if (std::accumulate(subview_shape.begin(), subview_shape.end(), 1ULL, std::multiplies<>()) !=
+                this->size()) {
+                throw std::invalid_argument("Subview dimensions must evenly divide tensor dimensions");
+            }
         }
 
         struct subview_range {
@@ -403,8 +435,15 @@ template <typename Derived, typename T> class iterable_tensor : public tensor_ba
 
     // Const subview iteration for dynamic shape tensors
     auto subviews(const std::vector<std::size_t> &subview_shape) const {
-        if (subview_shape.size() != this->rank()) {
-            throw std::invalid_argument("Subview dimensions must match tensor rank");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (subview_shape.size() != this->rank()) {
+                throw std::invalid_argument("Subview dimensions must match tensor rank");
+            }
+            // New dimensions must evenly divide old dimensions
+            if (std::accumulate(subview_shape.begin(), subview_shape.end(), 1ULL, std::multiplies<>()) !=
+                this->size()) {
+                throw std::invalid_argument("Subview dimensions must evenly divide tensor dimensions");
+            }
         }
 
         struct const_subview_range {

@@ -10,7 +10,8 @@
 namespace squint {
 
 // Dynamic tensor implementation
-template <typename T> class dynamic_tensor : public iterable_tensor<dynamic_tensor<T>, T> {
+template <typename T, error_checking ErrorChecking>
+class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, T, ErrorChecking> {
     std::vector<T> data_;
     std::vector<std::size_t> shape_;
     layout layout_;
@@ -58,9 +59,19 @@ template <typename T> class dynamic_tensor : public iterable_tensor<dynamic_tens
 
     auto view() const { return make_dynamic_tensor_view(*this); }
 
-    template <typename... Slices> auto subview(Slices... slices) { return view().subview(slices...); }
+    template <typename... Slices> auto subview(Slices... slices) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds({slice{slices.start, slices.size}...});
+        }
+        return view().subview(slices...);
+    }
 
-    template <typename... Slices> auto subview(Slices... slices) const { return view().subview(slices...); }
+    template <typename... Slices> auto subview(Slices... slices) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds({slice{slices.start, slices.size}...});
+        }
+        return view().subview(slices...);
+    }
 
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
@@ -103,9 +114,6 @@ template <typename T> class dynamic_tensor : public iterable_tensor<dynamic_tens
         return strides;
     }
 };
-
-// Deduction guide
-template <typename T, typename... Args> dynamic_tensor(T, Args...) -> dynamic_tensor<T>;
 
 } // namespace squint
 

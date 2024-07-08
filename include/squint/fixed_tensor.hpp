@@ -9,8 +9,8 @@
 namespace squint {
 
 // Fixed tensor implementation
-template <typename T, layout L, std::size_t... Dims>
-class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
+template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims>
+class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking> {
     static constexpr std::size_t total_size = (Dims * ...);
     std::array<T, total_size> data_;
 
@@ -35,25 +35,37 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
 
     template <typename... Indices> constexpr T &at(Indices... indices) {
         static_assert(sizeof...(Indices) == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
+        }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
     }
 
     template <typename... Indices> constexpr const T &at(Indices... indices) const {
         static_assert(sizeof...(Indices) == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
+        }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
     }
 
     // Non-constexpr version for runtime index access
     T &at_impl(const std::vector<size_t> &indices) {
-        if (indices.size() != sizeof...(Dims)) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (indices.size() != sizeof...(Dims)) {
+                throw std::invalid_argument("Incorrect number of indices");
+            }
+            this->check_bounds(indices);
         }
         return data_[calculate_index_runtime(indices)];
     }
 
     const T &at_impl(const std::vector<size_t> &indices) const {
-        if (indices.size() != sizeof...(Dims)) {
-            throw std::invalid_argument("Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (indices.size() != sizeof...(Dims)) {
+                throw std::invalid_argument("Incorrect number of indices");
+            }
+            this->check_bounds(indices);
         }
         return data_[calculate_index_runtime(indices)];
     }
@@ -66,10 +78,16 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, Dims...>, T> {
     constexpr auto view() const { return make_fixed_tensor_view(*this); }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds({slice{slices.start, NewDims}...});
+        }
         return view().template subview<NewDims...>(slices...);
     }
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds({slice{slices.start, NewDims}...});
+        }
         return view().template subview<NewDims...>(slices...);
     }
 

@@ -1,6 +1,7 @@
 #ifndef SQUINT_TENSOR_BASE_HPP
 #define SQUINT_TENSOR_BASE_HPP
 
+#include "squint/quantity.hpp"
 #include <cstddef>
 #include <functional>
 #include <iostream>
@@ -12,9 +13,9 @@ namespace squint {
 enum class layout { row_major, column_major };
 
 // Forward declarations
-template <typename T> class tensor_view;
-template <typename T, layout L, std::size_t... Dims> class fixed_tensor;
-template <typename T> class dynamic_tensor;
+template <typename T, error_checking ErrorChecking> class tensor_view;
+template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims> class fixed_tensor;
+template <typename T, error_checking ErrorChecking> class dynamic_tensor;
 
 // Tensor slice
 struct slice {
@@ -52,7 +53,7 @@ template <typename T>
 concept dynamic_shape_tensor = tensor<T> && !has_constexpr_shape<T> && !has_constexpr_strides<T>;
 
 // Base tensor class using CRTP
-template <typename Derived, typename T> class tensor_base {
+template <typename Derived, typename T, error_checking ErrorChecking> class tensor_base {
   public:
     using value_type = T;
 
@@ -72,18 +73,56 @@ template <typename Derived, typename T> class tensor_base {
     }
 
     template <typename... Indices> constexpr T &at(Indices... indices) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
+        }
         return static_cast<Derived *>(this)->at(std::vector<size_t>{static_cast<size_t>(indices)...});
     }
 
     template <typename... Indices> constexpr const T &at(Indices... indices) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
+        }
         return static_cast<const Derived *>(this)->at(std::vector<size_t>{static_cast<size_t>(indices)...});
     }
 
     // Add overloads for at() that take a vector of indices
-    constexpr T &at(const std::vector<size_t> &indices) { return static_cast<Derived *>(this)->at_impl(indices); }
+    constexpr T &at(const std::vector<size_t> &indices) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            check_bounds(indices);
+        }
+        return static_cast<Derived *>(this)->at_impl(indices);
+    }
 
     constexpr const T &at(const std::vector<size_t> &indices) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            check_bounds(indices);
+        }
         return static_cast<const Derived *>(this)->at_impl(indices);
+    }
+
+    void check_bounds(const std::vector<size_t> &indices) const {
+        const auto &shape = this->shape();
+        if (indices.size() != shape.size()) {
+            throw std::out_of_range("Invalid number of indices");
+        }
+        for (size_t i = 0; i < indices.size(); ++i) {
+            if (indices[i] >= shape[i]) {
+                throw std::out_of_range("Index out of bounds");
+            }
+        }
+    }
+
+    void check_subview_bounds(const std::vector<slice> &slices) const {
+        const auto &shape = this->shape();
+        if (slices.size() > shape.size()) {
+            throw std::out_of_range("Too many slices");
+        }
+        for (size_t i = 0; i < slices.size(); ++i) {
+            if (slices[i].start + slices[i].size > shape[i]) {
+                throw std::out_of_range("Subview out of bounds");
+            }
+        }
     }
 
     virtual T *data() = 0;

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Squint is a C++ library that provides compile-time dimensional analysis and unit conversion capabilities. It allows developers to work with physical quantities in a type-safe manner, preventing common errors related to unit mismatches and improving code readability and maintainability.
+Squint is a C++ library that provides compile-time dimensional analysis, unit conversion capabilities, and tensor operations. It allows developers to work with physical quantities and multi-dimensional data in a type-safe manner, preventing common errors related to unit mismatches and improving code readability and maintainability.
 
 ## Project Map
 
@@ -14,6 +14,13 @@ squint/
 |   |-- squint/
 |       |-- dimension.hpp
 |       |-- quantity.hpp
+|       |-- tensor.hpp
+|       |-- tensor_base.hpp
+|       |-- fixed_tensor.hpp
+|       |-- dynamic_tensor.hpp
+|       |-- tensor_view.hpp
+|       |-- iterable_tensor.hpp
+|       |-- linear_algebra.hpp
 ```
 
 ### File Contents
@@ -37,6 +44,18 @@ include/squint/quantity.hpp
   - `quantity` class template
   - `units` namespace with various unit types
   - `constants` namespace with mathematical and physical constants
+
+include/squint/dimension.hpp and include/squint/quantity.hpp
+(Content remains the same as in the original README)
+
+include/squint/tensor.hpp and related files
+
+- Implement tensor operations and abstractions
+- Contains:
+  - `fixed_tensor` and `dynamic_tensor` class templates
+  - Tensor view classes for efficient sub-tensor operations
+  - Iterators for element-wise access
+  - Basic linear algebra operations
 
 CMakeLists.txt
 
@@ -131,6 +150,33 @@ int main() {
 }
 ```
 
+### Example 3: Basic Tensor Operations
+
+```cpp
+#include <squint/tensor.hpp>
+#include <iostream>
+
+int main() {
+    using namespace squint;
+
+    // Create a 2x3 fixed tensor
+    fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
+
+    std::cout << "Tensor: " << t << std::endl;
+
+    // Access elements
+    std::cout << "Element at (1, 2): " << t[1, 2] << std::endl;
+
+    // Create a view
+    auto view = t.view();
+
+    // Create a subview
+    auto subview = t.subview<2, 2>(slice{0, 2}, slice{1, 2});
+
+    return 0;
+}
+```
+
 ## Features
 
 ### Dimensional Analysis
@@ -177,6 +223,15 @@ int main() {
   - Energy: joules, kilowatt-hours
   - Power: watts, horsepower
 
+### Tensor Operations
+
+- Fixed-size and dynamic-size tensors
+- Row-major and column-major memory layouts
+- Multi-dimensional indexing and slicing
+- Tensor views for efficient sub-tensor operations
+- Iterators for element-wise access
+- Basic linear algebra operations
+
 ## Advanced Usage
 
 ### Working with Mixed types
@@ -195,14 +250,14 @@ auto result = l_double + l_float + l_int; // result is quantity<double, length>
 
 Squint provides two levels of error checking:
 
-1. `error_checking_disabled` (default): No runtime checks are performed.
-2. `error_checking_enabled`: Runtime checks for overflow, division by zero, and underflow are performed.
+1. `error_checking::disabled` (default): No runtime checks are performed.
+2. `error_checking::enabled`: Runtime checks for overflow, division by zero, and underflow are performed.
 
 You can specify the error checking mode when declaring a quantity:
 
 ```cpp
-quantity<int, length, error_checking_enabled> safe_length(5);
-quantity<int, length, error_checking_disabled> fast_length(5);
+quantity<int, length, error_checking::enabled> safe_length(5);
+quantity<int, length, error_checking::disabled> fast_length(5);
 ```
 
 ### Working with Constants
@@ -212,6 +267,33 @@ Squint provides a set of mathematical and physical constants that can be used in
 ```cpp
 auto circle_area = constants::math_constants<double>::pi * length_t<double>::meters(2.0).pow<2>();
 auto energy = mass_t<double>::kilograms(1.0) * constants::si_constants<double>::c.pow<2>();
+```
+
+### Working with Tensors
+
+Squint supports both fixed-size and dynamic-size tensors. You can perform various operations on tensors, including element-wise arithmetic, slicing, and basic linear algebra operations.
+
+```cpp
+#include <squint/tensor.hpp>
+#include <iostream>
+
+int main() {
+    using namespace squint;
+
+    // Create two 2x3 tensors
+    fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
+    fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2{{6, 5, 4, 3, 2, 1}};
+
+    // Element-wise addition
+    auto sum = t1 + t2;
+    std::cout << "Sum: " << sum << std::endl;
+
+    // Scalar multiplication
+    auto scaled = t1 * 2;
+    std::cout << "Scaled: " << scaled << std::endl;
+
+    return 0;
+}
 ```
 
 ## API Reference
@@ -270,3 +352,25 @@ The `constants` namespace provides template structs with various mathematical an
 - `atomic_constants<T>`
 
 These can be used to access constants like π, speed of light, gravitational constant, etc.
+
+`squint::fixed_tensor<T, L, ErrorChecking, Dims...>`
+
+The `fixed_tensor` class template represents a fixed-size tensor with compile-time dimensions.
+
+Template Parameters
+
+- `T`: The underlying data type (e.g., `float`, `double`, `int`)
+- `L`: Memory layout (`layout::row_major` or `layout::column_major`)
+- `ErrorChecking`: Error checking policy (`error_checking::enabled` or `error_checking::disabled`)
+- `Dims...`: Compile-time dimensions of the tensor
+
+`squint::dynamic_tensor<T, ErrorChecking>`
+
+The `dynamic_tensor` class template represents a dynamic-size tensor with runtime-determined dimensions.
+
+Template Parameters
+
+- `T`: The underlying data type (e.g., `float`, `double`, `int`)
+- `ErrorChecking`: Error checking policy (`error_checking::enabled` or `error_checking::disabled`)
+
+Both tensor types provide methods for accessing elements, creating views and subviews, and performing basic linear algebra operations.
