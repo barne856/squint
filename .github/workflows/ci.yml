@@ -12,26 +12,36 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [g++-12, clang++-17]
+        compiler: [g++-12, clang++-15, clang++-16, clang++-17, clang++-18]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install compiler
+    - name: Install compiler and libraries
       run: |
         sudo apt-get update
-        if [ "${{ matrix.compiler }}" = "clang++-17" ]; then
+        if [[ "${{ matrix.compiler }}" == clang++* ]]; then
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 17
-          sudo apt-get install -y clang-17
+          CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
+          sudo ./llvm.sh $CLANG_VERSION
+          sudo apt-get install -y clang-$CLANG_VERSION libc++-$CLANG_VERSION-dev libc++abi-$CLANG_VERSION-dev lld-$CLANG_VERSION
         else
           sudo apt-get install -y ${{ matrix.compiler }}
         fi
+
     - name: Configure CMake
       env:
         CXX: ${{ matrix.compiler }}
-      run: cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON
+      run: |
+        if [[ "${{ matrix.compiler }}" == clang++* ]]; then
+          CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
+          export CXXFLAGS="-stdlib=libc++"
+          export LDFLAGS="-stdlib=libc++ -fuse-ld=lld-$CLANG_VERSION"
+          cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS"
+        else
+          cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON
+        fi
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build
