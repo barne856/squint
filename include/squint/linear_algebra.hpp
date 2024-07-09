@@ -68,7 +68,7 @@ class fixed_tensor_with_la
     : public fixed_tensor<T, L, ErrorChecking, Dims...>,
       public linear_algebra_mixin<fixed_tensor_with_la<T, L, ErrorChecking, Dims...>, ErrorChecking> {
   public:
-    using fixed_tensor<T, L, Dims...>::fixed_tensor;
+    using fixed_tensor<T, L, ErrorChecking, Dims...>::fixed_tensor;
 
     // Add any additional methods or overrides specific to fixed_tensor_with_la
 };
