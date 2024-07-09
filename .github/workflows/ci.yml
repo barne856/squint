@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [g++-12]
+        compiler: [g++-12, clang++-17]
 
     steps:
     - uses: actions/checkout@v3
@@ -20,8 +20,14 @@ jobs:
     - name: Install compiler
       run: |
         sudo apt-get update
-        sudo apt-get install -y ${{ matrix.compiler }}
-
+        if [ "${{ matrix.compiler }}" = "clang++-17" ]; then
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt-get install -y clang-17
+        else
+          sudo apt-get install -y ${{ matrix.compiler }}
+        fi
     - name: Configure CMake
       env:
         CXX: ${{ matrix.compiler }}
