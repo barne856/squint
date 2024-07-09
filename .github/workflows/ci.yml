@@ -77,3 +77,27 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest -C Release --output-on-failure
+
+  clang-tidy:
+    name: Clang-Tidy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Clang and Clang-Tidy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-tidy
+
+    - name: Run Clang-Tidy
+      run: |
+        find include -name '*.cpp' -or -name '*.hpp' | \
+        xargs clang-tidy -p build \
+        --config-file=.clang-tidy
+
+    - name: Check Clang-Tidy result
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "Clang-Tidy found issues. Please fix them before merging."
+          exit 1
+        fi
