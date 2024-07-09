@@ -1,6 +1,3 @@
 TODO:
 
-Add convience types for common matrix and vectors
-
-implement linalg/math mixin
-implement quantity math to mirror std::math
+implement linalg/math mixin for tensors

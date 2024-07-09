@@ -8,12 +8,11 @@
 
 int main() {
     using namespace squint;
+    using namespace squint::units;
 
-    auto d = fixed_tensor<double, layout::column_major, error_checking::disabled, 4>::arange(4);
-    auto eye = fixed_tensor<double, layout::column_major, error_checking::disabled, 4, 4>::diag(d);
-    auto rand = fixed_tensor<double, layout::column_major, error_checking::disabled, 4, 4>::random();
+    auto eye = mat4<length>::I();
+
     std::cout << eye << std::endl;
-    std::cout << rand << std::endl;
 
     return 0;
 }

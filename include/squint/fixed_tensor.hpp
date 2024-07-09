@@ -293,6 +293,24 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     }
 };
 
+// Vector types
+template <typename T> using vec2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2>;
+template <typename T> using vec3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3>;
+template <typename T> using vec4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4>;
+
+// Square matrix types
+template <typename T> using mat2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 2>;
+template <typename T> using mat3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 3>;
+template <typename T> using mat4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 4>;
+
+// Non-square matrix types
+template <typename T> using mat2x3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 3>;
+template <typename T> using mat2x4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 4>;
+template <typename T> using mat3x2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 2>;
+template <typename T> using mat3x4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 4>;
+template <typename T> using mat4x2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 2>;
+template <typename T> using mat4x3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 3>;
+
 } // namespace squint
 
 #endif // SQUINT_FIXED_TENSOR_HPP

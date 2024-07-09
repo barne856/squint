@@ -6,6 +6,7 @@
 using namespace squint;
 using namespace squint::dimensions;
 using namespace squint::constants;
+using namespace squint::math;
 
 TEST_CASE("Quantity Construction and Basic Operations") {
     SUBCASE("Default constructor") {
@@ -233,14 +234,10 @@ TEST_CASE("Quantity Stream Operators") {
     }
 }
 
-TEST_CASE("Quantity Type Traits and Concepts") {
-    SUBCASE("is_quantity type trait") {
-        CHECK(is_quantity_v<quantity<double, length>>);
-        CHECK_FALSE(is_quantity_v<double>);
-    }
-
+TEST_CASE("Quantity Concepts") {
     SUBCASE("quantitative concept") {
         CHECK(quantitative<quantity<double, length>>);
+        CHECK(quantitative<units::length>);
         CHECK_FALSE(quantitative<double>);
     }
 }
@@ -536,7 +533,7 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
     SUBCASE("Addition with mixed error checking") {
         checked_double_length checked(5.0);
         unchecked_double_length unchecked(3.0);
-        
+
         auto result = checked + unchecked;
         CHECK(result.value() == doctest::Approx(8.0));
         CHECK(std::is_same_v<decltype(result), checked_double_length>);
@@ -549,7 +546,7 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
     SUBCASE("Subtraction with mixed error checking") {
         checked_double_length checked(5.0);
         unchecked_double_length unchecked(3.0);
-        
+
         auto result = checked - unchecked;
         CHECK(result.value() == doctest::Approx(2.0));
         CHECK(std::is_same_v<decltype(result), checked_double_length>);
@@ -562,22 +559,26 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
     SUBCASE("Multiplication with mixed error checking") {
         checked_double_length checked(5.0);
         unchecked_double_length unchecked(3.0);
-        
+
         auto result = checked * unchecked;
         CHECK(result.value() == doctest::Approx(15.0));
         CHECK(std::is_same_v<decltype(result)::dimension_type, mult_t<dimensions::length, dimensions::length>>);
         CHECK(std::is_same_v<decltype(result)::value_type, double>);
-        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
+        CHECK(
+            std::is_same_v<decltype(result),
+                           quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
 
         result = unchecked * checked;
         CHECK(result.value() == doctest::Approx(15.0));
-        CHECK(std::is_same_v<decltype(result), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
+        CHECK(
+            std::is_same_v<decltype(result),
+                           quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
     }
 
     SUBCASE("Division with mixed error checking") {
         checked_double_length checked(6.0);
         unchecked_double_length unchecked(3.0);
-        
+
         auto result = checked / unchecked;
         CHECK(result.value() == doctest::Approx(2.0));
         CHECK(std::is_same_v<decltype(result)::dimension_type, dimensions::dimensionless>);
@@ -636,6 +637,151 @@ TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations") {
 
         auto result2 = unchecked_int * checked_double;
         CHECK(result2.value() == doctest::Approx(15.0));
-        CHECK(std::is_same_v<decltype(result2), quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
+        CHECK(
+            std::is_same_v<decltype(result2),
+                           quantity<double, mult_t<dimensions::length, dimensions::length>, error_checking::enabled>>);
+    }
+}
+
+TEST_CASE("Absolute value") {
+    using namespace squint::units;
+
+    SUBCASE("Quantity types") {
+        auto length = length_t<double>::meters(-5.0);
+        auto abs_length = abs(length);
+        CHECK(abs_length.value() == doctest::Approx(5.0));
+        CHECK(std::is_same_v<decltype(abs_length)::dimension_type, dimensions::length>);
+    }
+}
+
+TEST_CASE("Square root") {
+    using namespace squint::units;
+
+    SUBCASE("Quantity types") {
+        auto area = area_t<double>::square_meters(4.0);
+        auto length = sqrt(area);
+        CHECK(length.value() == doctest::Approx(2.0));
+        CHECK(std::is_same_v<decltype(length)::dimension_type, dimensions::length>);
+    }
+}
+
+TEST_CASE("Exponential function") {
+    SUBCASE("Quantity types") {
+        auto dimensionless = quantity<double, dimensions::dimensionless>(1.0);
+        auto result = exp(dimensionless);
+        CHECK(result.value() == doctest::Approx(std::exp(1.0)));
+        CHECK(std::is_same_v<decltype(result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Natural logarithm") {
+    SUBCASE("Quantity types") {
+        auto dimensionless = quantity<double, dimensions::dimensionless>(std::exp(1.0));
+        auto result = log(dimensionless);
+        CHECK(result.value() == doctest::Approx(1.0));
+        CHECK(std::is_same_v<decltype(result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Power function") {
+    using namespace squint::units;
+
+    SUBCASE("Quantity types") {
+        auto length = length_t<double>::meters(2.0);
+        auto volume = pow<3>(length);
+        CHECK(volume.value() == doctest::Approx(8.0));
+        CHECK(std::is_same_v<decltype(volume)::dimension_type, dimensions::volume>);
+    }
+}
+
+TEST_CASE("Trigonometric functions") {
+    using namespace squint::units;
+
+    SUBCASE("Quantity types") {
+        auto angle = angle_t<double>::radians(0.0);
+
+        auto sin_result = sin(angle);
+        CHECK(sin_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(sin_result)::dimension_type, dimensions::dimensionless>);
+
+        auto cos_result = cos(angle);
+        CHECK(cos_result.value() == doctest::Approx(1.0));
+        CHECK(std::is_same_v<decltype(cos_result)::dimension_type, dimensions::dimensionless>);
+
+        auto tan_result = tan(angle);
+        CHECK(tan_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(tan_result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Inverse trigonometric functions") {
+
+    SUBCASE("Quantity types") {
+        auto dimensionless = quantity<double, dimensions::dimensionless>(0.0);
+
+        auto asin_result = asin(dimensionless);
+        CHECK(asin_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(asin_result)::dimension_type, dimensions::dimensionless>);
+
+        auto unit = quantity<double, dimensions::dimensionless>(1.0);
+        auto acos_result = acos(unit);
+        CHECK(acos_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(acos_result)::dimension_type, dimensions::dimensionless>);
+
+        auto atan_result = atan(dimensionless);
+        CHECK(atan_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(atan_result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Two-argument arctangent") {
+    using namespace squint::units;
+
+    SUBCASE("Quantity types") {
+        auto y = length_t<double>::meters(0.0);
+        auto x = length_t<double>::meters(1.0);
+
+        auto atan2_result = atan2(y, x);
+        CHECK(atan2_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(atan2_result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Hyperbolic functions") {
+
+    SUBCASE("Quantity types") {
+        auto dimensionless = quantity<double, dimensions::dimensionless>(0.0);
+
+        auto sinh_result = sinh(dimensionless);
+        CHECK(sinh_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(sinh_result)::dimension_type, dimensions::dimensionless>);
+
+        auto cosh_result = cosh(dimensionless);
+        CHECK(cosh_result.value() == doctest::Approx(1.0));
+        CHECK(std::is_same_v<decltype(cosh_result)::dimension_type, dimensions::dimensionless>);
+
+        auto tanh_result = tanh(dimensionless);
+        CHECK(tanh_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(tanh_result)::dimension_type, dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Inverse hyperbolic functions") {
+
+    SUBCASE("Quantity types") {
+        auto zero = quantity<double, dimensions::dimensionless>(0.0);
+        auto one = quantity<double, dimensions::dimensionless>(1.0);
+
+        auto asinh_result = asinh(zero);
+        CHECK(asinh_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(asinh_result)::dimension_type, dimensions::dimensionless>);
+
+        auto acosh_result = acosh(one);
+        CHECK(acosh_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(acosh_result)::dimension_type, dimensions::dimensionless>);
+
+        auto atanh_result = atanh(zero);
+        CHECK(atanh_result.value() == doctest::Approx(0.0));
+        CHECK(std::is_same_v<decltype(atanh_result)::dimension_type, dimensions::dimensionless>);
     }
 }
