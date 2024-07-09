@@ -1,0 +1,35 @@
+name: SQUINT CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++-12, clang++-15, clang++-16, clang++-17, clang++-18]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install compiler
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ matrix.compiler }}
+
+    - name: Configure CMake
+      env:
+        CXX: ${{ matrix.compiler }}
+      run: cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest --output-on-failure
