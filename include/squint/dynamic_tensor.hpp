@@ -18,6 +18,8 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     layout layout_;
 
   public:
+    using iterable_tensor<dynamic_tensor<T, ErrorChecking>, T, ErrorChecking>::subviews;
+    constexpr dynamic_tensor() = default;
     // virtual destructor
     virtual ~dynamic_tensor() = default;
     dynamic_tensor(std::vector<std::size_t> shape, layout layout = layout::column_major)
@@ -265,6 +267,46 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         return const_dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_);
     }
 
+    auto rows() {
+        if (shape_.empty()) {
+            // For 0D tensors
+            return this->subviews(std::vector<std::size_t>{});
+        }
+        std::vector<std::size_t> row_shape = shape_;
+        row_shape[0] = 1;
+        return this->subviews(row_shape);
+    }
+
+    auto cols() {
+        if (shape_.size() < 2) {
+            // For 0D and 1D tensors
+            return this->subviews(shape_);
+        }
+        std::vector<std::size_t> col_shape = shape_;
+        col_shape[shape_.size() - 1] = 1;
+        return this->subviews(col_shape);
+    }
+
+    auto rows() const {
+        if (shape_.empty()) {
+            // For 0D tensors
+            return this->subviews(std::vector<std::size_t>{});
+        }
+        std::vector<std::size_t> row_shape = shape_;
+        row_shape[0] = 1;
+        return this->subviews(row_shape);
+    }
+
+    auto cols() const {
+        if (shape_.size() < 2) {
+            // For 0D and 1D tensors
+            return this->subviews(shape_);
+        }
+        std::vector<std::size_t> col_shape = shape_;
+        col_shape[shape_.size() - 1] = 1;
+        return this->subviews(col_shape);
+    }
+
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
@@ -328,6 +370,8 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         return new_shape;
     }
 };
+
+template <typename T> using dtens = dynamic_tensor<T, error_checking::disabled>;
 
 } // namespace squint
 

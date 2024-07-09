@@ -1063,3 +1063,203 @@ TEST_CASE("dynamic_tensor fill and flatten methods") {
         CHECK_FALSE(std::is_assignable<decltype(flattened.at_impl({0})), float>::value);
     }
 }
+
+TEST_CASE("fixed_tensor rows() and cols() tests") {
+    SUBCASE("2D tensor") {
+        squint::fixed_tensor<int, squint::layout::row_major, squint::error_checking::disabled, 3, 4> tensor(
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+
+        SUBCASE("rows()") {
+            std::vector<std::vector<int>> expected_rows = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}};
+            int row_index = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1, 4});
+                std::vector<int> row_values;
+                for (const auto &value : row) {
+                    row_values.push_back(value);
+                }
+                CHECK(row_values == expected_rows[row_index]);
+                ++row_index;
+            }
+            CHECK(row_index == 3);
+        }
+
+        SUBCASE("cols()") {
+            std::vector<std::vector<int>> expected_cols = {{1, 5, 9}, {2, 6, 10}, {3, 7, 11}, {4, 8, 12}};
+            int col_index = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{3, 1});
+                std::vector<int> col_values;
+                for (const auto &value : col) {
+                    col_values.push_back(value);
+                }
+                CHECK(col_values == expected_cols[col_index]);
+                ++col_index;
+            }
+            CHECK(col_index == 4);
+        }
+    }
+
+    SUBCASE("3D tensor") {
+        squint::fixed_tensor<int, squint::layout::row_major, squint::error_checking::disabled, 2, 3, 4> tensor;
+        for (std::size_t i = 0; i < 24; ++i) {
+            tensor.at_impl({i / 12, (i % 12) / 4, i % 4}) = i + 1;
+        }
+
+        SUBCASE("rows()") {
+            int row_index = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1, 3, 4});
+                CHECK(row.size() == 12);
+                for (std::size_t i = 0; i < 12; ++i) {
+                    CHECK(row.at_impl({0, i / 4, i % 4}) == row_index * 12 + i + 1);
+                }
+                ++row_index;
+            }
+            CHECK(row_index == 2);
+        }
+
+        SUBCASE("cols()") {
+            int col_index = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{2, 3, 1});
+                CHECK(col.size() == 6);
+                for (std::size_t i = 0; i < 6; ++i) {
+                    CHECK(col.at_impl({i / 3, i % 3, 0}) == i * 4 + col_index + 1);
+                }
+                ++col_index;
+            }
+            CHECK(col_index == 4);
+        }
+    }
+
+    SUBCASE("1D tensor") {
+        squint::fixed_tensor<int, squint::layout::row_major, squint::error_checking::disabled, 5> tensor(
+            {1, 2, 3, 4, 5});
+
+        SUBCASE("rows()") {
+            int row_count = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1});
+                CHECK(row.size() == 1);
+                CHECK(row[0] == row_count + 1);
+                ++row_count;
+            }
+            CHECK(row_count == 5);
+        }
+
+        SUBCASE("cols()") {
+            int col_count = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{5});
+                CHECK(col.size() == 5);
+                for (const auto &value : col) {
+                    CHECK(value == col_count + 1);
+                }
+                ++col_count;
+            }
+            CHECK(col_count == 1);
+        }
+    }
+}
+
+TEST_CASE("dynamic_tensor rows() and cols() tests") {
+    SUBCASE("2D tensor") {
+        squint::dynamic_tensor<int, squint::error_checking::disabled> tensor({3, 4}, squint::layout::row_major);
+        std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        std::copy(data.begin(), data.end(), tensor.data());
+
+        SUBCASE("rows()") {
+            std::vector<std::vector<int>> expected_rows = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}};
+            int row_index = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1, 4});
+                std::vector<int> row_values;
+                for (const auto &value : row) {
+                    row_values.push_back(value);
+                }
+                CHECK(row_values == expected_rows[row_index]);
+                ++row_index;
+            }
+            CHECK(row_index == 3);
+        }
+
+        SUBCASE("cols()") {
+            std::vector<std::vector<int>> expected_cols = {{1, 5, 9}, {2, 6, 10}, {3, 7, 11}, {4, 8, 12}};
+            int col_index = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{3, 1});
+                std::vector<int> col_values;
+                for (const auto &value : col) {
+                    col_values.push_back(value);
+                }
+                CHECK(col_values == expected_cols[col_index]);
+                ++col_index;
+            }
+            CHECK(col_index == 4);
+        }
+    }
+
+    SUBCASE("3D tensor") {
+        squint::dynamic_tensor<int, squint::error_checking::disabled> tensor({2, 3, 4}, squint::layout::row_major);
+        for (std::size_t i = 0; i < 24; ++i) {
+            tensor.at_impl({i / 12, (i % 12) / 4, i % 4}) = i + 1;
+        }
+
+        SUBCASE("rows()") {
+            int row_index = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1, 3, 4});
+                CHECK(row.size() == 12);
+                for (std::size_t i = 0; i < 12; ++i) {
+                    CHECK(row.at_impl({0, i / 4, i % 4}) == row_index * 12 + i + 1);
+                }
+                ++row_index;
+            }
+            CHECK(row_index == 2);
+        }
+
+        SUBCASE("cols()") {
+            int col_index = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{2, 3, 1});
+                CHECK(col.size() == 6);
+                for (std::size_t i = 0; i < 6; ++i) {
+                    CHECK(col.at_impl({i / 3, i % 3, 0}) == i * 4 + col_index + 1);
+                }
+                ++col_index;
+            }
+            CHECK(col_index == 4);
+        }
+    }
+
+    SUBCASE("1D tensor") {
+        squint::dynamic_tensor<int, squint::error_checking::disabled> tensor({5}, squint::layout::row_major);
+        std::vector<int> data = {1, 2, 3, 4, 5};
+        std::copy(data.begin(), data.end(), tensor.data());
+
+        SUBCASE("rows()") {
+            int row_count = 0;
+            for (const auto &row : tensor.rows()) {
+                CHECK(row.shape() == std::vector<std::size_t>{1});
+                CHECK(row.size() == 1);
+                CHECK(row.at_impl({0}) == row_count + 1);
+                ++row_count;
+            }
+            CHECK(row_count == 5);
+        }
+
+        SUBCASE("cols()") {
+            int col_count = 0;
+            for (const auto &col : tensor.cols()) {
+                CHECK(col.shape() == std::vector<std::size_t>{5});
+                CHECK(col.size() == 5);
+                for (std::size_t i = 0; i < 5; ++i) {
+                    CHECK(col.at_impl({i}) == i + 1);
+                }
+                ++col_count;
+            }
+            CHECK(col_count == 1);
+        }
+    }
+}

@@ -1,9 +1,7 @@
+#include "squint/dynamic_tensor.hpp"
 #include "squint/fixed_tensor.hpp"
-#include "squint/quantity.hpp"
-#include "squint/tensor.hpp"
-#include "squint/tensor_base.hpp"
-#include "squint/tensor_view.hpp"
-#include <iomanip>
+#include <chrono>
 #include <iostream>
+#include <squint/quantity.hpp>
 
 int main() { return 0; }

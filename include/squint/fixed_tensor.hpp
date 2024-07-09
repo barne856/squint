@@ -26,6 +26,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     std::array<T, total_size> data_;
 
   public:
+    using iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking>::subviews;
     // virtual destructor
     virtual ~fixed_tensor() = default;
     constexpr fixed_tensor() = default;
@@ -228,6 +229,54 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     void fill(const T &value) { data_.fill(value); }
     auto flatten() { return view().flatten(); }
     auto flatten() const { return view().flatten(); }
+
+    auto rows() {
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subviews<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<1, std::get<Is + 1>(dims)...>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto rows() const {
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subviews<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<1, std::get<Is + 1>(dims)...>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto cols() {
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<std::get<Is>(dims)..., 1>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subviews<Dims...>();
+        }
+    }
+
+    auto cols() const {
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<std::get<Is>(dims)..., 1>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subviews<Dims...>();
+        }
+    }
 
   private:
     template <std::size_t... Is, typename... Indices>

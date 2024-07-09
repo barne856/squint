@@ -32,7 +32,7 @@ folder_path = "./"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt']
 
 # Specify the subdirectories to exclude
-excluded_subdirs = ['build', 'old']
+excluded_subdirs = ['build', 'old', 'tests']
 
 # Specify the output file path
 output_file = "combined_files.txt"
