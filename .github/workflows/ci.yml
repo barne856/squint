@@ -15,7 +15,7 @@ jobs:
         compiler: [g++-12, clang++-17]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install compiler
       run: |
