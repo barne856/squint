@@ -160,6 +160,28 @@ TEST_CASE("Quantity Comparison Operations") {
     //     CHECK((l1 <=> l3) == 0);
     // }
 
+    SUBCASE("Less than comparison") {
+        CHECK(l2 < l1);
+        CHECK_FALSE(l1 < l2);
+    }
+
+    SUBCASE("Less than or equal comparison") {
+        CHECK(l2 <= l1);
+        CHECK(l1 <= l1);
+        CHECK_FALSE(l1 <= l2);
+    }
+
+    SUBCASE("Greater than comparison") {
+        CHECK(l1 > l2);
+        CHECK_FALSE(l2 > l1);
+    }
+
+    SUBCASE("Greater than or equal comparison") {
+        CHECK(l1 >= l2);
+        CHECK(l1 >= l1);
+        CHECK_FALSE(l2 >= l1);
+    }
+
     SUBCASE("Equality comparison") {
         CHECK(l1 == l3);
         CHECK(l1 != l2);
