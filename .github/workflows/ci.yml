@@ -89,6 +89,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang-tidy
 
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
     - name: Run Clang-Tidy
       run: |
         find include -name '*.cpp' -or -name '*.hpp' | \
