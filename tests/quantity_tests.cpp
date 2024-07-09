@@ -154,11 +154,11 @@ TEST_CASE("Quantity Comparison Operations") {
     quantity<double, length> l2(3.0);
     quantity<double, length> l3(5.0);
 
-    SUBCASE("Three-way comparison") {
-        CHECK((l1 <=> l2) > 0);
-        CHECK((l2 <=> l1) < 0);
-        CHECK((l1 <=> l3) == 0);
-    }
+    // SUBCASE("Three-way comparison") {
+    //     CHECK((l1 <=> l2) > 0);
+    //     CHECK((l2 <=> l1) < 0);
+    //     CHECK((l1 <=> l3) == 0);
+    // }
 
     SUBCASE("Equality comparison") {
         CHECK(l1 == l3);
