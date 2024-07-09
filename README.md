@@ -36,7 +36,7 @@
 
 ## Introduction
 
-Squint is a modern, header-only C++ library designed to bring robust dimensional analysis, unit conversion, and linear algebra operations to scientific and engineering applications. By leveraging C++'s template metaprogramming capabilities, Squint provides a powerful set of tools that enhance code safety, readability, and expressiveness without compromising performance.
+SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring robust dimensional analysis, unit conversion, and linear algebra operations to scientific and engineering applications. By leveraging C++'s template metaprogramming capabilities, Squint provides a powerful set of tools that enhance code safety, readability, and expressiveness without compromising performance.
 
 Key features of Squint include:
 
@@ -68,7 +68,6 @@ length l = length::meters(5.0);
 time t = time::seconds(2.0);
 auto v = l / t;  // type 'velocity' inferred
 // auto e = l + t;  // Compile-time error: can't add length and time
-// auto m = l * t;  // Compile-time error: l * t is not a recognized dimension
 ```
 
 2. **Expressiveness**: The library aims to allow users to write code that closely mirrors mathematical and physical equations.
@@ -163,9 +162,7 @@ include/squint/quantity.hpp
   - `quantity` class template
   - `units` namespace with various unit types
   - `constants` namespace with mathematical and physical constants
-
-include/squint/dimension.hpp and include/squint/quantity.hpp
-(Content remains the same as in the original README)
+  - `math` namespace with mathematical functions for use with quantity types
 
 include/squint/tensor.hpp and related files
 
@@ -175,11 +172,6 @@ include/squint/tensor.hpp and related files
   - Tensor view classes for efficient sub-tensor operations
   - Iterators for element-wise access
   - Basic linear algebra operations
-
-CMakeLists.txt
-
-- Defines the Squint library as a header-only library
-- Sets up installation rules
 
 ## Walkthrough of Core Types
 
@@ -304,11 +296,11 @@ mat3<velocity> velocity_field = {
 auto lengths = velocity_field * times; // Results in a vec3<quantity<double, length>>
 ```
 
-In this example, we've created a 3D position vector and a 3x3 matrix of velocities. When we multiply the velocity field by the time vector, we get a new position vector since dimensionally V * T = L. The library ensures that the dimensions are correct and handles the unit calculations automatically.
+In this example, we've created a 3D time vector and a 3x3 matrix of velocities. When we multiply the velocity field by the time vector, we get a new position vector since dimensionally (L / T) * T = L. The library ensures that the dimensions are correct and handles the unit calculations automatically.
 
 This combination of quantities and tensors allows for expressive and type-safe representations of complex physical systems, such as stress tensors in material science, electromagnetic field tensors in physics, or multi-dimensional data in any scientific or engineering discipline.
 
-Tensors can also have error checking enabled. This is separate from qunatity error checking and essentially only enabled bounds checking at runtime. It is possbile to have error checked tensors with non error checked quantities or error checked quantities and in expressions the usual type deduction rules for quantities apply.
+Tensors can also have error checking enabled. This is separate from qunatity error checking and essentially only enables bounds checking at runtime. It is possbile to have error checked tensors with non error checked quantities or error checked quantities and in expressions the usual type deduction rules for quantities apply.
 
 ## Installation
 
