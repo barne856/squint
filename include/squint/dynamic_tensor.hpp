@@ -5,6 +5,7 @@
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <numeric>
+#include <random>
 #include <vector>
 
 namespace squint {
@@ -155,6 +156,113 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
             this->check_subview_bounds({slice{slices.start, slices.size}...});
         }
         return view().subview(slices...);
+    }
+
+    static dynamic_tensor zeros(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        result.fill(T{});
+        return result;
+    }
+
+    static dynamic_tensor ones(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        result.fill(T{1});
+        return result;
+    }
+
+    static dynamic_tensor full(const std::vector<std::size_t> &shape, const T &value, layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        result.fill(value);
+        return result;
+    }
+
+    static dynamic_tensor arange(const std::vector<std::size_t> &shape, T start, T step = T{1},
+                                 layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        T value = start;
+        for (std::size_t i = 0; i < result.size(); ++i) {
+            result.data_[i] = value;
+            value += step;
+        }
+        return result;
+    }
+
+    template <tensor OtherTensor>
+    static dynamic_tensor diag(const OtherTensor &vector, const std::vector<std::size_t> &shape,
+                               layout l = layout::column_major) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (vector.rank() != 1) {
+                throw std::invalid_argument("Diagonal vector must be 1D");
+            }
+            if (vector.size() != *std::min_element(shape.begin(), shape.end())) {
+                throw std::invalid_argument("Diagonal vector size must be the minimum of the dimensions");
+            }
+        }
+        dynamic_tensor result(shape, l);
+        result.fill(T{});
+
+        std::size_t min_dim = *std::min_element(shape.begin(), shape.end());
+        for (std::size_t i = 0; i < min_dim; ++i) {
+            std::vector<std::size_t> indices(shape.size(), i);
+            result.at_impl(indices) = vector.at_impl({i});
+        }
+
+        return result;
+    }
+
+    static dynamic_tensor diag(const T &value, const std::vector<std::size_t> &shape, layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        result.fill(T{});
+
+        std::size_t min_dim = *std::min_element(shape.begin(), shape.end());
+        for (std::size_t i = 0; i < min_dim; ++i) {
+            std::vector<std::size_t> indices(shape.size(), i);
+            result.at_impl(indices) = value;
+        }
+
+        return result;
+    }
+
+    static dynamic_tensor random(const std::vector<std::size_t> &shape, T low = T{}, T high = T{1},
+                                 layout l = layout::column_major) {
+        dynamic_tensor result(shape, l);
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<T> dis(low, high);
+
+        for (std::size_t i = 0; i < result.size(); ++i) {
+            result.data_[i] = dis(gen);
+        }
+
+        return result;
+    }
+
+    static dynamic_tensor I(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (!std::equal(shape.begin() + 1, shape.end(), shape.begin())) {
+                throw std::invalid_argument("All dimensions must be equal for identity tensor");
+            }
+        }
+        dynamic_tensor result(shape, l);
+        result.fill(T{});
+
+        std::size_t dim = shape[0];
+        for (std::size_t i = 0; i < dim; ++i) {
+            std::vector<std::size_t> indices(shape.size(), i);
+            result.at_impl(indices) = T{1};
+        }
+
+        return result;
+    }
+
+    void fill(const T &value) { std::fill(data_.begin(), data_.end(), value); }
+
+    auto flatten() {
+        return dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_);
+    }
+
+    auto flatten() const {
+        return const_dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_);
     }
 
   private:

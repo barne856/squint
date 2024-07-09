@@ -763,3 +763,304 @@ TEST_CASE("Error Checking Disabled") {
         CHECK_NOTHROW(t.subview(slice{2, 1}, slice{0, 3})); // This would be invalid, but no check is performed
     }
 }
+
+TEST_CASE("fixed_tensor static methods") {
+    using tensor_type = squint::fixed_tensor<float, squint::layout::row_major, squint::error_checking::enabled, 2, 3>;
+
+    SUBCASE("zeros") {
+        auto t = tensor_type::zeros();
+        CHECK(t.size() == 6);
+        CHECK(t.at(0, 0) == 0.0F);
+        CHECK(t.at(1, 2) == 0.0F);
+    }
+
+    SUBCASE("ones") {
+        auto t = tensor_type::ones();
+        CHECK(t.size() == 6);
+        CHECK(t.at(0, 0) == 1.0F);
+        CHECK(t.at(1, 2) == 1.0F);
+    }
+
+    SUBCASE("full") {
+        auto t = tensor_type::full(3.14F);
+        CHECK(t.size() == 6);
+        CHECK(t.at(0, 0) == 3.14F);
+        CHECK(t.at(1, 2) == 3.14F);
+    }
+
+    SUBCASE("arange") {
+        auto t = tensor_type::arange(1.0F, 0.5F);
+        CHECK(t.size() == 6);
+        CHECK(t.at(0, 0) == 1.0F);
+        CHECK(t.at(0, 1) == 1.5F);
+        CHECK(t.at(0, 2) == 2.0F);
+        CHECK(t.at(1, 0) == 2.5F);
+        CHECK(t.at(1, 1) == 3.0F);
+        CHECK(t.at(1, 2) == 3.5F);
+    }
+
+    SUBCASE("diag") {
+        squint::fixed_tensor<float, squint::layout::row_major, squint::error_checking::enabled, 2> diag_vector(
+            {1.0F, 2.0F});
+        auto t = tensor_type::diag(diag_vector);
+        CHECK(t.at(0, 0) == 1.0F);
+        CHECK(t.at(1, 1) == 2.0F);
+        CHECK(t.at(0, 1) == 0.0F);
+        CHECK(t.at(1, 0) == 0.0F);
+        CHECK(t.at(0, 2) == 0.0F);
+        CHECK(t.at(1, 2) == 0.0F);
+    }
+
+    SUBCASE("diag with scalar") {
+        auto t = tensor_type::diag(5.0F);
+        CHECK(t.at(0, 0) == 5.0F);
+        CHECK(t.at(1, 1) == 5.0F);
+        CHECK(t.at(0, 1) == 0.0F);
+        CHECK(t.at(1, 0) == 0.0F);
+        CHECK(t.at(0, 2) == 0.0F);
+        CHECK(t.at(1, 2) == 0.0F);
+    }
+
+    SUBCASE("random") {
+        auto t = tensor_type::random(0.0F, 1.0F);
+        CHECK(t.size() == 6);
+        for (std::size_t i = 0; i < 2; ++i) {
+            for (std::size_t j = 0; j < 3; ++j) {
+                CHECK(t.at(i, j) >= 0.0F);
+                CHECK(t.at(i, j) <= 1.0F);
+            }
+        }
+    }
+
+    SUBCASE("I") {
+        using square_tensor_type =
+            squint::fixed_tensor<float, squint::layout::row_major, squint::error_checking::enabled, 3, 3>;
+        auto t = square_tensor_type::I();
+        CHECK(t.at(0, 0) == 1.0F);
+        CHECK(t.at(1, 1) == 1.0F);
+        CHECK(t.at(2, 2) == 1.0F);
+        CHECK(t.at(0, 1) == 0.0F);
+        CHECK(t.at(1, 0) == 0.0F);
+        CHECK(t.at(0, 2) == 0.0F);
+        CHECK(t.at(2, 0) == 0.0F);
+    }
+}
+
+TEST_CASE("dynamic_tensor static methods") {
+    using tensor_type = squint::dynamic_tensor<float, squint::error_checking::enabled>;
+    std::vector<std::size_t> shape = {2, 3};
+
+    SUBCASE("zeros") {
+        auto t = tensor_type::zeros(shape);
+        CHECK(t.size() == 6);
+        CHECK(t.at_impl({0, 0}) == 0.0F);
+        CHECK(t.at_impl({1, 2}) == 0.0F);
+    }
+
+    SUBCASE("ones") {
+        auto t = tensor_type::ones(shape);
+        CHECK(t.size() == 6);
+        CHECK(t.at_impl({0, 0}) == 1.0F);
+        CHECK(t.at_impl({1, 2}) == 1.0F);
+    }
+
+    SUBCASE("full") {
+        auto t = tensor_type::full(shape, 3.14F);
+        CHECK(t.size() == 6);
+        CHECK(t.at_impl({0, 0}) == 3.14F);
+        CHECK(t.at_impl({1, 2}) == 3.14F);
+    }
+
+    SUBCASE("arange") {
+        auto t = tensor_type::arange(shape, 1.0F, 0.5F);
+        CHECK(t.size() == 6);
+        CHECK(t.at_impl({0, 0}) == 1.0F);
+        CHECK(t.at_impl({1, 0}) == 1.5F);
+        CHECK(t.at_impl({0, 1}) == 2.0F);
+        CHECK(t.at_impl({1, 1}) == 2.5F);
+        CHECK(t.at_impl({0, 2}) == 3.0F);
+        CHECK(t.at_impl({1, 2}) == 3.5F);
+    }
+
+    SUBCASE("diag") {
+        tensor_type diag_vector({2}, 1.0F);
+        diag_vector.at_impl({1}) = 2.0F;
+        auto t = tensor_type::diag(diag_vector, shape);
+        CHECK(t.at_impl({0, 0}) == 1.0F);
+        CHECK(t.at_impl({1, 1}) == 2.0F);
+        CHECK(t.at_impl({0, 1}) == 0.0F);
+        CHECK(t.at_impl({1, 0}) == 0.0F);
+        CHECK(t.at_impl({0, 2}) == 0.0F);
+        CHECK(t.at_impl({1, 2}) == 0.0F);
+    }
+
+    SUBCASE("diag with scalar") {
+        auto t = tensor_type::diag(5.0F, shape);
+        CHECK(t.at_impl({0, 0}) == 5.0F);
+        CHECK(t.at_impl({1, 1}) == 5.0F);
+        CHECK(t.at_impl({0, 1}) == 0.0F);
+        CHECK(t.at_impl({1, 0}) == 0.0F);
+        CHECK(t.at_impl({0, 2}) == 0.0F);
+        CHECK(t.at_impl({1, 2}) == 0.0F);
+    }
+
+    SUBCASE("random") {
+        auto t = tensor_type::random(shape, 0.0F, 1.0F);
+        CHECK(t.size() == 6);
+        for (std::size_t i = 0; i < 2; ++i) {
+            for (std::size_t j = 0; j < 3; ++j) {
+                CHECK(t.at_impl({i, j}) >= 0.0F);
+                CHECK(t.at_impl({i, j}) <= 1.0F);
+            }
+        }
+    }
+
+    SUBCASE("I") {
+        std::vector<std::size_t> square_shape = {3, 3};
+        auto t = tensor_type::I(square_shape);
+        CHECK(t.at_impl({0, 0}) == 1.0F);
+        CHECK(t.at_impl({1, 1}) == 1.0F);
+        CHECK(t.at_impl({2, 2}) == 1.0F);
+        CHECK(t.at_impl({0, 1}) == 0.0F);
+        CHECK(t.at_impl({1, 0}) == 0.0F);
+        CHECK(t.at_impl({0, 2}) == 0.0F);
+        CHECK(t.at_impl({2, 0}) == 0.0F);
+    }
+}
+
+TEST_CASE("fixed_tensor fill and flatten methods") {
+    using tensor_type = squint::fixed_tensor<float, squint::layout::column_major, squint::error_checking::enabled, 2, 3>;
+
+    SUBCASE("fill") {
+        tensor_type t;
+        t.fill(3.14F);
+        CHECK(t.size() == 6);
+        for (std::size_t i = 0; i < 2; ++i) {
+            for (std::size_t j = 0; j < 3; ++j) {
+                CHECK(t.at(i, j) == 3.14F);
+            }
+        }
+    }
+
+    SUBCASE("flatten non-const") {
+        tensor_type t = tensor_type::arange(1.0F, 1.0F);
+        auto flattened = t.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at(i) == static_cast<float>(i + 1));
+        }
+        // Verify that modifications to flattened affect the original tensor
+        flattened.at(0) = 10.0F;
+        CHECK(t.at(0, 0) == 10.0F);
+    }
+
+    SUBCASE("flatten const") {
+        const tensor_type t = tensor_type::arange(1.0F, 1.0F);
+        auto flattened = t.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at(i) == static_cast<float>(i + 1));
+        }
+        // Verify that flattened is indeed const
+        CHECK_FALSE(std::is_assignable<decltype(flattened.at(0)), float>::value);
+    }
+
+    SUBCASE("view flatten") {
+        tensor_type t;
+        t.fill(3.14F);
+        auto view = t.view();
+        auto flattened = view.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at(i) == 3.14F);
+        }
+        // Verify that modifications to flattened affect the original tensor
+        flattened.at(0) = 10.0F;
+        CHECK(t.at(0, 0) == 10.0F);
+    }
+
+    SUBCASE("view flatten const") {
+        const tensor_type t(3.14F);
+        const auto view = t.view();
+        auto flattened = view.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at(i) == 3.14F);
+        }
+        // Verify that flattened is indeed const
+        CHECK_FALSE(std::is_assignable<decltype(flattened.at(0)), float>::value);
+    }
+}
+
+TEST_CASE("dynamic_tensor fill and flatten methods") {
+    using tensor_type = squint::dynamic_tensor<float, squint::error_checking::enabled>;
+    std::vector<std::size_t> shape = {2, 3};
+
+    SUBCASE("fill") {
+        tensor_type t(shape);
+        t.fill(3.14F);
+        CHECK(t.size() == 6);
+        for (std::size_t i = 0; i < 2; ++i) {
+            for (std::size_t j = 0; j < 3; ++j) {
+                CHECK(t.at_impl({i, j}) == 3.14F);
+            }
+        }
+    }
+
+    SUBCASE("flatten non-const") {
+        tensor_type t = tensor_type::arange(shape, 1.0F, 1.0F);
+        auto flattened = t.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at_impl({i}) == static_cast<float>(i + 1));
+        }
+        // Verify that modifications to flattened affect the original tensor
+        flattened.at_impl({0}) = 10.0F;
+        CHECK(t.at_impl({0, 0}) == 10.0F);
+    }
+
+    SUBCASE("flatten const") {
+        const tensor_type t = tensor_type::arange(shape, 1.0F, 1.0F);
+        auto flattened = t.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at_impl({i}) == static_cast<float>(i + 1));
+        }
+        // Verify that flattened is indeed const
+        CHECK_FALSE(std::is_assignable<decltype(flattened.at_impl({0})), float>::value);
+    }
+
+    SUBCASE("view flatten") {
+        tensor_type t(shape);
+        t.fill(3.14F);
+        auto view = t.view();
+        auto flattened = view.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at_impl({i}) == 3.14F);
+        }
+        // Verify that modifications to flattened affect the original tensor
+        flattened.at_impl({0}) = 10.0F;
+        CHECK(t.at_impl({0, 0}) == 10.0F);
+    }
+
+    SUBCASE("view flatten const") {
+        const tensor_type t(shape, 3.14F);
+        const auto view = t.view();
+        auto flattened = view.flatten();
+        CHECK(flattened.size() == 6);
+        CHECK(flattened.rank() == 1);
+        for (std::size_t i = 0; i < 6; ++i) {
+            CHECK(flattened.at_impl({i}) == 3.14F);
+        }
+        // Verify that flattened is indeed const
+        CHECK_FALSE(std::is_assignable<decltype(flattened.at_impl({0})), float>::value);
+    }
+}

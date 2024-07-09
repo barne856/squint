@@ -21,11 +21,10 @@ namespace squint {
 // Define a type to enable or disable error checking
 enum class error_checking { enabled, disabled };
 
-template <error_checking ErrorChecking1, error_checking ErrorChecking2>
-struct resulting_error_checking {
+template <error_checking ErrorChecking1, error_checking ErrorChecking2> struct resulting_error_checking {
     static constexpr auto value = ErrorChecking1 == error_checking::enabled || ErrorChecking2 == error_checking::enabled
-                                     ? error_checking::enabled
-                                     : error_checking::disabled;
+                                      ? error_checking::enabled
+                                      : error_checking::disabled;
 };
 
 namespace detail {
@@ -75,15 +74,35 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     constexpr quantity &operator=(const quantity &) noexcept = default;
     constexpr quantity &operator=(quantity &&) noexcept = default;
 
-    // Conversion constructor for arithmetic types (implicitly converted to dimensionless)
-    template <arithmetic U> constexpr quantity(const U &value) noexcept : value_(static_cast<T>(value)) {
-        static_assert(std::is_same_v<D, dimensions::dimensionless>,
-                      "Implicit conversion from arithmetic type is only allowed for dimensionless quantities");
+    // Conditional implicit conversion constructor (for dimensionless quantities from arithmetic types)
+    template <arithmetic U>
+    constexpr quantity(const U &value) noexcept
+        requires std::is_same_v<D, dimensions::dimensionless>
+        : value_(static_cast<T>(value)) {}
+
+    // Explicit conversion constructor for all other cases (you can static_cast from arithmetic types if you want to)
+    template <arithmetic U>
+    explicit constexpr quantity(const U &value) noexcept
+        requires(!std::is_same_v<D, dimensions::dimensionless>)
+        : value_(static_cast<T>(value)) {}
+
+    // Explicit conversion operator for non-dimensionless quantities
+    explicit constexpr operator T() const noexcept
+        requires(!std::is_same_v<D, dimensions::dimensionless>)
+    {
+        return value_;
+    }
+
+    // Implicit conversion operator for dimensionless quantities
+    constexpr operator T() const noexcept
+        requires std::is_same_v<D, dimensions::dimensionless>
+    {
+        return value_;
     }
 
     // Conversion constructor for quantities with different error checking
     template <typename U, error_checking OtherErrorChecking>
-    constexpr quantity(const quantity<U, D, OtherErrorChecking>& other) noexcept 
+    constexpr quantity(const quantity<U, D, OtherErrorChecking> &other) noexcept
         : value_(static_cast<T>(other.value())) {
         if constexpr (E == error_checking::enabled && OtherErrorChecking == error_checking::disabled) {
             // Perform any necessary error checking here
@@ -96,9 +115,6 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     [[nodiscard]] constexpr T *operator->() noexcept { return &value_; }
     [[nodiscard]] constexpr const T &operator*() const noexcept { return value_; }
     [[nodiscard]] constexpr T &operator*() noexcept { return value_; }
-
-    // Explicit conversion to value type
-    explicit constexpr operator T() const noexcept { return value_; }
 
     // Error checking methods
     template <typename U> static constexpr void check_overflow_multiply(const T &a, const U &b) {
@@ -258,95 +274,99 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
 
 // Arithmetic operations between quantities
 template <typename T1, typename T2, dimensional D, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator+(const quantity<T1, D, ErrorChecking1>& lhs, const quantity<T2, D, ErrorChecking2>& rhs) {
+constexpr auto operator+(const quantity<T1, D, ErrorChecking1> &lhs, const quantity<T2, D, ErrorChecking2> &rhs) {
     using result_type = decltype(lhs.value() + rhs.value());
     constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
-    
+
     if constexpr (result_error_checking == error_checking::enabled) {
         quantity<result_type, D, result_error_checking>::check_overflow_add(lhs.value(), rhs.value());
     }
-    
+
     return quantity<result_type, D, result_error_checking>(lhs.value() + rhs.value());
 }
 
 template <typename T1, typename T2, dimensional D, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator-(const quantity<T1, D, ErrorChecking1>& lhs, const quantity<T2, D, ErrorChecking2>& rhs) {
+constexpr auto operator-(const quantity<T1, D, ErrorChecking1> &lhs, const quantity<T2, D, ErrorChecking2> &rhs) {
     using result_type = decltype(lhs.value() - rhs.value());
     constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
-    
+
     if constexpr (result_error_checking == error_checking::enabled) {
         quantity<result_type, D, result_error_checking>::check_overflow_subtract(lhs.value(), rhs.value());
     }
-    
+
     return quantity<result_type, D, result_error_checking>(lhs.value() - rhs.value());
 }
 
-template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator*(const quantity<T1, D1, ErrorChecking1>& lhs, const quantity<T2, D2, ErrorChecking2>& rhs) {
+template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1,
+          error_checking ErrorChecking2>
+constexpr auto operator*(const quantity<T1, D1, ErrorChecking1> &lhs, const quantity<T2, D2, ErrorChecking2> &rhs) {
     using result_type = decltype(lhs.value() * rhs.value());
     using result_dimension = mult_t<D1, D2>;
     constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
-    
+
     if constexpr (result_error_checking == error_checking::enabled) {
-        quantity<result_type, result_dimension, result_error_checking>::check_overflow_multiply(lhs.value(), rhs.value());
+        quantity<result_type, result_dimension, result_error_checking>::check_overflow_multiply(lhs.value(),
+                                                                                                rhs.value());
     }
-    
+
     return quantity<result_type, result_dimension, result_error_checking>(lhs.value() * rhs.value());
 }
 
-template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator/(const quantity<T1, D1, ErrorChecking1>& lhs, const quantity<T2, D2, ErrorChecking2>& rhs) {
+template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1,
+          error_checking ErrorChecking2>
+constexpr auto operator/(const quantity<T1, D1, ErrorChecking1> &lhs, const quantity<T2, D2, ErrorChecking2> &rhs) {
     using result_type = decltype(lhs.value() / rhs.value());
     using result_dimension = div_t<D1, D2>;
-     constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
-    
+    constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
+
     if constexpr (result_error_checking == error_checking::enabled) {
         quantity<result_type, result_dimension, result_error_checking>::check_division_by_zero(rhs.value());
-        quantity<result_type, result_dimension, result_error_checking>::check_underflow_divide(lhs.value(), rhs.value());
+        quantity<result_type, result_dimension, result_error_checking>::check_underflow_divide(lhs.value(),
+                                                                                               rhs.value());
     }
-    
+
     return quantity<result_type, result_dimension, result_error_checking>(lhs.value() / rhs.value());
 }
 
 // Scalar operations
 template <arithmetic T, typename U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator*(const T& scalar, const quantity<U, D, ErrorChecking>& q) {
+constexpr auto operator*(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
     using result_type = decltype(scalar * q.value());
-    
+
     if constexpr (ErrorChecking == error_checking::enabled) {
         quantity<result_type, D, ErrorChecking>::check_overflow_multiply(scalar, q.value());
     }
-    
+
     return quantity<result_type, D, ErrorChecking>(scalar * q.value());
 }
 
 template <typename T, arithmetic U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator*(const quantity<T, D, ErrorChecking>& q, const U& scalar) {
+constexpr auto operator*(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
     return scalar * q;
 }
 
 template <typename T, arithmetic U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator/(const quantity<T, D, ErrorChecking>& q, const U& scalar) {
+constexpr auto operator/(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
     using result_type = decltype(q.value() / scalar);
-    
+
     if constexpr (ErrorChecking == error_checking::enabled) {
         quantity<result_type, D, ErrorChecking>::check_division_by_zero(scalar);
         quantity<result_type, D, ErrorChecking>::check_underflow_divide(q.value(), scalar);
     }
-    
+
     return quantity<result_type, D, ErrorChecking>(q.value() / scalar);
 }
 
 template <arithmetic T, typename U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator/(const T& scalar, const quantity<U, D, ErrorChecking>& q) {
+constexpr auto operator/(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
     using result_type = decltype(scalar / q.value());
     using result_dimension = inv_t<D>;
-    
+
     if constexpr (ErrorChecking == error_checking::enabled) {
         quantity<result_type, result_dimension, ErrorChecking>::check_division_by_zero(q.value());
         quantity<result_type, result_dimension, ErrorChecking>::check_underflow_divide(scalar, q.value());
     }
-    
+
     return quantity<result_type, result_dimension, ErrorChecking>(scalar / q.value());
 }
 
@@ -423,14 +443,16 @@ struct length_t : unit_t<T, dimensions::length, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct feet_t : length_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct feet_t : length_t<T, ErrorChecking> {
     using length_t<T, ErrorChecking>::length_t;
     static constexpr T convert_to(const length_t<T, ErrorChecking> &l, const feet_t & /*unused*/) {
         return l.value() / T(0.3048);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct inches_t : length_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct inches_t : length_t<T, ErrorChecking> {
     using length_t<T, ErrorChecking>::length_t;
     static constexpr T convert_to(const length_t<T, ErrorChecking> &l, const inches_t & /*unused*/) {
         return l.value() / T(0.0254);
@@ -445,7 +467,8 @@ struct kilometers_t : length_t<T, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct miles_t : length_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct miles_t : length_t<T, ErrorChecking> {
     using length_t<T, ErrorChecking>::length_t;
     static constexpr T convert_to(const length_t<T, ErrorChecking> &l, const miles_t & /*unused*/) {
         return l.value() / T(1609.344);
@@ -462,21 +485,24 @@ struct time_t : unit_t<T, dimensions::time, ErrorChecking> {
     static constexpr time_t<T, ErrorChecking> days(T value) { return time_t<T, ErrorChecking>(value * T(86400.0)); }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct minutes_t : time_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct minutes_t : time_t<T, ErrorChecking> {
     using time_t<T, ErrorChecking>::time_t;
     static constexpr T convert_to(const time_t<T, ErrorChecking> &t, const minutes_t & /*unused*/) {
         return t.value() / T(60.0);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct hours_t : time_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct hours_t : time_t<T, ErrorChecking> {
     using time_t<T, ErrorChecking>::time_t;
     static constexpr T convert_to(const time_t<T, ErrorChecking> &t, const hours_t & /*unused*/) {
         return t.value() / T(3600.0);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct days_t : time_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct days_t : time_t<T, ErrorChecking> {
     using time_t<T, ErrorChecking>::time_t;
     static constexpr T convert_to(const time_t<T, ErrorChecking> &t, const days_t & /*unused*/) {
         return t.value() / T(86400.0);
@@ -494,14 +520,16 @@ struct mass_t : unit_t<T, dimensions::mass, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct grams_t : mass_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct grams_t : mass_t<T, ErrorChecking> {
     using mass_t<T, ErrorChecking>::mass_t;
     static constexpr T convert_to(const mass_t<T, ErrorChecking> &m, const grams_t & /*unused*/) {
         return m.value() / T(0.001);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct pounds_t : mass_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct pounds_t : mass_t<T, ErrorChecking> {
     using mass_t<T, ErrorChecking>::mass_t;
     static constexpr T convert_to(const mass_t<T, ErrorChecking> &m, const pounds_t & /*unused*/) {
         return m.value() / T(0.45359237);
@@ -559,7 +587,8 @@ struct angle_t : unit_t<T, dimensions::dimensionless, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct degrees_t : angle_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct degrees_t : angle_t<T, ErrorChecking> {
     using angle_t<T, ErrorChecking>::angle_t;
     static constexpr T convert_to(const angle_t<T, ErrorChecking> &a, const degrees_t & /*unused*/) {
         return a.value() * T(180.0) / std::numbers::pi_v<T>;
@@ -638,7 +667,8 @@ struct square_feet_t : area_t<T, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct acres_t : area_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct acres_t : area_t<T, ErrorChecking> {
     using area_t<T, ErrorChecking>::area_t;
     static constexpr T convert_to(const area_t<T, ErrorChecking> &a, const acres_t & /*unused*/) {
         return a.value() / T(4046.8564224);
@@ -656,14 +686,16 @@ struct volume_t : unit_t<T, dimensions::volume, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct liters_t : volume_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct liters_t : volume_t<T, ErrorChecking> {
     using volume_t<T, ErrorChecking>::volume_t;
     static constexpr T convert_to(const volume_t<T, ErrorChecking> &v, const liters_t & /*unused*/) {
         return v.value() / T(0.001);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct gallons_t : volume_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct gallons_t : volume_t<T, ErrorChecking> {
     using volume_t<T, ErrorChecking>::volume_t;
     static constexpr T convert_to(const volume_t<T, ErrorChecking> &v, const gallons_t & /*unused*/) {
         return v.value() / T(0.00378541);
@@ -701,14 +733,16 @@ struct pressure_t : unit_t<T, dimensions::pressure, ErrorChecking> {
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct bars_t : pressure_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct bars_t : pressure_t<T, ErrorChecking> {
     using pressure_t<T, ErrorChecking>::pressure_t;
     static constexpr T convert_to(const pressure_t<T, ErrorChecking> &p, const bars_t & /*unused*/) {
         return p.value() / T(100000.0);
     }
 };
 
-template <typename T, error_checking ErrorChecking = error_checking::disabled> struct psi_t : pressure_t<T, ErrorChecking> {
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct psi_t : pressure_t<T, ErrorChecking> {
     using pressure_t<T, ErrorChecking>::pressure_t;
     static constexpr T convert_to(const pressure_t<T, ErrorChecking> &p, const psi_t & /*unused*/) {
         return p.value() / T(6894.75729);

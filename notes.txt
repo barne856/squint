@@ -1,6 +1,5 @@
 TODO:
 
-Add static methods I(), Diag(), etc
 Add convience types for common matrix and vectors
 
 implement linalg/math mixin

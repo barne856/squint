@@ -138,6 +138,8 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
         return const_fixed_tensor_view<T, L, new_strides, ErrorChecking, NewDims...>(data_);
     }
 
+    auto flatten() const { return const_fixed_tensor_view<T, L, Strides, ErrorChecking, size()>(data_); }
+
   protected:
     template <std::size_t... Is, typename... Indices>
     static constexpr std::size_t calculate_offset(std::index_sequence<Is...> /*unused*/, Indices... indices) {
@@ -210,6 +212,8 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
         using new_strides = compile_time_strides<L, NewDims...>;
         return fixed_tensor_view<T, L, new_strides, ErrorChecking, NewDims...>(data_);
     }
+
+    auto flatten() { return fixed_tensor_view<T, L, Strides, ErrorChecking, size()>(data_); }
 
   private:
     using base_type::data_;
@@ -323,6 +327,11 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
 
     constexpr auto view() const { return *this; }
 
+    auto flatten() const {
+        return const_dynamic_tensor_view<T, ErrorChecking>(data_, std::vector<std::size_t>{size()},
+                                                           std::vector<std::size_t>{1}, layout_);
+    }
+
   protected:
     std::size_t calculate_offset(const std::vector<std::size_t> &indices) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
@@ -427,6 +436,11 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
             }
         }
         base_type::shape_ = std::move(new_shape);
+    }
+
+    auto flatten() {
+        return dynamic_tensor_view<T, ErrorChecking>(base_type::data_, std::vector<std::size_t>{size()},
+                                                     std::vector<std::size_t>{1}, base_type::layout_);
     }
 
   private:

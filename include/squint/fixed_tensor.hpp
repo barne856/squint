@@ -5,6 +5,7 @@
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <array>
+#include <random>
 
 namespace squint {
 
@@ -124,6 +125,97 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
         return view().template subview<NewDims...>(slices...);
     }
+
+    static constexpr fixed_tensor zeros() {
+        fixed_tensor result;
+        result.data_.fill(T{});
+        return result;
+    }
+
+    static constexpr fixed_tensor ones() {
+        fixed_tensor result;
+        result.data_.fill(T{1});
+        return result;
+    }
+
+    static constexpr fixed_tensor full(const T &value) {
+        fixed_tensor result;
+        result.data_.fill(value);
+        return result;
+    }
+
+    static constexpr fixed_tensor arange(T start, T step = T{1}) {
+        fixed_tensor result;
+        T value = start;
+        for (std::size_t i = 0; i < total_size; ++i) {
+            result.data_[i] = value;
+            value += step;
+        }
+        return result;
+    }
+
+    template <fixed_shape_tensor OtherTensor> static constexpr fixed_tensor diag(const OtherTensor &vector) {
+        static_assert(OtherTensor::rank() == 1, "Diagonal vector must be 1D");
+        static_assert(OtherTensor::size() == std::min(Dims...),
+                      "Diagonal tensor size must be the minimum of the dimensions");
+        fixed_tensor result;
+        result.fill(T{}); // Fill with zeros
+
+        constexpr std::size_t min_dim = std::min({Dims...});
+        for (std::size_t i = 0; i < min_dim; ++i) {
+            std::array<std::size_t, sizeof...(Dims)> indices;
+            indices.fill(i);
+            result.at_impl(std::vector<std::size_t>(indices.begin(), indices.end())) = vector.at(i);
+        }
+
+        return result;
+    }
+
+    static constexpr fixed_tensor diag(const T &value) {
+        fixed_tensor result;
+        result.fill(T{}); // Fill with zeros
+
+        constexpr std::size_t min_dim = std::min({Dims...});
+        for (std::size_t i = 0; i < min_dim; ++i) {
+            std::array<std::size_t, sizeof...(Dims)> indices;
+            indices.fill(i);
+            result.at_impl(std::vector<std::size_t>(indices.begin(), indices.end())) = value;
+        }
+
+        return result;
+    }
+
+    static fixed_tensor random(T low = T{}, T high = T{1}) {
+        fixed_tensor result;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<T> dis(low, high);
+
+        for (std::size_t i = 0; i < total_size; ++i) {
+            result.data_[i] = dis(gen);
+        }
+
+        return result;
+    }
+
+    static constexpr fixed_tensor I() {
+        static_assert(((Dims == Dims) && ...), "All dimensions must be equal for identity tensor");
+        fixed_tensor result;
+        result.fill(T{}); // Fill with zeros
+
+        constexpr std::size_t min_dim = std::min({Dims...});
+        for (std::size_t i = 0; i < min_dim; ++i) {
+            std::array<std::size_t, sizeof...(Dims)> indices;
+            indices.fill(i);
+            result.at_impl(std::vector<std::size_t>(indices.begin(), indices.end())) = T{1};
+        }
+
+        return result;
+    }
+
+    void fill(const T &value) { data_.fill(value); }
+    auto flatten() { return view().flatten(); }
+    auto flatten() const { return view().flatten(); }
 
   private:
     template <std::size_t... Is, typename... Indices>

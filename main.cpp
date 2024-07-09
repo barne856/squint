@@ -1,4 +1,5 @@
 #include "squint/fixed_tensor.hpp"
+#include "squint/quantity.hpp"
 #include "squint/tensor.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
@@ -8,14 +9,11 @@
 int main() {
     using namespace squint;
 
-    fixed_tensor<int, layout::row_major, error_checking::enabled, 2, 3> a{1};
-    for (auto v : a.subviews<2, 1>()) {
-        auto u = v.reshape<2>();
-        u[0] = 2;
-        u[1] = 2;
-        v = u;
-    }
-    std::cout << a << std::endl;
+    auto d = fixed_tensor<double, layout::column_major, error_checking::disabled, 4>::arange(4);
+    auto eye = fixed_tensor<double, layout::column_major, error_checking::disabled, 4, 4>::diag(d);
+    auto rand = fixed_tensor<double, layout::column_major, error_checking::disabled, 4, 4>::random();
+    std::cout << eye << std::endl;
+    std::cout << rand << std::endl;
 
     return 0;
 }
