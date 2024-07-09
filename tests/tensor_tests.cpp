@@ -749,17 +749,15 @@ TEST_CASE("Tensor View Error Checking") {
 TEST_CASE("Error Checking Disabled") {
     SUBCASE("Fixed tensor without error checking") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
-
-        CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed
-        CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed
+        // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
+        // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
         CHECK_NOTHROW(t.subview<2, 2>(slice{1, 2}, slice{0, 2})); // This would be invalid, but no check is performed
     }
 
     SUBCASE("Dynamic tensor without error checking") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3});
-
-        CHECK_NOTHROW(t.at(2, 0));                          // This would be out of bounds, but no check is performed
-        CHECK_NOTHROW(t.at(0, 3));                          // This would be out of bounds, but no check is performed
+        // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
+        // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
         CHECK_NOTHROW(t.subview(slice{2, 1}, slice{0, 3})); // This would be invalid, but no check is performed
     }
 }
@@ -929,7 +927,8 @@ TEST_CASE("dynamic_tensor static methods") {
 }
 
 TEST_CASE("fixed_tensor fill and flatten methods") {
-    using tensor_type = squint::fixed_tensor<float, squint::layout::column_major, squint::error_checking::enabled, 2, 3>;
+    using tensor_type =
+        squint::fixed_tensor<float, squint::layout::column_major, squint::error_checking::enabled, 2, 3>;
 
     SUBCASE("fill") {
         tensor_type t;

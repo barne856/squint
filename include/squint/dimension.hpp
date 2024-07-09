@@ -9,7 +9,6 @@
 #include <concepts>
 #include <ratio>
 
-
 namespace squint {
 // define a concept for the standard library ratio template type
 template <class T>
@@ -26,8 +25,8 @@ concept dimensional = requires {
     requires rational<typename U::J>; // Luminous intensity
 };
 // implement the concept of a dimension as a struct
-template <rational Length, rational Time, rational Mass, rational Temp, 
-          rational Current, rational AmountOfSubstance, rational LuminousIntensity>
+template <rational Length, rational Time, rational Mass, rational Temp, rational Current, rational AmountOfSubstance,
+          rational LuminousIntensity>
 struct dimension {
     using L = Length;
     using T = Time;
@@ -39,54 +38,42 @@ struct dimension {
 };
 // multiply dimensions together
 template <dimensional U1, dimensional U2> struct dim_mult {
-    using type = dimension<
-        std::ratio_add<typename U1::L, typename U2::L>,
-        std::ratio_add<typename U1::T, typename U2::T>,
-        std::ratio_add<typename U1::M, typename U2::M>,
-        std::ratio_add<typename U1::K, typename U2::K>,
-        std::ratio_add<typename U1::I, typename U2::I>,
-        std::ratio_add<typename U1::N, typename U2::N>,
-        std::ratio_add<typename U1::J, typename U2::J>
-    >;
+    using type =
+        dimension<std::ratio_add<typename U1::L, typename U2::L>, std::ratio_add<typename U1::T, typename U2::T>,
+                  std::ratio_add<typename U1::M, typename U2::M>, std::ratio_add<typename U1::K, typename U2::K>,
+                  std::ratio_add<typename U1::I, typename U2::I>, std::ratio_add<typename U1::N, typename U2::N>,
+                  std::ratio_add<typename U1::J, typename U2::J>>;
 };
 // divide dimensions
 template <dimensional U1, dimensional U2> struct dim_div {
     using type = dimension<
-        std::ratio_subtract<typename U1::L, typename U2::L>,
-        std::ratio_subtract<typename U1::T, typename U2::T>,
-        std::ratio_subtract<typename U1::M, typename U2::M>,
-        std::ratio_subtract<typename U1::K, typename U2::K>,
-        std::ratio_subtract<typename U1::I, typename U2::I>,
-        std::ratio_subtract<typename U1::N, typename U2::N>,
-        std::ratio_subtract<typename U1::J, typename U2::J>
-    >;
+        std::ratio_subtract<typename U1::L, typename U2::L>, std::ratio_subtract<typename U1::T, typename U2::T>,
+        std::ratio_subtract<typename U1::M, typename U2::M>, std::ratio_subtract<typename U1::K, typename U2::K>,
+        std::ratio_subtract<typename U1::I, typename U2::I>, std::ratio_subtract<typename U1::N, typename U2::N>,
+        std::ratio_subtract<typename U1::J, typename U2::J>>;
 };
 
 // raise dimension to a power
 template <dimensional U, std::integral auto const N> struct dim_pow {
-    using type = dimension<
-        std::ratio_multiply<typename U::L, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::T, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::M, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::K, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::I, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::N, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_multiply<typename U::J, std::ratio<static_cast<std::intmax_t>(N)>>
-    >;
+    using type = dimension<std::ratio_multiply<typename U::L, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::T, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::M, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::K, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::I, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::N, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_multiply<typename U::J, std::ratio<static_cast<std::intmax_t>(N)>>>;
 };
 
 // take root of a dimension
 template <dimensional U, std::integral auto const N> struct dim_root {
     static_assert(N > 0, "Cannot take 0th root.");
-    using type = dimension<
-        std::ratio_divide<typename U::L, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::T, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::M, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::K, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::I, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::N, std::ratio<static_cast<std::intmax_t>(N)>>,
-        std::ratio_divide<typename U::J, std::ratio<static_cast<std::intmax_t>(N)>>
-    >;
+    using type = dimension<std::ratio_divide<typename U::L, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::T, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::M, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::K, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::I, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::N, std::ratio<static_cast<std::intmax_t>(N)>>,
+                           std::ratio_divide<typename U::J, std::ratio<static_cast<std::intmax_t>(N)>>>;
 };
 // convenience types for combining dimensions
 template <dimensional U1, dimensional U2> using mult_t = typename dim_mult<U1, U2>::type; // multiply dimensions
@@ -96,19 +83,29 @@ using pow_t = typename dim_pow<U, N>::type; // exponentiate dimensions
 template <dimensional U, std::integral auto const N>
 using root_t = typename dim_root<U, N>::type; // Nth root of dimensions
 template <dimensional U>
-using inv_t = div_t<dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>, U>;
+using inv_t = div_t<
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>,
+    U>;
 
 // common dimension definitions
 namespace dimensions {
 // Base dimensions
-using dimensionless = dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using length = dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using time = dimension<std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using mass = dimension<std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using temperature = dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using current = dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>>;
-using amount_of_substance = dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>>;
-using luminous_intensity = dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>>;
+using dimensionless =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
+using length =
+    dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
+using time =
+    dimension<std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
+using mass =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
+using temperature =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
+using current =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>>;
+using amount_of_substance =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>>;
+using luminous_intensity =
+    dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>>;
 
 // Other dimensionless quantities
 using angle = dimensionless;
