@@ -2,6 +2,7 @@
 #define SQUINT_FIXED_TENSOR_HPP
 
 #include "squint/iterable_tensor.hpp"
+#include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <array>
@@ -191,10 +192,19 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         fixed_tensor result;
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<T> dis(low, high);
+        if constexpr (quantitative<T>) {
+            std::uniform_real_distribution<typename T::value_type> dis(static_cast<typename T::value_type>(low),
+                                                                       static_cast<typename T::value_type>(high));
 
-        for (std::size_t i = 0; i < total_size; ++i) {
-            result.data_[i] = dis(gen);
+            for (std::size_t i = 0; i < total_size; ++i) {
+                result.data_[i] = T{dis(gen)};
+            }
+        } else {
+            std::uniform_real_distribution<T> dis(low, high);
+
+            for (std::size_t i = 0; i < total_size; ++i) {
+                result.data_[i] = dis(gen);
+            }
         }
 
         return result;

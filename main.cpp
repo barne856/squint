@@ -6,13 +6,4 @@
 #include <iomanip>
 #include <iostream>
 
-int main() {
-    using namespace squint;
-    using namespace squint::units;
-
-    auto eye = mat4<length>::I();
-
-    std::cout << eye << std::endl;
-
-    return 0;
-}
+int main() { return 0; }
