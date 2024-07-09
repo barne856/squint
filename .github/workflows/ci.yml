@@ -49,3 +49,31 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest --output-on-failure
+
+  build-and-test-windows:
+    name: Build and Test (Windows)
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        clang_version: [15, 16, 17, 18]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: ${{ matrix.clang_version }}
+
+    - name: Configure CMake
+      env:
+        CXX: clang++
+      run: |
+        cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++" -T ClangCL
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C Release --output-on-failure
