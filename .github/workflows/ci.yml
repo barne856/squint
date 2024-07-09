@@ -69,7 +69,7 @@ jobs:
       env:
         CXX: clang++
       run: |
-        cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++" -T ClangCL
+        cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="/EHsc" -T ClangCL
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
