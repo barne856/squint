@@ -50,6 +50,45 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest --output-on-failure
 
+  clang-tidy:
+    name: Clang-Tidy
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Clang 18 and Clang-Tidy
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 18
+        sudo apt-get install -y clang-18 libc++-18-dev libc++abi-18-dev lld-18 clang-tidy-18
+
+    - name: Configure CMake
+      env:
+        CXX: clang++-18
+      run: |
+        export CXXFLAGS="-stdlib=libc++"
+        export LDFLAGS="-stdlib=libc++ -fuse-ld=lld-18"
+        cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS"
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
+    - name: Run Clang-Tidy
+      run: |
+        find include -name '*.cpp' -or -name '*.hpp' | \
+        xargs clang-tidy-18 -p build \
+        --config-file=.clang-tidy
+
+    - name: Check Clang-Tidy result
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "Clang-Tidy found issues. Please fix them before merging."
+          exit 1
+        fi
+
   build-and-test-windows:
     name: Build and Test (Windows)
     runs-on: windows-latest
@@ -77,33 +116,3 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest -C Release --output-on-failure
-
-  clang-tidy:
-    name: Clang-Tidy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Clang and Clang-Tidy
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang-tidy
-
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
-
-    - name: Run Clang-Tidy
-      run: |
-        find include -name '*.cpp' -or -name '*.hpp' | \
-        xargs clang-tidy -p build \
-        --config-file=.clang-tidy
-
-    - name: Check Clang-Tidy result
-      run: |
-        if [ $? -ne 0 ]; then
-          echo "Clang-Tidy found issues. Please fix them before merging."
-          exit 1
-        fi
