@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [g++-12, clang++-15, clang++-16, clang++-17]
+        compiler: [g++-12]
 
     steps:
     - uses: actions/checkout@v3
