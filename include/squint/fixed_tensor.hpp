@@ -25,6 +25,8 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     std::array<T, total_size> data_;
 
   public:
+    // virtual destructor
+    virtual ~fixed_tensor() = default;
     constexpr fixed_tensor() = default;
     // insert elements into the layout
     constexpr fixed_tensor(const std::array<T, total_size> &elements) : data_(elements) {}
@@ -99,8 +101,8 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         return data_[calculate_index_runtime(indices)];
     }
 
-    constexpr T *data() { return data_.data(); }
-    constexpr const T *data() const { return data_.data(); }
+    T *data() { return data_.data(); }
+    const T *data() const { return data_.data(); }
 
     template <std::size_t... NewDims> auto reshape() {
         static_assert((NewDims * ...) == total_size, "New shape must have the same total size");

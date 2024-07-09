@@ -18,6 +18,8 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     layout layout_;
 
   public:
+    // virtual destructor
+    virtual ~dynamic_tensor() = default;
     dynamic_tensor(std::vector<std::size_t> shape, layout layout = layout::column_major)
         : shape_(std::move(shape)), layout_(layout) {
         std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
@@ -257,9 +259,7 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
 
     void fill(const T &value) { std::fill(data_.begin(), data_.end(), value); }
 
-    auto flatten() {
-        return dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_);
-    }
+    auto flatten() { return dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_); }
 
     auto flatten() const {
         return const_dynamic_tensor_view<T, ErrorChecking>(data_.data(), {data_.size()}, {1}, layout_);
