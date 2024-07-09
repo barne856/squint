@@ -58,19 +58,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Clang 18 and Clang-Tidy
+    - name: Install Clang 15 and Clang-Tidy
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 18
-        sudo apt-get install -y clang-18 libc++-18-dev libc++abi-18-dev lld-18 clang-tidy-18
+        sudo ./llvm.sh 15
+        sudo apt-get install -y clang-15 libc++-15-dev libc++abi-15-dev lld-15 clang-tidy-15
 
     - name: Configure CMake
       env:
-        CXX: clang++-18
+        CXX: clang++-15
       run: |
         export CXXFLAGS="-stdlib=libc++"
-        export LDFLAGS="-stdlib=libc++ -fuse-ld=lld-18"
+        export LDFLAGS="-stdlib=libc++ -fuse-ld=lld-15"
         cmake -B ${{github.workspace}}/build -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS"
 
     - name: Build
@@ -79,7 +79,7 @@ jobs:
     - name: Run Clang-Tidy
       run: |
         find include -name '*.cpp' -or -name '*.hpp' | \
-        xargs clang-tidy-18 -p build \
+        xargs clang-tidy-15 -p build \
         --config-file=.clang-tidy
 
     - name: Check Clang-Tidy result
