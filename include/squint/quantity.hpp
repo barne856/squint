@@ -9,6 +9,7 @@
 #define SQUINT_QUANTITY_HPP
 
 #include "squint/dimension.hpp"
+#include <cassert>
 #include <cmath>
 #include <compare>
 #include <concepts>
@@ -67,8 +68,8 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     // Constructors
     constexpr quantity() noexcept : value_(T{}) {}
     constexpr explicit quantity(const T &value) noexcept : value_(value) {}
-    constexpr quantity(const quantity &) noexcept = default;
-    constexpr quantity(quantity &&) noexcept = default;
+    explicit quantity(const quantity &) noexcept = default;
+    explicit quantity(quantity &&) noexcept = default;
 
     // Assignment operators
     constexpr quantity &operator=(const quantity &) noexcept = default;
@@ -85,6 +86,9 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     explicit constexpr quantity(const U &value) noexcept
         requires(!std::is_same_v<D, dimensions::dimensionless>)
         : value_(static_cast<T>(value)) {}
+
+    // Allow explicit cast to other types
+    template <typename U> explicit operator U() const noexcept { return U(value_); }
 
     // Explicit conversion operator for non-dimensionless quantities
     explicit constexpr operator T() const noexcept
@@ -181,13 +185,19 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     }
 
     // Arithmetic operators
-    template <arithmetic U> constexpr quantity &operator*=(const U &scalar) {
+    template <typename U>
+    constexpr quantity &operator*=(const U &scalar)
+        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>)
+    {
         check_overflow_multiply(value_, scalar);
         value_ *= scalar;
         return *this;
     }
 
-    template <arithmetic U> constexpr quantity &operator/=(const U &scalar) {
+    template <typename U>
+    constexpr quantity &operator/=(const U &scalar)
+        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>)
+    {
         check_division_by_zero(scalar);
         check_underflow_divide(value_, scalar);
         value_ /= scalar;
@@ -406,6 +416,44 @@ concept quantitative = requires {
     typename T::value_type;
     typename T::dimension_type;
 };
+
+// approx equal for arithmetic types
+template <typename T>
+    requires arithmetic<T>
+bool approx_equal(T a, T b, T epsilon = 128 * 1.192092896e-04, T abs_th = std::numeric_limits<T>::epsilon()) {
+    assert(std::numeric_limits<T>::epsilon() <= epsilon);
+    assert(epsilon < 1.F);
+
+    if (a == b)
+        return true;
+
+    auto diff = std::abs(a - b);
+    auto norm = std::min((std::abs(a) + std::abs(b)), std::numeric_limits<T>::max());
+    return diff < std::max(abs_th, epsilon * norm);
+}
+
+// approx equal for quantities
+template <quantitative T, quantitative U, arithmetic Epsilon>
+bool approx_equal(const T &a, const U &b, const Epsilon &epsilon = Epsilon{128 * 1.192092896e-04}) {
+    static_assert(std::is_same_v<typename T::dimension_type, typename U::dimension_type>,
+                  "Quantities must have the same dimension");
+    return approx_equal(a.value(), b.value(), epsilon);
+}
+
+// approx equal for mixed types
+template <quantitative T, arithmetic U, arithmetic V>
+bool approx_equal(const T &a, const U &b, const V &epsilon = V{128 * 1.192092896e-04})
+    requires std::is_same_v<typename T::dimension_type, dimensions::dimensionless>
+{
+    return approx_equal(a.value(), b, epsilon);
+}
+
+template <arithmetic T, quantitative U, arithmetic V>
+bool approx_equal(const T &a, const U &b, const V &epsilon = V{128 * 1.192092896e-04})
+    requires std::is_same_v<typename U::dimension_type, dimensions::dimensionless>
+{
+    return approx_equal(a, b.value(), epsilon);
+}
 
 namespace units {
 

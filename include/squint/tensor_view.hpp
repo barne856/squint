@@ -132,6 +132,14 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
 
     constexpr auto view() const { return *this; }
 
+    template <typename U> auto as() const {
+        fixed_tensor<U, L, ErrorChecking, Dims...> result;
+        for (std::size_t i = 0; i < Derived::size(); ++i) {
+            result.data()[i] = static_cast<U>(data_[i]);
+        }
+        return result;
+    }
+
     template <std::size_t... NewDims> auto reshape() const {
         static_assert((NewDims * ...) == size(), "New shape must have the same total size");
         using new_strides = compile_time_strides<L, NewDims...>;

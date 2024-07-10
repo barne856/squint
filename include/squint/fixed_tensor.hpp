@@ -2,6 +2,7 @@
 #define SQUINT_FIXED_TENSOR_HPP
 
 #include "squint/iterable_tensor.hpp"
+#include "squint/linear_algebra.hpp"
 #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
@@ -22,11 +23,13 @@ constexpr auto make_subviews_iterator(const BlockTensor & /*unused*/, Tensor &te
 
 // Fixed tensor implementation
 template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims>
-class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking> {
+class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking>,
+                     public fixed_linear_algebra_mixin<fixed_tensor<T, L, ErrorChecking, Dims...>, ErrorChecking> {
     static constexpr std::size_t total_size = (Dims * ...);
     std::array<T, total_size> data_;
 
   public:
+    using value_type = T;
     using iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking>::subviews;
     // virtual destructor
     virtual ~fixed_tensor() = default;
@@ -59,6 +62,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     static constexpr std::size_t rank() { return sizeof...(Dims); }
     static constexpr std::size_t size() { return total_size; }
     static constexpr layout get_layout() { return L; }
+    static constexpr error_checking get_error_checking() { return ErrorChecking; }
     static constexpr std::vector<std::size_t> strides() {
         auto strides_array = calculate_strides();
         return std::vector<std::size_t>(std::begin(strides_array), std::end(strides_array));
@@ -129,6 +133,14 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
         return view().template subview<NewDims...>(slices...);
+    }
+
+    template <typename U> auto as() const {
+        fixed_tensor<U, L, ErrorChecking, Dims...> result;
+        for (std::size_t i = 0; i < total_size; ++i) {
+            result.data()[i] = static_cast<U>(data_[i]);
+        }
+        return result;
     }
 
     static constexpr fixed_tensor zeros() {
