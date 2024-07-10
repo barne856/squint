@@ -162,6 +162,20 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         return view().subview(slices...);
     }
 
+    auto subview(const std::vector<slice> &slices) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds(slices);
+        }
+        return view().subview(slices);
+    }
+
+    auto subview(const std::vector<slice> &slices) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            this->check_subview_bounds(slices);
+        }
+        return view().subview(slices);
+    }
+
     static dynamic_tensor zeros(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
         dynamic_tensor result(shape, l);
         result.fill(T{});
@@ -307,6 +321,62 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         return this->subviews(col_shape);
     }
 
+    auto row(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        std::vector<slice> row_slices(shape_.size());
+        row_slices[0] = slice{index, 1};
+        for (std::size_t i = 1; i < shape_.size(); ++i) {
+            row_slices[i] = slice{0, shape_[i]};
+        }
+        return this->subview(row_slices);
+    }
+
+    auto row(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        std::vector<slice> row_slices(shape_.size());
+        row_slices[0] = slice{index, 1};
+        for (std::size_t i = 1; i < shape_.size(); ++i) {
+            row_slices[i] = slice{0, shape_[i]};
+        }
+        return this->subview(row_slices);
+    }
+
+    auto col(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[shape_.size() - 1]) {
+                throw std::out_of_range("Column index out of range");
+            }
+        }
+        std::vector<slice> col_slices(shape_.size());
+        col_slices[shape_.size() - 1] = slice{index, 1};
+        for (std::size_t i = 0; i < shape_.size() - 1; ++i) {
+            col_slices[i] = slice{0, shape_[i]};
+        }
+        return this->subview(col_slices);
+    }
+
+    auto col(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[shape_.size() - 1]) {
+                throw std::out_of_range("Column index out of range");
+            }
+        }
+        std::vector<slice> col_slices(shape_.size());
+        col_slices[shape_.size() - 1] = slice{index, 1};
+        for (std::size_t i = 0; i < shape_.size() - 1; ++i) {
+            col_slices[i] = slice{0, shape_[i]};
+        }
+        return this->subview(col_slices);
+    }
+
   private:
     size_t calculate_index(const std::vector<size_t> &indices) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
@@ -371,7 +441,12 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     }
 };
 
-template <typename T> using dtens = dynamic_tensor<T, error_checking::disabled>;
+template <typename T> using tens_t = dynamic_tensor<T, error_checking::disabled>;
+using itens = tens_t<int>;
+using utens = tens_t<unsigned char>;
+using tens = tens_t<float>;
+using dtens = tens_t<double>;
+using btens = tens_t<bool>;
 
 } // namespace squint
 

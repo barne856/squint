@@ -6,6 +6,7 @@
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <array>
+#include <cstddef>
 #include <random>
 
 namespace squint {
@@ -254,6 +255,40 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         }
     }
 
+    auto row(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subview<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<1, std::get<Is + 1>(dims)...>(slice{index, 1}, slice{0, Is}...);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto row(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subview<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<1, std::get<Is + 1>(dims)...>(slice{index, 1}, slice{0, Is}...);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
     auto cols() {
         if constexpr (sizeof...(Dims) > 1) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
@@ -275,6 +310,40 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         } else {
             // For 1D tensors
             return this->template subviews<Dims...>();
+        }
+    }
+
+    auto col(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[sizeof...(Dims) - 1]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<std::get<Is>(dims)..., 1>(slice{0, Is}..., slice{index, 1});
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subview<Dims...>(slice{0, size()});
+        }
+    }
+
+    auto col(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[sizeof...(Dims) - 1]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<std::get<Is>(dims)..., 1>(slice{0, Is}..., slice{index, 1});
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subview<Dims...>(slice{0, size()});
         }
     }
 
@@ -353,22 +422,82 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
 };
 
 // Vector types
-template <typename T> using vec2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2>;
-template <typename T> using vec3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3>;
-template <typename T> using vec4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4>;
+template <typename T> using vec2_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 2>;
+template <typename T> using vec3_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 3>;
+template <typename T> using vec4_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 4>;
+using ivec2 = vec2_t<int>;
+using ivec3 = vec3_t<int>;
+using ivec4 = vec4_t<int>;
+using uvec2 = vec2_t<unsigned char>;
+using uvec3 = vec3_t<unsigned char>;
+using uvec4 = vec4_t<unsigned char>;
+using vec2 = vec2_t<float>;
+using vec3 = vec3_t<float>;
+using vec4 = vec4_t<float>;
+using dvec2 = vec2_t<double>;
+using dvec3 = vec3_t<double>;
+using dvec4 = vec4_t<double>;
+using bvec2 = vec2_t<bool>;
+using bvec3 = vec3_t<bool>;
+using bvec4 = vec4_t<bool>;
 
 // Square matrix types
-template <typename T> using mat2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 2>;
-template <typename T> using mat3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 3>;
-template <typename T> using mat4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 4>;
+template <typename T> using mat2_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 2>;
+template <typename T> using mat3_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 3>;
+template <typename T> using mat4_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 4>;
+using imat2 = mat2_t<int>;
+using imat3 = mat3_t<int>;
+using imat4 = mat4_t<int>;
+using umat2 = mat2_t<unsigned char>;
+using umat3 = mat3_t<unsigned char>;
+using umat4 = mat4_t<unsigned char>;
+using mat2 = mat2_t<float>;
+using mat3 = mat3_t<float>;
+using mat4 = mat4_t<float>;
+using dmat2 = mat2_t<double>;
+using dmat3 = mat3_t<double>;
+using dmat4 = mat4_t<double>;
+using bmat2 = mat2_t<bool>;
+using bmat3 = mat3_t<bool>;
+using bmat4 = mat4_t<bool>;
 
 // Non-square matrix types
-template <typename T> using mat2x3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 3>;
-template <typename T> using mat2x4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 4>;
-template <typename T> using mat3x2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 2>;
-template <typename T> using mat3x4 = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 4>;
-template <typename T> using mat4x2 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 2>;
-template <typename T> using mat4x3 = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 3>;
+template <typename T> using mat2x3_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 3>;
+template <typename T> using mat2x4_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 2, 4>;
+template <typename T> using mat3x2_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 2>;
+template <typename T> using mat3x4_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 3, 4>;
+template <typename T> using mat4x2_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 2>;
+template <typename T> using mat4x3_t = fixed_tensor<T, layout::column_major, error_checking::disabled, 4, 3>;
+using imat2x3 = mat2x3_t<int>;
+using imat2x4 = mat2x4_t<int>;
+using imat3x2 = mat3x2_t<int>;
+using imat3x4 = mat3x4_t<int>;
+using imat4x2 = mat4x2_t<int>;
+using imat4x3 = mat4x3_t<int>;
+using umat2x3 = mat2x3_t<unsigned char>;
+using umat2x4 = mat2x4_t<unsigned char>;
+using umat3x2 = mat3x2_t<unsigned char>;
+using umat3x4 = mat3x4_t<unsigned char>;
+using umat4x2 = mat4x2_t<unsigned char>;
+using umat4x3 = mat4x3_t<unsigned char>;
+using mat2x3 = mat2x3_t<float>;
+using mat2x4 = mat2x4_t<float>;
+using mat3x2 = mat3x2_t<float>;
+using mat3x4 = mat3x4_t<float>;
+using mat4x2 = mat4x2_t<float>;
+using mat4x3 = mat4x3_t<float>;
+using dmat2x3 = mat2x3_t<double>;
+using dmat2x4 = mat2x4_t<double>;
+using dmat3x2 = mat3x2_t<double>;
+using dmat3x4 = mat3x4_t<double>;
+using dmat4x2 = mat4x2_t<double>;
+using dmat4x3 = mat4x3_t<double>;
+using bmat2x3 = mat2x3_t<bool>;
+using bmat2x4 = mat2x4_t<bool>;
+using bmat3x2 = mat3x2_t<bool>;
+using bmat3x4 = mat3x4_t<bool>;
+using bmat4x2 = mat4x2_t<bool>;
+using bmat4x3 = mat4x3_t<bool>;
 
 } // namespace squint
 
