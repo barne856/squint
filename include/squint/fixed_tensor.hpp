@@ -110,6 +110,21 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
 
     T *data() { return data_.data(); }
     const T *data() const { return data_.data(); }
+    auto raw_data() {
+        if constexpr (quantitative<T>) {
+            return &(data_[0].value());
+        } else {
+            return data();
+        }
+    }
+
+    auto raw_data() const {
+        if constexpr (quantitative<T>) {
+            return &(std::as_const(data_[0]).value());
+        } else {
+            return data();
+        }
+    }
 
     template <std::size_t... NewDims> auto reshape() {
         static_assert((NewDims * ...) == total_size, "New shape must have the same total size");
@@ -133,14 +148,6 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
 
     template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
         return view().template subview<NewDims...>(slices...);
-    }
-
-    template <typename U> auto as() const {
-        fixed_tensor<U, L, ErrorChecking, Dims...> result;
-        for (std::size_t i = 0; i < total_size; ++i) {
-            result.data()[i] = static_cast<U>(data_[i]);
-        }
-        return result;
     }
 
     static constexpr fixed_tensor zeros() {

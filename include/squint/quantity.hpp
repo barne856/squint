@@ -114,7 +114,8 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     }
 
     // Accessor methods
-    [[nodiscard]] constexpr T value() const noexcept { return value_; }
+    [[nodiscard]] constexpr T &value() noexcept { return value_; }
+    [[nodiscard]] constexpr const T &value() const noexcept { return value_; }
     [[nodiscard]] constexpr const T *operator->() const noexcept { return &value_; }
     [[nodiscard]] constexpr T *operator->() noexcept { return &value_; }
     [[nodiscard]] constexpr const T &operator*() const noexcept { return value_; }

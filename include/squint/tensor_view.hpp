@@ -7,6 +7,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace squint {
@@ -65,6 +66,22 @@ class tensor_view_base : public iterable_tensor<Derived, T, ErrorChecking> {
 
     constexpr T *data() { return data_; }
     constexpr const T *data() const { return data_; }
+
+    auto raw_data() {
+        if constexpr (quantitative<T>) {
+            return &(data_[0].value());
+        } else {
+            return data();
+        }
+    }
+
+    auto raw_data() const {
+        if constexpr (quantitative<T>) {
+            return &(std::as_const(data_[0]).value());
+        } else {
+            return data();
+        }
+    }
 };
 
 // Base class for fixed tensor views
@@ -131,14 +148,6 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
     }
 
     constexpr auto view() const { return *this; }
-
-    template <typename U> auto as() const {
-        fixed_tensor<U, L, ErrorChecking, Dims...> result;
-        for (std::size_t i = 0; i < Derived::size(); ++i) {
-            result.data()[i] = static_cast<U>(data_[i]);
-        }
-        return result;
-    }
 
     template <std::size_t... NewDims> auto reshape() const {
         static_assert((NewDims * ...) == size(), "New shape must have the same total size");

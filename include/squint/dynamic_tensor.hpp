@@ -7,6 +7,7 @@
 #include "squint/tensor_view.hpp"
 #include <numeric>
 #include <random>
+#include <utility>
 #include <vector>
 
 namespace squint {
@@ -137,6 +138,22 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     T *data() { return data_.data(); }
 
     const T *data() const { return data_.data(); }
+
+    auto raw_data() {
+        if constexpr (quantitative<T>) {
+            return &(data_[0].value());
+        } else {
+            return data();
+        }
+    }
+
+    auto raw_data() const {
+        if constexpr (quantitative<T>) {
+            return &(std::as_const(data_[0]).value());
+        } else {
+            return data();
+        }
+    }
 
     void reshape(std::vector<std::size_t> new_shape) {
         if constexpr (ErrorChecking == error_checking::enabled) {

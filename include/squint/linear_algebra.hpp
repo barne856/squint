@@ -1,6 +1,14 @@
 #ifndef SQUINT_LINEAR_ALGEBRA_HPP
 #define SQUINT_LINEAR_ALGEBRA_HPP
 
+#include "squint/dimension.hpp"
+#ifdef BLAS_BACKEND_MKL
+#include <mkl.h>
+#else
+#include <cblas.h>
+#include <lapacke.h>
+#endif
+
 #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include <algorithm>
@@ -106,76 +114,70 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
         return *static_cast<Derived *>(this);
     }
 
-    template <fixed_shape_tensor B> auto solve(const B &b) const {
-        // PA=LU factorization (Doolittle algorithm)
-        constexpr std::size_t count = Derived::constexpr_shape()[0];
-        auto U = static_cast<Derived const *>(this)->template as<typename Derived::value_type>();
-        using L_type = decltype(typename Derived::value_type{} / typename Derived::value_type{});
-        auto L = static_cast<Derived const *>(this)->template as<L_type>();
-        auto P = L;
-        for (std::size_t i = 0; i < count; ++i) {
-            P[i, i] = L_type{1};
+    template <fixed_shape_tensor B> auto solve(B &b) const {
+        if constexpr (quantitative<typename B::value_type>) {
+            static_assert(std::is_same_v<typename B::value_type::dimension_type, dimensions::dimensionless>,
+                          "Quantity type must be dimensionless");
+            static_assert(std::is_same_v<typename B::value_type::value_type, float> ||
+                              std::is_same_v<typename B::value_type::value_type, double>,
+                          "Quantity underlying type must be float or double");
         }
-        for (std::size_t k = 0; k < count - 1; ++k) {
-            // select index >= k to maximize |A[i][k]|
-            std::size_t index = k;
-            auto val = typename Derived::value_type{};
-            for (std::size_t i = k; i < count; ++i) {
-                auto a_val = U[i, k];
-                a_val = a_val < typename Derived::value_type(0) ? -a_val : a_val;
-                if (a_val > val) {
-                    index = i;
-                    val = a_val;
-                }
-            }
-            // Swap Rows
-            auto U_row = U.row(k);
-            U.row(k) = U.row(index);
-            U.row(index) = U_row;
-            auto L_row = L.row(k);
-            L.row(k) = L.row(index);
-            L.row(index) = L_row;
-            auto P_row = P.row(k);
-            P.row(k) = P.row(index);
-            P.row(index) = P_row;
-            // compute factorization
-            for (std::size_t j = k + 1; j < count; ++j) {
-                L[j, k] = U[j, k] / U[k, k];
-                for (std::size_t i = k; i < count; ++i) {
-                    U[j, i] = U[j, i] - L[j, k] * U[k, i];
-                }
-            }
+        if constexpr (quantitative<typename Derived::value_type>) {
+            static_assert(std::is_same_v<typename Derived::value_type::dimension_type, dimensions::dimensionless>,
+                          "Quantity type must be dimensionless");
+            static_assert(std::is_same_v<typename Derived::value_type::value_type, float> ||
+                              std::is_same_v<typename Derived::value_type::value_type, double>,
+                          "Quantity underlying type must be float or double");
         }
-        // fill diagonals of L with 1
-        for (std::size_t i = 0; i < count; ++i) {
-            L[i, i] = L_type{1};
+        if constexpr (arithmetic<typename B::value_type>) {
+            static_assert(std::is_same_v<typename B::value_type, float> ||
+                              std::is_same_v<typename B::value_type, double>,
+                          "Tensor underlying type must be float or double");
         }
-        // for each column in B, solve the system using forward and back substitution
-        using result_type = decltype(typename Derived::value_type{} * typename B::value_type{});
-        auto result = b.template as<result_type>();
-        for (auto &col : result.cols()) {
-            // forward substitute
-            auto y = col.template as<result_type>().template reshape<count>;
-            auto b_col = col.template as<result_type>().template reshape<count>;
-            // permute b
-            b_col = P * b_col;
-            for (std::size_t i = 0; i < count; ++i) {
-                auto tmp = b_col[i];
-                for (std::size_t j = 0; j < i; ++j) {
-                    tmp -= L[i, j] * y[j];
-                }
-                y[i] = tmp / L[i, i];
-            }
-            // back substitute into column
-            for (int i = count - 1; i > -1; --i) {
-                auto tmp = y[i];
-                for (std::size_t j = i + 1; j < count; ++j) {
-                    tmp -= U[i, j] * col[j];
-                }
-                col[i] = tmp / U[i, i];
-            }
+        if constexpr (arithmetic<typename Derived::value_type>) {
+            static_assert(std::is_same_v<typename Derived::value_type, float> ||
+                              std::is_same_v<typename Derived::value_type, double>,
+                          "Tensor underlying type must be float or double");
         }
-        return result;
+
+        static_assert(Derived::rank() == 2, "This tensor must be 2-dimensional (matrix)");
+        static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
+
+        constexpr auto a_shape = Derived::constexpr_shape();
+        constexpr auto b_shape = B::constexpr_shape();
+        constexpr auto a_strides = Derived::constexpr_strides();
+        constexpr auto b_strides = B::constexpr_strides();
+
+        static_assert(a_shape[0] == a_shape[1], "Matrix must be square");
+        static_assert(a_shape[0] == b_shape[0], "Matrix and vector dimensions must match");
+
+        constexpr int n = a_shape[0];
+        constexpr int nrhs = (B::rank() == 1) ? 1 : b_shape[1];
+
+        // Determine leading dimensions based on layout
+        constexpr int lda = (Derived::get_layout() == layout::row_major) ? a_strides[0] : a_strides[1];
+        constexpr int ldb = (B::get_layout() == layout::row_major) ? ((B::rank() == 1) ? 1 : b_strides[0])
+                                                                   : ((B::rank() == 1) ? n : b_strides[1]);
+
+        std::vector<int> ipiv(n);
+
+        // Determine LAPACK layout
+        int lapack_layout = (Derived::get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+
+        int info;
+        if constexpr (std::is_same_v<decltype(b.raw_data()), float *>) {
+            info = LAPACKE_sgesv(lapack_layout, n, nrhs,
+                                 const_cast<float *>(static_cast<Derived const *>(this)->raw_data()), lda, ipiv.data(),
+                                 b.raw_data(), ldb);
+        } else {
+            info = LAPACKE_dgesv(lapack_layout, n, nrhs,
+                                 const_cast<double *>(static_cast<Derived const *>(this)->raw_data()), lda, ipiv.data(),
+                                 b.raw_data(), ldb);
+        }
+
+        if (info != 0) {
+            throw std::runtime_error("LAPACKE_gesv failed with error code " + std::to_string(info));
+        }
     }
 
     template <fixed_shape_tensor B> auto solve_lls(const B &b) const;
