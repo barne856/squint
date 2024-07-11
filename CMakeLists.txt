@@ -1,9 +1,25 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(SQUINT VERSION 1.0.0 LANGUAGES CXX)
+project(SQUINT VERSION 1.0.0 LANGUAGES CXX C Fortran)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+include(FetchContent)
+
+# Download and build OpenBLAS
+FetchContent_Declare(
+  openblas
+  GIT_REPOSITORY https://github.com/OpenMathLib/OpenBLAS.git
+  GIT_TAG develop
+)
+
+# # Configure OpenBLAS build options
+set(USE_THREAD ON)
+# set(BUILD_RELAPACK ON)
+# set(RELAPACK_REPLACE ON)
+
+FetchContent_MakeAvailable(openblas)
 
 # Option to control building tests
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -16,7 +32,10 @@ endif()
 add_library(SQUINT INTERFACE)
 target_include_directories(SQUINT INTERFACE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    ${openblas_SOURCE_DIR}
+    ${openblas_BINARY_DIR}
 )
+target_link_libraries(SQUINT INTERFACE openblas)
 
 # Tests
 if(SQUINT_BUILD_TESTS)

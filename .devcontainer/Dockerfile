@@ -2,13 +2,14 @@
 FROM mcr.microsoft.com/devcontainers/base:noble
 
 # Argument for LLVM version
-ARG LLVM_VERSION=18
+ARG LLVM_VERSION=17
 
 # C++ development environment, uses clang, libc++, and ninja
 ENV CC=clang-$LLVM_VERSION
 ENV CXX=clang++-$LLVM_VERSION
-ENV LDFLAGS="-stdlib=libc++ -fuse-ld=lld-$LLVM_VERSION"
-ENV CXXFLAGS="-stdlib=libc++"
+ENV FC=gfortran
+ENV CMAKE_GENERATOR=Ninja
+ENV CXXFLAGS=-stdlib=libc++
 
 # Add the LLVM repository and install the specified version of LLVM
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -29,8 +30,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     lldb-$LLVM_VERSION \
     lld-$LLVM_VERSION \
     ninja-build \
-    libopenblas-dev \
-    liblapacke-dev \
+    gfortran \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \
@@ -38,10 +38,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && ln -s /usr/bin/clang-tidy-$LLVM_VERSION /usr/bin/clang-tidy \
     && ln -s /usr/bin/clangd-$LLVM_VERSION /usr/bin/clangd \
     && ln -s /usr/bin/lldb-$LLVM_VERSION /usr/bin/lldb \
-    && ln -s /usr/bin/lld-$LLVM_VERSION /usr/bin/lld
+    && ln -s /usr/bin/lld-$LLVM_VERSION /usr/bin/lld \
+    && ln -f -s /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld 
 
 # Clean up
 RUN apt-get -y remove wget gnupg software-properties-common
-
-# Default to LLVM version 15 if not specified
-ARG LLVM_VERSION=15

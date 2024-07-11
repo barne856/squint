@@ -354,7 +354,7 @@ With cmake >= 3.28, ninja, and llvm >= 15 installed:
 ```
 mkdir build
 cd build
-cmake -G Ninja -DCMAKE_CXX_COMPILER=clang++ ..
+cmake -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_Fortran_COMPILER=ifx ..
 cd ..
 cmake --build ./build
 ```
