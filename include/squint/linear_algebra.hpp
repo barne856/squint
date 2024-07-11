@@ -2,6 +2,7 @@
 #define SQUINT_LINEAR_ALGEBRA_HPP
 
 #include "squint/dimension.hpp"
+#include <numeric>
 #ifdef BLAS_BACKEND_MKL
 #include <mkl.h>
 #else
@@ -29,31 +30,22 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
     auto eigenvectors() const;
     auto pinv() const;
 
-    auto mean() const { return sum() / static_cast<Derived const *>(this)->size(); }
+    auto mean() const { return sum() / static_cast<const Derived *>(this)->size(); }
+
     auto sum() const {
-        auto result = typename Derived::value_type{};
-        for (const auto &elem : *static_cast<Derived const *>(this)) {
-            result += elem;
-        }
-        return result;
+        // TODO, can be optimized with BLAS algorithms
+        const auto *derived = static_cast<const Derived *>(this);
+        return std::accumulate(derived->begin(), derived->end(), typename Derived::value_type{});
     }
+
     auto min() const {
-        auto result = *static_cast<Derived const *>(this)->begin();
-        for (const auto &elem : *static_cast<Derived const *>(this)) {
-            if (elem < result) {
-                result = elem;
-            }
-        }
-        return result;
+        const auto *derived = static_cast<const Derived *>(this);
+        return *std::min_element(derived->begin(), derived->end());
     }
+
     auto max() const {
-        auto result = *static_cast<Derived const *>(this)->begin();
-        for (const auto &elem : *static_cast<Derived const *>(this)) {
-            if (elem > result) {
-                result = elem;
-            }
-        }
-        return result;
+        const auto *derived = static_cast<const Derived *>(this);
+        return *std::max_element(derived->begin(), derived->end());
     }
 };
 
@@ -74,6 +66,60 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr bool compatible_
     constexpr bool matmat = (A::rank() == 2) && (B::rank() == 2) && (this_shape[1] == other_shape[0]);
     constexpr bool matvec = (A::rank() == 2) && (B::rank() == 1) && (this_shape[1] == other_shape[0]);
     return matmat || matvec;
+}
+
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve() {
+    constexpr auto a_shape = A::constexpr_shape();
+    constexpr auto b_shape = B::constexpr_shape();
+
+    // Shape checks
+    static_assert(A::rank() == 2, "A must be 2-dimensional (matrix)");
+    static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
+    static_assert(a_shape[0] == a_shape[1], "Matrix A must be square");
+    static_assert(a_shape[0] == b_shape[0], "Matrix A and vector/matrix B dimensions must match");
+
+    // Type checks for B
+    if constexpr (quantitative<typename B::value_type>) {
+        static_assert(std::is_same_v<typename B::value_type::value_type, float> ||
+                          std::is_same_v<typename B::value_type::value_type, double>,
+                      "B's quantity underlying type must be float or double");
+    } else if constexpr (arithmetic<typename B::value_type>) {
+        static_assert(std::is_same_v<typename B::value_type, float> || std::is_same_v<typename B::value_type, double>,
+                      "B's tensor underlying type must be float or double");
+    } else {
+        static_assert(false, "B's tensor underlying type must be float or double");
+    }
+
+    // Type checks for A
+    if constexpr (quantitative<typename A::value_type>) {
+        static_assert(std::is_same_v<typename A::value_type::dimension_type, dimensions::dimensionless>,
+                      "A's quantity type must be dimensionless");
+        static_assert(std::is_same_v<typename A::value_type::value_type, float> ||
+                          std::is_same_v<typename A::value_type::value_type, double>,
+                      "A's quantity underlying type must be float or double");
+    } else if constexpr (arithmetic<typename A::value_type>) {
+        static_assert(std::is_same_v<typename A::value_type, float> || std::is_same_v<typename A::value_type, double>,
+                      "A's tensor underlying type must be float or double");
+    } else {
+        static_assert(false, "A's tensor underlying type must be float or double");
+    }
+
+    // Type compatibility check
+    if constexpr (quantitative<typename A::value_type> && quantitative<typename B::value_type>) {
+        static_assert(std::is_same_v<typename A::value_type::value_type, typename B::value_type::value_type>,
+                      "A and B underlying types must match");
+    } else if constexpr (quantitative<typename A::value_type> && arithmetic<typename B::value_type>) {
+        static_assert(std::is_same_v<typename A::value_type::value_type, typename B::value_type>,
+                      "A and B underlying types must match");
+    } else if constexpr (arithmetic<typename A::value_type> && quantitative<typename B::value_type>) {
+        static_assert(std::is_same_v<typename A::value_type, typename B::value_type::value_type>,
+                      "A and B underlying types must match");
+    } else {
+        static_assert(std::is_same_v<typename A::value_type, typename B::value_type>,
+                      "A and B underlying types must match");
+    }
+
+    return true;
 }
 
 // Fixed tensor with linear algebra
@@ -115,41 +161,12 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
     }
 
     template <fixed_shape_tensor B> auto solve(B &b) const {
-        if constexpr (quantitative<typename B::value_type>) {
-            static_assert(std::is_same_v<typename B::value_type::dimension_type, dimensions::dimensionless>,
-                          "Quantity type must be dimensionless");
-            static_assert(std::is_same_v<typename B::value_type::value_type, float> ||
-                              std::is_same_v<typename B::value_type::value_type, double>,
-                          "Quantity underlying type must be float or double");
-        }
-        if constexpr (quantitative<typename Derived::value_type>) {
-            static_assert(std::is_same_v<typename Derived::value_type::dimension_type, dimensions::dimensionless>,
-                          "Quantity type must be dimensionless");
-            static_assert(std::is_same_v<typename Derived::value_type::value_type, float> ||
-                              std::is_same_v<typename Derived::value_type::value_type, double>,
-                          "Quantity underlying type must be float or double");
-        }
-        if constexpr (arithmetic<typename B::value_type>) {
-            static_assert(std::is_same_v<typename B::value_type, float> ||
-                              std::is_same_v<typename B::value_type, double>,
-                          "Tensor underlying type must be float or double");
-        }
-        if constexpr (arithmetic<typename Derived::value_type>) {
-            static_assert(std::is_same_v<typename Derived::value_type, float> ||
-                              std::is_same_v<typename Derived::value_type, double>,
-                          "Tensor underlying type must be float or double");
-        }
-
-        static_assert(Derived::rank() == 2, "This tensor must be 2-dimensional (matrix)");
-        static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
+        static_assert(compatible_for_solve<Derived, B>(), "Incompatible types or shapes for solving linear system");
 
         constexpr auto a_shape = Derived::constexpr_shape();
         constexpr auto b_shape = B::constexpr_shape();
         constexpr auto a_strides = Derived::constexpr_strides();
         constexpr auto b_strides = B::constexpr_strides();
-
-        static_assert(a_shape[0] == a_shape[1], "Matrix must be square");
-        static_assert(a_shape[0] == b_shape[0], "Matrix and vector dimensions must match");
 
         constexpr int n = a_shape[0];
         constexpr int nrhs = (B::rank() == 1) ? 1 : b_shape[1];
@@ -304,7 +321,7 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
 
     template <tensor Other> auto &operator-=(const Other &other);
 
-    template <tensor B> auto solve(const B &b) const;
+    template <tensor B> auto solve(B &b) const;
 
     template <tensor B> auto solve_lls(const B &b) const;
 

@@ -9,11 +9,12 @@ using namespace squint;
 using namespace squint::units;
 
 int main() {
-    auto A = mat4_t<units::dimensionless>::random();
+    auto A = mat4::random();
+    for (const auto &block : A.subviews<2, 2>()) {
+        for(const auto& elem : block) {
+            std::cout << elem << std::endl;
+        }
+    }
     std::cout << A << std::endl;
-    auto b = vec4::random();
-    std::cout << b << std::endl;
-    A.solve(b);
-    std::cout << b << std::endl;
     return 0;
 }

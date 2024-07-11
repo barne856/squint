@@ -401,10 +401,10 @@ TEST_CASE("Dynamic Tensor Views") {
 TEST_CASE("Dynamic Tensor Iteration") {
     dynamic_tensor<int, error_checking::disabled> t({2, 3});
     t[0, 0] = 1;
-    t[0, 1] = 2;
-    t[0, 2] = 3;
-    t[1, 0] = 4;
-    t[1, 1] = 5;
+    t[1, 0] = 2;
+    t[0, 1] = 3;
+    t[1, 1] = 4;
+    t[0, 2] = 5;
     t[1, 2] = 6;
 
     SUBCASE("Range-based for loop") {
