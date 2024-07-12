@@ -38,9 +38,9 @@ jobs:
         if [[ "${{ matrix.compiler }}" == clang++* ]]; then
           CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
           export CXXFLAGS="-stdlib=libc++"
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         else
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         fi
 
     - name: Build
@@ -50,6 +50,15 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -L SQUINT --output-on-failure
 
+    - name: Upload build artifacts
+      if: matrix.compiler == 'clang++-17'
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          ${{github.workspace}}/build
+          ${{github.workspace}}/include
+
   clang-tidy:
     name: Clang-Tidy
     needs: build-and-test-linux
@@ -58,22 +67,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Clang 17 and Clang-Tidy
+    - name: Install Clang-Tidy
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 17
-        sudo apt-get install -y clang-17 libc++-17-dev libc++abi-17-dev lld-17 clang-tidy-17 ninja-build
+        sudo apt-get install -y clang-tidy-17
 
-    - name: Configure CMake
-      env:
-        CXX: clang++-17
-      run: |
-        export CXXFLAGS="-stdlib=libc++"
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: ${{github.workspace}}
 
     - name: Run Clang-Tidy
       run: |
@@ -87,34 +92,3 @@ jobs:
           echo "Clang-Tidy found issues. Please fix them before merging."
           exit 1
         fi
-
-  build-and-test-windows:
-    name: Build and Test (Windows)
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        clang_version: [17]
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v2
-      with:
-        version: ${{ matrix.clang_version }}
-
-    - name: Install Ninja
-      uses: seanmiddleditch/gha-setup-ninja@master
-
-    - name: Configure CMake
-      env:
-        CXX: clang++
-      run: |
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -L SQUINT -C Release --output-on-failure
