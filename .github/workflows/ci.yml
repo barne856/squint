@@ -70,8 +70,7 @@ jobs:
         CXX: clang++-17
       run: |
         export CXXFLAGS="-stdlib=libc++"
-        export LDFLAGS="-stdlib=libc++ -fuse-ld=lld-17"
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS"
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build
@@ -111,7 +110,7 @@ jobs:
       env:
         CXX: clang++
       run: |
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="/EHsc"
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
