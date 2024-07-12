@@ -107,16 +107,11 @@ jobs:
     - name: Install Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
 
-    - name: Install MinGW-w64
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
-
     - name: Configure CMake
       env:
         CXX: clang++
       run: |
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="/EHsc" -DCMAKE_C_COMPILER=gcc -DCMAKE_Fortran_COMPILER=gfortran
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="/EHsc"
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release

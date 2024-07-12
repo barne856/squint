@@ -68,7 +68,11 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr bool compatible_
     return matmat || matvec;
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve() {
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+static constexpr bool compatible_for_solve()
+    requires((quantitative<typename B::value_type> || arithmetic<typename B::value_type>) &&
+             (quantitative<typename A::value_type> || arithmetic<typename A::value_type>))
+{
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
 
@@ -86,8 +90,6 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool comp
     } else if constexpr (arithmetic<typename B::value_type>) {
         static_assert(std::is_same_v<typename B::value_type, float> || std::is_same_v<typename B::value_type, double>,
                       "B's tensor underlying type must be float or double");
-    } else {
-        static_assert(false, "B's tensor underlying type must be float or double");
     }
 
     // Type checks for A
@@ -100,8 +102,6 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool comp
     } else if constexpr (arithmetic<typename A::value_type>) {
         static_assert(std::is_same_v<typename A::value_type, float> || std::is_same_v<typename A::value_type, double>,
                       "A's tensor underlying type must be float or double");
-    } else {
-        static_assert(false, "A's tensor underlying type must be float or double");
     }
 
     // Type compatibility check
