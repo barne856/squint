@@ -9,12 +9,11 @@ using namespace squint;
 using namespace squint::units;
 
 int main() {
-    auto A = mat4::random();
-    for (const auto &block : A.subviews<2, 2>()) {
-        for(const auto& elem : block) {
-            std::cout << elem << std::endl;
-        }
-    }
+    const auto A = tens::arange({4, 4}, 1);
     std::cout << A << std::endl;
+    for (const auto &view : A.subviews({2, 2})) {
+        std::cout << view << std::endl;
+    }
+
     return 0;
 }

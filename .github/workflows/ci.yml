@@ -48,7 +48,7 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure
+      run: ctest ctest -L SQUINT --output-on-failure
 
   clang-tidy:
     name: Clang-Tidy
@@ -115,4 +115,4 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ctest -C Release --output-on-failure
+      run: ctest ctest -L SQUINT -C Release --output-on-failure

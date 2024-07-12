@@ -42,6 +42,8 @@ function(setup_openblas)
         ${CMAKE_BINARY_DIR}
     )
     target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_OPENBLAS)
+
+    set(EXCLUDE_FROM_ALL TRUE)
 endfunction()
 
 # Function to setup MKL
@@ -110,6 +112,7 @@ if(SQUINT_BUILD_TESTS)
         add_executable(${test_name} tests/${test_name}.cpp)
         target_link_libraries(${test_name} PRIVATE SQUINT doctest)
         add_test(NAME ${test_name} COMMAND ${test_name})
+        set_tests_properties(${test_name} PROPERTIES LABELS "SQUINT")
     endfunction()
 
     # Add tests

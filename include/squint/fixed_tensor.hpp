@@ -76,7 +76,37 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
         }
+        // specialization for 1D tensors
+        if constexpr (sizeof...(Dims) == 1) {
+            return data_[indices...];
+        }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
+    }
+
+    // specialization for 1D tensors
+    constexpr T &at(size_t index) {
+        static_assert(1 == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= fixed_tensor::constexpr_shape()[0]) {
+                throw std::out_of_range("Index out of range");
+            }
+        }
+        return data_[index];
+    }
+
+    // specialization for 2D tensors
+    constexpr T &at(size_t row, size_t col) {
+        static_assert(2 == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (row >= fixed_tensor::constexpr_shape()[0] || col >= fixed_tensor::constexpr_shape()[1]) {
+                throw std::out_of_range("Index out of range");
+            }
+        }
+        if constexpr (L == layout::row_major) {
+            return data_[row * fixed_tensor::constexpr_shape()[1] + col];
+        } else {
+            return data_[col * fixed_tensor::constexpr_shape()[0] + row];
+        }
     }
 
     template <typename... Indices> constexpr const T &at(Indices... indices) const {
@@ -85,6 +115,32 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
             this->check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});
         }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
+    }
+
+    // specialization for 1D tensors
+    constexpr const T &at(size_t index) const {
+        static_assert(1 == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= fixed_tensor::constexpr_shape()[0]) {
+                throw std::out_of_range("Index out of range");
+            }
+        }
+        return data_[index];
+    }
+
+    // specialization for 2D tensors
+    constexpr const T &at(size_t row, size_t col) const {
+        static_assert(2 == sizeof...(Dims), "Incorrect number of indices");
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (row >= fixed_tensor::constexpr_shape()[0] || col >= fixed_tensor::constexpr_shape()[1]) {
+                throw std::out_of_range("Index out of range");
+            }
+        }
+        if constexpr (L == layout::row_major) {
+            return data_[row * fixed_tensor::constexpr_shape()[1] + col];
+        } else {
+            return data_[col * fixed_tensor::constexpr_shape()[0] + row];
+        }
     }
 
     // Non-constexpr version for runtime index access

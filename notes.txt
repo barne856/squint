@@ -6,4 +6,3 @@ TODO:
 solve method in linalg does modify A tensor even though it's meant to be const
  - This is because LAPACKE_sgesv modifies A and overwrites it with the LU factorization
  - should be ipiv = solve(&A,&b)
-iterators over 1D tensors don't work

@@ -170,7 +170,7 @@ TEST_CASE("Fixed Tensor Iteration") {
         for (const auto &value : t) {
             values.push_back(value);
         }
-        CHECK(values == std::vector<int>{1, 2, 3, 4, 5, 6});
+        CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
     }
 
     SUBCASE("Iterator-based loop") {
@@ -178,7 +178,7 @@ TEST_CASE("Fixed Tensor Iteration") {
         for (auto it = t.begin(); it != t.end(); ++it) {
             values.push_back(*it);
         }
-        CHECK(values == std::vector<int>{1, 2, 3, 4, 5, 6});
+        CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
     }
 
     SUBCASE("Const iteration") {
@@ -187,7 +187,7 @@ TEST_CASE("Fixed Tensor Iteration") {
         for (const auto &value : const_t) {
             values.push_back(value);
         }
-        CHECK(values == std::vector<int>{1, 2, 3, 4, 5, 6});
+        CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
     }
 }
 
@@ -262,7 +262,7 @@ TEST_CASE("Dynamic Tensor Creation and Basic Operations") {
         dynamic_tensor<int, error_checking::disabled> t_block3({2, 1});
         t_block3[0, 0] = 5;
         t_block3[1, 0] = 6;
-        dynamic_tensor<int, error_checking::disabled> t(std::vector{t_block1, t_block2, t_block3});
+        dynamic_tensor<int, error_checking::disabled> t({2, 3}, std::vector{t_block1, t_block2, t_block3});
         CHECK(t[0, 0] == 1);
         CHECK(t[1, 0] == 2);
         CHECK(t[0, 1] == 3);
@@ -633,7 +633,7 @@ TEST_CASE("Tensor View Iterator") {
         for (auto it = view.begin(); it != view.end(); ++it) {
             values.push_back(*it);
         }
-        CHECK(values == std::vector<int>{1, 2, 3, 4, 5, 6});
+        CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
     }
 
     SUBCASE("Dynamic tensor view iterator") {
@@ -649,7 +649,7 @@ TEST_CASE("Tensor View Iterator") {
         for (auto it = view.begin(); it != view.end(); ++it) {
             values.push_back(*it);
         }
-        CHECK(values == std::vector<int>{1, 2, 3, 4, 5, 6});
+        CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
     }
 }
 
@@ -1153,8 +1153,9 @@ TEST_CASE("fixed_tensor rows() and cols() tests") {
             for (const auto &col : tensor.cols()) {
                 CHECK(col.shape() == std::vector<std::size_t>{5});
                 CHECK(col.size() == 5);
+                int i = 0;
                 for (const auto &value : col) {
-                    CHECK(value == col_count + 1);
+                    CHECK(value == ++i);
                 }
                 ++col_count;
             }

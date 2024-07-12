@@ -77,8 +77,8 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
 
     // Construct from a vector of tensor blocks or views
     template <tensor BlockTensor>
-    dynamic_tensor(const std::vector<BlockTensor> &blocks)
-        : shape_(calculate_new_shape(blocks)), layout_(blocks[0].get_layout()) {
+    dynamic_tensor(std::vector<std::size_t> shape, const std::vector<BlockTensor> &blocks)
+        : shape_(shape), layout_(blocks[0].get_layout()) {
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (blocks.empty()) {
                 throw std::invalid_argument("Cannot construct from empty vector of blocks");
@@ -94,17 +94,8 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
                 if (block.size() == 0) {
                     throw std::invalid_argument("Block must have non-zero size");
                 }
-                if (block.size() != blocks[0].size()) {
-                    throw std::invalid_argument("All blocks must have the same size");
-                }
-                if (block.shape().size() != blocks[0].shape().size()) {
-                    throw std::invalid_argument("All blocks must have the same rank");
-                }
                 if (block.shape() != blocks[0].shape()) {
                     throw std::invalid_argument("All blocks must have the same shape");
-                }
-                if (block.get_layout() != layout_) {
-                    throw std::invalid_argument("All blocks must have the same layout");
                 }
             }
 
@@ -443,21 +434,6 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
             }
         }
         return strides;
-    }
-
-    // Helper function to calculate the new shape for a vector of blocks
-    template <tensor BlockTensor>
-    std::vector<std::size_t> calculate_new_shape(const std::vector<BlockTensor> &blocks) const {
-        if (blocks.empty()) {
-            return {};
-        }
-        // the shape is the shape of the blocks times the number of blocks
-        std::vector<std::size_t> new_shape = blocks[0].shape();
-        for (auto &dim : new_shape) {
-            dim *= blocks.size();
-        }
-
-        return new_shape;
     }
 };
 
