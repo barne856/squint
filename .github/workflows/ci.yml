@@ -38,9 +38,9 @@ jobs:
         if [[ "${{ matrix.compiler }}" == clang++* ]]; then
           CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
           export CXXFLAGS="-stdlib=libc++"
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
         else
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
         fi
 
     - name: Build
@@ -50,40 +50,34 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -L SQUINT --output-on-failure
 
-    - name: Upload build artifacts
-      if: matrix.compiler == 'clang++-17'
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-artifacts
-        path: |
-          ${{github.workspace}}/build
-          ${{github.workspace}}/include
-
   clang-tidy:
     name: Clang-Tidy
-    needs: build-and-test-linux
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Clang-Tidy
+    - name: Install Clang 17 and Clang-Tidy
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 17
-        sudo apt-get install -y clang-tidy-17
+        sudo apt-get install -y clang-17 libc++-17-dev libc++abi-17-dev lld-17 clang-tidy-17 ninja-build
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-        path: ${{github.workspace}}
+    - name: Configure CMake
+      env:
+        CXX: clang++-17
+      run: |
+        export CXXFLAGS="-stdlib=libc++"
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
 
     - name: Run Clang-Tidy
       run: |
         find include -name '*.cpp' -or -name '*.hpp' | \
-        xargs clang-tidy-17 -p build \
+        xargs -P $(nproc) clang-tidy-17 -p build \
         --config-file=.clang-tidy
 
     - name: Check Clang-Tidy result
