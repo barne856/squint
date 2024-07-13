@@ -349,17 +349,70 @@ target_link_libraries(your_target PRIVATE squint::squint)
 
 ### Building Tests
 
-With cmake >= 3.28, ninja, and llvm >= 15 installed:
+
+## On Windows
+
+Install MSVC, CMake >= 3.28, Clang >= 15, MKL (optional), Intel fortran compiler (optional if MKL is used as backend)
+
+You must set all env vars with:
+
+```
+"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
+```
+
+Then:
 
 ```
 mkdir build
 cd build
-cmake -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_Fortran_COMPILER=ifx ..
+```
+
+For OpenBLAS backend:
+
+```
+cmake -DCMAKE_Fortran_COMPILER=ifx -DBLAS_BACKEND=OpenBLAS -T ClangCL ..
+```
+
+For MKL backend
+
+```
+cmake -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DBLAS_BACKEND=MKL ..
+```
+
+```
 cd ..
 cmake --build ./build
 ```
 
-Run the tests:
+## On Linux
+
+Install CMake >= 3.28, Clang >= 15, MKL (optional), gfortran (optional if MKL is used as backend)
+
+Configure env vars like the devcontainer
+
+```
+mkdir build
+cd build
+```
+
+For OpenBLAS backend:
+
+```
+cmake -DBLAS_BACKEND=OpenBLAS ..
+```
+
+For MKL backend
+
+```
+cmake -DBLAS_BACKEND=MKL ..
+```
+
+```
+cd ..
+cmake --build ./build
+```
+
+## Run the tests:
 
 ```
 cd build

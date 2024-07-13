@@ -1,15 +1,23 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(SQUINT VERSION 1.0.0 LANGUAGES CXX C Fortran)
+# BLAS/LAPACKE backend options
+set(BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL)")
+set_property(CACHE BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL)
+
+set(PROJECT_LANGUAGES CXX)
+
+if(BLAS_BACKEND STREQUAL "OpenBLAS")
+  list(APPEND PROJECT_LANGUAGES C Fortran)
+endif()
+
+project(SQUINT VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 
-# BLAS/LAPACKE backend options
-set(BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL)")
-set_property(CACHE BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL)
+
 
 # Function to setup BLAS backend
 function(setup_blas_backend)

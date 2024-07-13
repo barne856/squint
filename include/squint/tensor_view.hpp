@@ -122,6 +122,7 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
     }
     static constexpr std::array<std::size_t, sizeof...(Dims)> constexpr_strides() { return Strides::value; }
     static constexpr layout get_layout() { return L; }
+    static constexpr error_checking get_error_checking() { return ErrorChecking; }
 
     template <typename... Indices> constexpr const T &at(Indices... indices) const {
         static_assert(sizeof...(Indices) == sizeof...(Dims), "Incorrect number of indices");
@@ -306,6 +307,7 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
     std::vector<std::size_t> shape() const { return shape_; }
     std::vector<std::size_t> strides() const { return strides_; }
     layout get_layout() const { return layout_; }
+    static constexpr error_checking get_error_checking() { return ErrorChecking; }
 
     template <typename... Indices> const T &at(Indices... indices) const {
         if constexpr (ErrorChecking == error_checking::enabled) {

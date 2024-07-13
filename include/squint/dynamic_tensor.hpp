@@ -2,6 +2,7 @@
 #define SQUINT_DYNAMIC_TENSOR_HPP
 
 #include "squint/iterable_tensor.hpp"
+#include "squint/linear_algebra.hpp"
 #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
@@ -14,7 +15,8 @@ namespace squint {
 
 // Dynamic tensor implementation
 template <typename T, error_checking ErrorChecking>
-class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, T, ErrorChecking> {
+class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, T, ErrorChecking>,
+                       public dynamic_linear_algebra_mixin<dynamic_tensor<T, ErrorChecking>, ErrorChecking> {
     std::vector<T> data_;
     std::vector<std::size_t> shape_;
     layout layout_;
@@ -119,7 +121,7 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
     constexpr std::size_t size() const { return data_.size(); }
     constexpr std::vector<std::size_t> shape() const { return shape_; }
     constexpr layout get_layout() const { return layout_; }
-    constexpr error_checking get_error_checking() const { return ErrorChecking; }
+    static constexpr error_checking get_error_checking() { return ErrorChecking; }
     std::vector<std::size_t> strides() const { return calculate_strides(); }
 
     T &at_impl(const std::vector<size_t> &indices) { return data_[calculate_index(indices)]; }

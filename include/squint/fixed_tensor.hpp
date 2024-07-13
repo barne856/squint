@@ -40,7 +40,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     explicit constexpr fixed_tensor(const T &value) { data_.fill(value); }
     // Fill the tensor with a single block or view
     template <fixed_shape_tensor BlockTensor> constexpr fixed_tensor(const BlockTensor &block) {
-        static_assert(check_dimensions<BlockTensor>(std::make_index_sequence<BlockTensor::constexpr_shape().size()>{}),
+        static_assert(check_dimensions<BlockTensor>(std::make_index_sequence<BlockTensor::rank()>{}),
                       "Each dimension of the block must be a multiple of the corresponding dimension of the tensor");
         copy_from_block(block);
     }
@@ -48,7 +48,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     // Create a tensor from a list of tensor blocks or views
     template <fixed_shape_tensor BlockTensor, std::size_t N>
     constexpr fixed_tensor(const std::array<BlockTensor, N> &blocks) {
-        static_assert(check_dimensions<BlockTensor>(std::make_index_sequence<BlockTensor::constexpr_shape().size()>{}),
+        static_assert(check_dimensions<BlockTensor>(std::make_index_sequence<BlockTensor::rank()>{}),
                       "Each dimension of the block must be a multiple of the corresponding dimension of the tensor");
         // the total size of the tensor must be a multiple of the total size of the block
         static_assert(total_size % BlockTensor::size() == 0, "Total size must be a multiple of block size");

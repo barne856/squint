@@ -50,6 +50,51 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -L SQUINT --output-on-failure
 
+  build-and-test-windows:
+    name: Build and Test (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Ninja
+      run: choco install ninja
+
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v2
+      with:
+        version: "17.0"
+
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: "3.11"
+        channels: conda-forge
+
+    - name: Install MKL
+      run: |
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge mkl mkl-devel
+
+    - name: Configure CMake
+      run: |
+        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DBLAS_BACKEND=MKL -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Build
+      run: |
+        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
+        cmake --build ${{github.workspace}}/build
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: |
+        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
+        ctest -L SQUINT --output-on-failure
+
   clang-tidy:
     name: Clang-Tidy
     runs-on: ubuntu-latest
