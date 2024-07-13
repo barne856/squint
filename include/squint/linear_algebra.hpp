@@ -26,6 +26,13 @@ namespace squint {
 template <typename T>
 concept scalar = arithmetic<T> || quantitative<T>;
 
+// concept for dimensionless tensor
+template <typename T>
+concept dimensionless_tensor =
+    tensor<T> && (arithmetic<typename T::value_type> ||
+                  (quantitative<typename T::value_type> &&
+                   std::is_same_v<typename T::value_type::dimension, dimensions::dimensionless>));
+
 // checks if a compile-time list of indices has no duplicates
 template <size_t... indices> constexpr bool is_unique() {
     std::array<size_t, sizeof...(indices)> arr{indices...};
@@ -111,46 +118,38 @@ static constexpr bool compatible_for_blas_op()
     return true;
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B, fixed_shape_tensor X>
-static constexpr bool compatible_for_solve() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve() {
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
-    constexpr auto x_shape = X::constexpr_shape();
 
     // Shape checks
     static_assert(A::rank() == 2, "A must be 2-dimensional (matrix)");
     static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
     static_assert(a_shape[0] == a_shape[1], "Matrix A must be square");
     static_assert(a_shape[0] == b_shape[0], "Matrix A and vector/matrix B dimensions must match");
-    static_assert(x_shape == b_shape, "Solution vector/matrix X must have the same shape as B");
 
     // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     return true;
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B, fixed_shape_tensor X>
-static constexpr bool compatible_for_solve_lls() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve_lls() {
     // Shape checks
     static_assert(A::rank() == 2, "Matrix A must be 2-dimensional");
     static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
-    static_assert(A::constexpr_shape()[0] == B::constexpr_shape()[0],
-                  "Matrix A and vector/matrix B dimensions must match");
-    static_assert(X::rank() == B::rank(), "X dimensions must match B");
-    if constexpr (B::rank() == 2) {
-        static_assert(B::constexpr_shape()[1] == X::constexpr_shape()[1],
-                      "vector/matrix B and vector/matrix X must have the same columns");
-    }
-    static_assert(X::constexpr_shape()[0] == A::constexpr_shape()[1],
-                  "Matrix A and vector/matrix X dimensions must be compatible");
+
+    constexpr auto x_rows = A::constexpr_shape()[1];
+    constexpr auto b_rows = A::constexpr_shape()[0];
+    constexpr auto max_rows = x_rows > b_rows ? x_rows : b_rows;
+    static_assert(B::constexpr_shape()[0] == max_rows, "Unexpected number of rows for Matrix B");
 
     // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     return true;
 }
@@ -159,6 +158,29 @@ static constexpr bool compatible_for_solve_lls() {
 template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_cross() {
     static_assert(A::size() == 3 && B::size() == 3, "Cross product requires 3D vectors");
     return true;
+}
+
+// is transposed
+template <fixed_shape_tensor A> static constexpr bool is_transposed() {
+    constexpr auto strides = A::constexpr_strides();
+    constexpr auto layout = A::get_layout();
+    if constexpr (A::rank() == 2) {
+        if (layout == layout::column_major) {
+            return strides[0] != 1;
+        }
+        return strides[1] != 1;
+    }
+    return false;
+}
+
+// get leading dimension
+template <fixed_shape_tensor A> static constexpr int get_ld() {
+    constexpr auto strides = A::constexpr_strides();
+    constexpr auto layout = A::get_layout();
+    constexpr bool is_transposed = squint::is_transposed<A>();
+    return ((layout == layout::column_major && !is_transposed) || (layout == layout::row_major && is_transposed))
+               ? (A::rank() == 1 ? A::constexpr_shape()[0] : strides[1])
+               : strides[0];
 }
 
 // Helper function to build a new fixed tensor type from an existing one with a different value type
@@ -187,11 +209,9 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_ma
 }
 
 // compatible for solve
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
-bool compatible_for_solve(const A &a, const B &b, const X &x) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_solve(const A &a, const B &b) {
     const auto a_shape = a.shape();
     const auto b_shape = b.shape();
-    const auto x_shape = x.shape();
 
     // Shape checks
     if (a.rank() != 2) {
@@ -206,21 +226,17 @@ bool compatible_for_solve(const A &a, const B &b, const X &x) {
     if (a_shape[0] != b_shape[0]) {
         throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
     }
-    if (x_shape != b_shape) {
-        throw std::runtime_error("Solution vector/matrix X must have the same shape as B");
-    }
 
     // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     return true;
 }
 
 // compatible for solve_lls
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
-bool compatible_for_solve_lls(const A &a, const B &b, const X &x) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_solve_lls(const A &a, const B &b) {
     // Shape checks
     if (a.rank() != 2) {
         throw std::runtime_error("Matrix A must be 2-dimensional");
@@ -228,25 +244,18 @@ bool compatible_for_solve_lls(const A &a, const B &b, const X &x) {
     if (b.rank() != 1 && b.rank() != 2) {
         throw std::runtime_error("B must be 1D or 2D");
     }
-    if (a.shape()[0] != b.shape()[0]) {
-        throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
-    }
-    if (x.rank() != b.rank()) {
-        throw std::runtime_error("X dimensions must match B");
-    }
-    if (x.rank() == 2) {
-        if (b.shape()[1] != x.shape()[1]) {
-            throw std::runtime_error("vector/matrix B and vector/matrix X must have the same columns");
-        }
-    }
-    if (x.shape()[0] != a.shape()[1]) {
-        throw std::runtime_error("Matrix A and vector/matrix X dimensions must be compatible");
+
+    const auto x_rows = a.shape()[1];
+    const auto b_rows = a.shape()[0];
+    const auto max_rows = x_rows > b_rows ? x_rows : b_rows;
+    if (b.shape()[0] != max_rows) {
+        throw std::runtime_error("Unexpected number of rows for Matrix B");
     }
 
     // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     return true;
 }
@@ -257,6 +266,26 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_cr
         throw std::runtime_error("Cross product requires 3D vectors");
     }
     return true;
+}
+
+// is transposed
+template <dynamic_shape_tensor A>
+bool is_transposed(const A &a, const std::vector<std::size_t> &strides, layout layout) {
+    if (a.rank() == 2) {
+        if (layout == layout::column_major) {
+            return strides[0] != 1;
+        }
+        return strides[1] != 1;
+    }
+    return false;
+}
+
+// get leading dimension
+template <dynamic_shape_tensor A>
+int get_ld(const A &a, const std::vector<std::size_t> &strides, layout layout, bool is_transposed) {
+    return ((layout == layout::column_major && !is_transposed) || (layout == layout::row_major && is_transposed))
+               ? (a.rank() == 1 ? a.shape()[0] : strides[1])
+               : strides[0];
 }
 
 // Base linear algebra mixin
@@ -343,8 +372,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
     }
 
     auto pinv() const {
-        const auto &derived = *static_cast<const Derived *>(this);
-        return (derived.transpose() * derived).inv() * derived.transpose();
+        // TODO
     }
 
     auto mean() const { return sum() / static_cast<const Derived *>(this)->size(); }
@@ -537,35 +565,40 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator-(const A &a,
 template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator*(const A &a, const B &b) {
     compatible_for_matmul<A, B>();
     compatible_for_blas_op<A, B>();
+    // layouts must match
+    static_assert(A::get_layout() == B::get_layout(), "A and B layouts must match");
     // matmul using BLAS
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
     constexpr auto a_strides = A::constexpr_strides();
     constexpr auto b_strides = B::constexpr_strides();
+    constexpr auto layout = A::get_layout();
 
     constexpr int m = a_shape[0];
-    constexpr int n = a_shape[1];
-    constexpr int k = b_shape[1];
+    constexpr int n = b_shape[1];
+    constexpr int k = a_shape[1];
 
-    // Determine leading dimensions based on layout
-    constexpr int lda = (A::constexpr_strides()[0] != 1) ? a_shape[0] : a_shape[1];
-    constexpr int ldb = (B::constexpr_strides()[0] != 1) ? b_shape[0] : b_shape[1];
-    constexpr int ldc = (A::constexpr_strides()[0] != 1) ? a_shape[0] : a_shape[1];
-    auto result = fixed_tensor<decltype(typename A::value_type{} * typename B::value_type{}), A::get_layout(),
-                               A::get_error_checking(), m, k>();
+    // Determine if matrix is transposed
+    constexpr auto op_a = is_transposed<A>() ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+    constexpr auto op_b = is_transposed<B>() ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
 
-    auto op_a = (A::constexpr_strides()[0] != 1) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
-    auto op_b = (B::constexpr_strides()[0] != 1) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+    // Determine leading dimensions based on layout and transposition
+    constexpr int lda = get_ld<A>();
+    constexpr int ldb = get_ld<B>();
+    constexpr int ldc = m;
+    auto result = fixed_tensor<decltype(typename A::value_type{} * typename B::value_type{}), layout,
+                               A::get_error_checking(), m, n>();
 
     // Determine BLAS layout
-    auto layout = (A::get_layout() == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
+    constexpr auto blas_layout =
+        (layout == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
 
     if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
                   std::is_same_v<decltype(a.raw_data()), const float *>) {
-        cblas_sgemm(layout, op_a, op_b, m, k, n, 1.0F, const_cast<float *>(a.raw_data()), lda,
+        cblas_sgemm(blas_layout, op_a, op_b, m, n, k, 1.0F, const_cast<float *>(a.raw_data()), lda,
                     const_cast<float *>(b.raw_data()), ldb, 0.0F, result.raw_data(), ldc);
     } else {
-        cblas_dgemm(layout, op_a, op_b, m, k, n, 1.0, const_cast<double *>(a.raw_data()), lda,
+        cblas_dgemm(blas_layout, op_a, op_b, m, n, k, 1.0, const_cast<double *>(a.raw_data()), lda,
                     const_cast<double *>(b.raw_data()), ldb, 0.0, result.raw_data(), ldc);
     }
 
@@ -573,42 +606,37 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator*(const A &a,
 }
 
 // Solve linear system of equations Ax = b
-template <fixed_shape_tensor A, fixed_shape_tensor B, fixed_shape_tensor X> auto solve(A &a, const B &b, X &x) {
-    compatible_for_solve<A, B, X>();
+template <fixed_shape_tensor A, fixed_shape_tensor B> auto solve(A &a, B &b) {
+    compatible_for_solve<A, B>();
     compatible_for_blas_op<A, B>();
-    compatible_for_blas_op<B, X>();
-
-    // copy b into x
-    auto iter_b = b.begin();
-    for (auto &elem : x) {
-        elem = typename X::value_type(*iter_b++);
-    }
+    static_assert(A::get_layout() == B::get_layout(), "A and B layouts must match");
+    static_assert(!is_transposed<A>() && !is_transposed<B>(), "A and B must not be transposed");
 
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
     constexpr auto a_strides = A::constexpr_strides();
     constexpr auto b_strides = B::constexpr_strides();
+    constexpr auto layout = A::get_layout();
 
     constexpr int n = a_shape[0];
     constexpr int nrhs = (B::rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
-    constexpr int lda = (A::get_layout() == layout::row_major) ? a_strides[0] : a_strides[1];
-    constexpr int ldb = (B::get_layout() == layout::row_major) ? ((B::rank() == 1) ? 1 : b_strides[0])
-                                                               : ((B::rank() == 1) ? n : b_strides[1]);
+    constexpr int lda = get_ld<A>();
+    constexpr int ldb = get_ld<B>();
 
     std::vector<BLAS_INT> ipiv(n);
 
     // Determine LAPACK layout
-    int lapack_layout = (A::get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+    int lapack_layout = (layout == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
     int info;
-    if constexpr (std::is_same_v<decltype(x.raw_data()), float *> ||
-                  std::is_same_v<decltype(x.raw_data()), const float *>) {
-        info = LAPACKE_sgesv(lapack_layout, n, nrhs, const_cast<float *>(a.raw_data()), lda, ipiv.data(), x.raw_data(),
+    if constexpr (std::is_same_v<decltype(b.raw_data()), float *> ||
+                  std::is_same_v<decltype(b.raw_data()), const float *>) {
+        info = LAPACKE_sgesv(lapack_layout, n, nrhs, const_cast<float *>(a.raw_data()), lda, ipiv.data(), b.raw_data(),
                              ldb);
     } else {
-        info = LAPACKE_dgesv(lapack_layout, n, nrhs, const_cast<double *>(a.raw_data()), lda, ipiv.data(), x.raw_data(),
+        info = LAPACKE_dgesv(lapack_layout, n, nrhs, const_cast<double *>(a.raw_data()), lda, ipiv.data(), b.raw_data(),
                              ldb);
     }
 
@@ -618,42 +646,40 @@ template <fixed_shape_tensor A, fixed_shape_tensor B, fixed_shape_tensor X> auto
     return ipiv;
 }
 
-// Solve linear least squares problem Ax = b
-template <fixed_shape_tensor A, fixed_shape_tensor B, fixed_shape_tensor X> void solve_lls(A &a, const B &b, X &x) {
-    compatible_for_solve_lls<A, B, X>();
+// Solve linear least squares problem Ax = b or the minimum norm solution
+template <fixed_shape_tensor A, fixed_shape_tensor B> void solve_lls(A &a, B &b) {
+    compatible_for_solve_lls<A, B>();
     compatible_for_blas_op<A, B>();
-    compatible_for_blas_op<B, X>();
+    static_assert(A::get_layout() == B::get_layout(), "A and B layouts must match");
+    static_assert(!is_transposed<A>() && !is_transposed<B>(), "A and B must not be transposed");
 
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
     constexpr auto a_strides = A::constexpr_strides();
     constexpr auto b_strides = B::constexpr_strides();
+    constexpr auto layout = A::get_layout();
 
     constexpr int m = a_shape[0];
     constexpr int n = a_shape[1];
     constexpr int nrhs = (B::rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
-    constexpr int lda = (A::get_layout() == layout::row_major) ? a_strides[0] : a_strides[1];
-    constexpr int ldb = (B::get_layout() == layout::row_major) ? ((B::rank() == 1) ? 1 : b_strides[0])
-                                                               : ((B::rank() == 1) ? std::max(m, n) : b_strides[1]);
+    constexpr int lda = get_ld<A>();
+    constexpr int ldb = get_ld<B>();
 
     // Determine LAPACK layout
-    int lapack_layout = (A::get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+    int lapack_layout = (layout == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
-    // Copy b into x
-    auto iter_x = x.begin();
-    for (auto &elem : b) {
-        (*iter_x++) = typename X::value_type(elem);
-    }
+    auto trans = is_transposed<A>() ? 'T' : 'N';
 
     int info;
     if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
                   std::is_same_v<decltype(a.raw_data()), const float *>) {
-        info = LAPACKE_sgels(lapack_layout, 'N', m, n, nrhs, const_cast<float *>(a.raw_data()), lda, x.raw_data(), ldb);
+        info =
+            LAPACKE_sgels(lapack_layout, trans, m, n, nrhs, const_cast<float *>(a.raw_data()), lda, b.raw_data(), ldb);
     } else {
         info =
-            LAPACKE_dgels(lapack_layout, 'N', m, n, nrhs, const_cast<double *>(a.raw_data()), lda, x.raw_data(), ldb);
+            LAPACKE_dgels(lapack_layout, trans, m, n, nrhs, const_cast<double *>(a.raw_data()), lda, b.raw_data(), ldb);
     }
 
     if (info != 0) {
@@ -890,6 +916,10 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
         if (!compatible_for_matmul(a, b)) {
             throw std::runtime_error("Incompatible shapes for matrix multiplication");
         }
+        // layouts must match
+        if (a.get_layout() != a.get_layout()) {
+            throw std::runtime_error("A and B layouts must match");
+        }
     }
     compatible_for_blas_op<A, B>();
 
@@ -897,32 +927,38 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
     const auto b_shape = b.shape();
     const auto a_strides = a.strides();
     const auto b_strides = b.strides();
+    const auto layout = a.get_layout();
 
     const int m = a_shape[0];
-    const int n = a_shape[1];
-    const int k = b_shape[1];
+    const int n = b_shape[1];
+    const int k = a_shape[1];
 
-    // Determine leading dimensions based on layout
-    const int lda = (a.strides()[0] != 1) ? a_shape[0] : a_shape[1];
-    const int ldb = (b.strides()[0] != 1) ? b_shape[0] : b_shape[1];
-    const int ldc = (a.strides()[0] != 1) ? a_shape[0] : a_shape[1];
+    // Determine if matrix is transposed based on strides and layout
+    // if column major and first stride isn't 1, then matrix is transposed
+    // if row major and last stride isn't 1, then matrix is transposed
+    constexpr auto op_a =
+        is_transposed(a, a_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+    constexpr auto op_b =
+        is_transposed(b, b_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+
+    // Determine leading dimensions based on layout and op
+    constexpr int lda = get_ld(a, a_strides, layout, op_a == CBLAS_TRANSPOSE::CblasTrans);
+    constexpr int ldb = get_ld(b, b_strides, layout, op_b == CBLAS_TRANSPOSE::CblasTrans);
+    constexpr int ldc = m;
 
     auto result =
         dynamic_tensor<decltype(typename A::value_type{} * typename B::value_type{}), A::get_error_checking()>(
-            {std::size_t(m), std::size_t(k)}, a.get_layout());
-
-    auto op_a = (A::constexpr_strides()[0] != 1) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
-    auto op_b = (B::constexpr_strides()[0] != 1) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+            {std::size_t(m), std::size_t(n)}, a.get_layout());
 
     // Determine BLAS layout
-    auto layout = (a.get_layout() == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
+    auto blas_layout = (a.get_layout() == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
 
     if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
                   std::is_same_v<decltype(a.raw_data()), const float *>) {
-        cblas_sgemm(layout, op_a, op_b, m, k, n, 1.0F, const_cast<float *>(a.raw_data()), lda,
+        cblas_sgemm(blas_layout, op_a, op_b, m, n, k, 1.0F, const_cast<float *>(a.raw_data()), lda,
                     const_cast<float *>(b.raw_data()), ldb, 0.0F, result.raw_data(), ldc);
     } else {
-        cblas_dgemm(layout, op_a, op_b, m, k, n, 1.0, const_cast<double *>(a.raw_data()), lda,
+        cblas_dgemm(blas_layout, op_a, op_b, m, n, k, 1.0, const_cast<double *>(a.raw_data()), lda,
                     const_cast<double *>(b.raw_data()), ldb, 0.0, result.raw_data(), ldc);
     }
 
@@ -930,20 +966,28 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
 }
 
 // Solve linear system of equations Ax = b
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X> auto solve(A &a, const B &b, X &x) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto solve(A &a, B &b) {
+    const auto a_strides = a.strides();
+    const auto b_strides = b.strides();
+    const auto layout = a.get_layout();
+    const bool a_is_transposed = is_transposed(a, a_strides, layout);
+    const bool b_is_transposed = is_transposed(b, b_strides, layout);
+
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_solve(a, b, x)) {
+        if (!compatible_for_solve(a, b)) {
             throw std::runtime_error("Incompatible shapes for solving linear system");
+        }
+        // layouts must match
+        if (a.get_layout() != b.get_layout()) {
+            throw std::runtime_error("A and B layouts must match");
+        }
+        // must not be transposed
+        if (a_is_transposed || b_is_transposed) {
+            throw std::runtime_error("A and B must not be transposed");
         }
     }
     compatible_for_blas_op<A, B>();
-
-    // copy b into x
-    auto iter_b = b.begin();
-    for (auto &elem : x) {
-        elem = typename X::value_type(*iter_b++);
-    }
 
     const auto a_shape = a.shape();
     const auto b_shape = b.shape();
@@ -952,23 +996,22 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X
     const int nrhs = (b.rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
-    const int lda = (a.get_layout() == layout::row_major) ? a.strides()[0] : a.strides()[1];
-    const int ldb = (b.get_layout() == layout::row_major) ? ((b.rank() == 1) ? 1 : b.strides()[0])
-                                                          : ((b.rank() == 1) ? n : b.strides()[1]);
+    const int lda = get_ld(a, a_strides, layout, a_is_transposed);
+    const int ldb = get_ld(b, b_strides, layout, b_is_transposed);
 
     std::vector<BLAS_INT> ipiv(n);
 
     // Determine LAPACK layout
-    int lapack_layout = (a.get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+    int lapack_layout = (layout == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
     int info;
-    if constexpr (std::is_same_v<decltype(x.raw_data()), float *> ||
-                  std::is_same_v<decltype(x.raw_data()), const float *>) {
+    if constexpr (std::is_same_v<decltype(b.raw_data()), float *> ||
+                  std::is_same_v<decltype(b.raw_data()), const float *>) {
         info = LAPACKE_sgesv(lapack_layout, n, nrhs, const_cast<float *>(a.raw_data()), lda, ipiv.data(),
-                             const_cast<float *>(x.raw_data()), ldb);
+                             const_cast<float *>(b.raw_data()), ldb);
     } else {
         info = LAPACKE_dgesv(lapack_layout, n, nrhs, const_cast<double *>(a.raw_data()), lda, ipiv.data(),
-                             const_cast<double *>(x.raw_data()), ldb);
+                             const_cast<double *>(b.raw_data()), ldb);
     }
 
     if (info != 0) {
@@ -978,12 +1021,25 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X
 }
 
 // Solve linear least squares problem Ax = b
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
-auto solve_lls(A &a, const B &b, X &x) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void solve_lls(A &a, B &b) {
+    const auto a_strides = a.strides();
+    const auto b_strides = b.strides();
+    const auto layout = a.get_layout();
+    const bool a_is_transposed = is_transposed(a, a_strides, layout);
+    const bool b_is_transposed = is_transposed(b, b_strides, layout);
+
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_solve_lls(a, b, x)) {
+        if (!compatible_for_solve_lls(a, b)) {
             throw std::runtime_error("Incompatible shapes for solving linear least squares");
+        }
+        // layouts must match
+        if (a.get_layout() != b.get_layout()) {
+            throw std::runtime_error("A and B layouts must match");
+        }
+        // must not be transposed
+        if (a_is_transposed || b_is_transposed) {
+            throw std::runtime_error("A and B must not be transposed");
         }
     }
     compatible_for_blas_op<A, B>();
@@ -996,32 +1052,24 @@ auto solve_lls(A &a, const B &b, X &x) {
     const int nrhs = (b.rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
-    const int lda = (a.get_layout() == layout::row_major) ? a.strides()[0] : a.strides()[1];
-    const int ldb = (b.get_layout() == layout::row_major) ? ((b.rank() == 1) ? 1 : b.strides()[0])
-                                                          : ((b.rank() == 1) ? std::max(m, n) : b.strides()[1]);
+    const int lda = get_ld(a, a_strides, layout, a_is_transposed);
+    const int ldb = get_ld(b, b_strides, layout, b_is_transposed);
 
     // Determine LAPACK layout
-    int lapack_layout = (a.get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
-
-    // copy b into x
-    auto iter_x = x.begin();
-    for (auto &elem : b) {
-        (*iter_x++) = typename X::value_type(elem);
-    }
+    int lapack_layout = (layout == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
     int info;
     if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
                   std::is_same_v<decltype(a.raw_data()), const float *>) {
-        info = LAPACKE_sgels(lapack_layout, 'N', m, n, nrhs, const_cast<float *>(a.raw_data()), lda, x.raw_data(), ldb);
+        info = LAPACKE_sgels(lapack_layout, 'N', m, n, nrhs, const_cast<float *>(a.raw_data()), lda, b.raw_data(), ldb);
     } else {
         info =
-            LAPACKE_dgels(lapack_layout, 'N', m, n, nrhs, const_cast<double *>(a.raw_data()), lda, x.raw_data(), ldb);
+            LAPACKE_dgels(lapack_layout, 'N', m, n, nrhs, const_cast<double *>(a.raw_data()), lda, b.raw_data(), ldb);
     }
 
     if (info) {
         throw std::runtime_error("LAPACKE_gels failed with error code " + std::to_string(info));
     }
-    return x;
 }
 
 // cross product between two 3D vectors

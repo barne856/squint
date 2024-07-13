@@ -15,16 +15,16 @@
 #endif
 
 int main() {
-    auto A =
-        squint::fixed_tensor<double, squint::layout::column_major, squint::error_checking::disabled, 2, 3>::random();
+    auto m = squint::mat2x4({1, 1, 2, 1, 3, 1, 4, 1});
+    auto b = squint::mat4x2({10, 5, 0, 0, 10, 5, 0, 0});
 
-    // std::cout << A << std::endl;
-    // std::cout << A.transpose() << std::endl;
-    // std::cout << (A.transpose() * A).inv() << std::endl;
-    // std::cout << A.pinv() << std::endl;
-    // std::cout << A.inv() << std::endl;
-    // std::cout << A * A.inv() << std::endl;
-    // std::cout << A * A.pinv() << std::endl;
+    std::cout << "m = " << m << std::endl;
+    std::cout << "b = " << b << std::endl;
+
+    squint::solve_lls(m, b);
+
+    // std::cout << "x = " << b.subview<2>(squint::slice{0, 2}) << std::endl;
+    std::cout << "x = " << b << std::endl;
 
     return 0;
 }
