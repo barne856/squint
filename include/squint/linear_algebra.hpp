@@ -49,112 +49,6 @@ template <std::size_t... Strides> struct strides_struct {
     }();
 };
 
-// Base linear algebra mixin
-template <typename Derived, error_checking ErrorChecking> class linear_algebra_mixin {
-  public:
-    template <tensor Other> auto &operator+=(const Other &other) {
-        if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
-            compatible_for_element_wise_op<Derived, Other>();
-        } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
-                             Other::get_error_checking() == error_checking::enabled) {
-            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
-                throw std::runtime_error("Incompatible shapes for element-wise operation");
-            }
-        }
-        auto it = static_cast<Derived *>(this)->begin();
-        for (const auto &elem : other) {
-            *it++ += elem;
-        }
-        return *static_cast<Derived *>(this);
-    }
-
-    template <fixed_shape_tensor Other> auto &operator-=(const Other &other) {
-        if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
-            compatible_for_element_wise_op<Derived, Other>();
-        } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
-                             Other::get_error_checking() == error_checking::enabled) {
-            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
-                throw std::runtime_error("Incompatible shapes for element-wise operation");
-            }
-        }
-        auto it = static_cast<Derived *>(this)->begin();
-        for (const auto &elem : other) {
-            *it++ -= elem;
-        }
-        return *static_cast<Derived *>(this);
-    }
-    template <scalar Scalar> auto &operator*=(const Scalar &s) {
-        for (auto &elem : *static_cast<Derived *>(this)) {
-            elem *= s;
-        }
-        return *static_cast<Derived *>(this);
-    }
-
-    template <scalar Scalar> auto &operator/=(const Scalar &s) {
-        for (auto &elem : *static_cast<Derived *>(this)) {
-            elem /= s;
-        }
-        return *static_cast<Derived *>(this);
-    }
-
-    auto norm() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        auto it = derived->begin();
-        auto result = (*it++) * (*it++);
-        for (std::size_t i = 1; i < derived->size(); ++i) {
-            result += (*it++) * (*it++);
-        }
-        return squint::math::sqrt(result);
-    }
-
-    auto trace() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        if constexpr (fixed_shape_tensor<Derived>) {
-            if constexpr (Derived::rank() == 2) {
-                if (derived->shape()[0] != derived->shape()[1]) {
-                    throw std::runtime_error("Matrix must be square for trace");
-                }
-            }
-        }
-        if constexpr (dynamic_shape_tensor<Derived>) {
-            if constexpr (Derived::get_error_checking() == error_checking::enabled) {
-                if (derived->shape()[0] != derived->shape()[1]) {
-                    throw std::runtime_error("Matrix must be square for trace");
-                }
-            }
-        }
-        auto it = derived->begin();
-        auto result = *it++;
-        for (std::size_t i = 1; i < derived->shape()[0]; ++i) {
-            result += *it;
-            it += derived->strides()[0] + 1;
-        }
-        return result;
-    }
-
-    auto pinv() const {
-        const auto &derived = *static_cast<const Derived *>(this);
-        return (derived.transpose() * derived).inv() * derived.transpose();
-    }
-
-    auto mean() const { return sum() / static_cast<const Derived *>(this)->size(); }
-
-    auto sum() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        return std::accumulate(derived->begin(), derived->end(), typename Derived::value_type{});
-    }
-
-    auto min() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        return *std::min_element(derived->begin(), derived->end());
-    }
-
-    auto max() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        return *std::max_element(derived->begin(), derived->end());
-    }
-};
-
 // Compile-time shape checks
 template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr bool compatible_for_element_wise_op() {
     auto min_dims = std::min(A::constexpr_shape().size(), B::constexpr_shape().size());
@@ -272,6 +166,204 @@ template <fixed_shape_tensor A, typename value_type, std::size_t... Is>
 auto build_fixed_tensor_type(std::index_sequence<Is...> /*unused*/) {
     return fixed_tensor<value_type, A::get_layout(), A::get_error_checking(), A::constexpr_shape()[Is]...>{};
 }
+
+// Runtime shape checks
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_element_wise_op(const A &a, const B &b) {
+    auto min_dims = std::min(a.rank(), b.rank());
+    for (std::size_t i = 0; i < min_dims; ++i) {
+        if (a.shape()[i] != b.shape()[i]) {
+            return false;
+        }
+    }
+    return a.size() == b.size();
+}
+
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_matmul(const A &a, const B &b) {
+    const auto this_shape = a.shape();
+    const auto other_shape = b.shape();
+    const bool matmat = (a.rank() == 2) && (b.rank() == 2) && (this_shape[1] == other_shape[0]);
+    const bool matvec = (a.rank() == 2) && (b.rank() == 1) && (this_shape[1] == other_shape[0]);
+    return matmat || matvec;
+}
+
+// compatible for solve
+template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
+bool compatible_for_solve(const A &a, const B &b, const X &x) {
+    const auto a_shape = a.shape();
+    const auto b_shape = b.shape();
+    const auto x_shape = x.shape();
+
+    // Shape checks
+    if (a.rank() != 2) {
+        throw std::runtime_error("Matrix A must be 2-dimensional (matrix)");
+    }
+    if (b.rank() != 1 && b.rank() != 2) {
+        throw std::runtime_error("B must be 1D or 2D");
+    }
+    if (a_shape[0] != a_shape[1]) {
+        throw std::runtime_error("Matrix A must be square");
+    }
+    if (a_shape[0] != b_shape[0]) {
+        throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
+    }
+    if (x_shape != b_shape) {
+        throw std::runtime_error("Solution vector/matrix X must have the same shape as B");
+    }
+
+    // Dimensionality checks
+    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
+    static_assert(std::convertible_to<typename X::value_type, x_type>,
+                  "unexpected value type for solution vector/matrix X");
+
+    return true;
+}
+
+// compatible for solve_lls
+template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
+bool compatible_for_solve_lls(const A &a, const B &b, const X &x) {
+    // Shape checks
+    if (a.rank() != 2) {
+        throw std::runtime_error("Matrix A must be 2-dimensional");
+    }
+    if (b.rank() != 1 && b.rank() != 2) {
+        throw std::runtime_error("B must be 1D or 2D");
+    }
+    if (a.shape()[0] != b.shape()[0]) {
+        throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
+    }
+    if (x.rank() != b.rank()) {
+        throw std::runtime_error("X dimensions must match B");
+    }
+    if (x.rank() == 2) {
+        if (b.shape()[1] != x.shape()[1]) {
+            throw std::runtime_error("vector/matrix B and vector/matrix X must have the same columns");
+        }
+    }
+    if (x.shape()[0] != a.shape()[1]) {
+        throw std::runtime_error("Matrix A and vector/matrix X dimensions must be compatible");
+    }
+
+    // Dimensionality checks
+    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
+    static_assert(std::convertible_to<typename X::value_type, x_type>,
+                  "unexpected value type for solution vector/matrix X");
+
+    return true;
+}
+
+// compatible for cross
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_cross(const A &a, const B &b) {
+    if (a.size() != 3 || b.size() != 3) {
+        throw std::runtime_error("Cross product requires 3D vectors");
+    }
+    return true;
+}
+
+// Base linear algebra mixin
+template <typename Derived, error_checking ErrorChecking> class linear_algebra_mixin {
+  public:
+    template <tensor Other> auto &operator+=(const Other &other) {
+        if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
+            compatible_for_element_wise_op<Derived, Other>();
+        } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
+                             Other::get_error_checking() == error_checking::enabled) {
+            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
+                throw std::runtime_error("Incompatible shapes for element-wise operation");
+            }
+        }
+        auto it = static_cast<Derived *>(this)->begin();
+        for (const auto &elem : other) {
+            *it++ += elem;
+        }
+        return *static_cast<Derived *>(this);
+    }
+
+    template <fixed_shape_tensor Other> auto &operator-=(const Other &other) {
+        if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
+            compatible_for_element_wise_op<Derived, Other>();
+        } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
+                             Other::get_error_checking() == error_checking::enabled) {
+            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
+                throw std::runtime_error("Incompatible shapes for element-wise operation");
+            }
+        }
+        auto it = static_cast<Derived *>(this)->begin();
+        for (const auto &elem : other) {
+            *it++ -= elem;
+        }
+        return *static_cast<Derived *>(this);
+    }
+    template <scalar Scalar> auto &operator*=(const Scalar &s) {
+        for (auto &elem : *static_cast<Derived *>(this)) {
+            elem *= s;
+        }
+        return *static_cast<Derived *>(this);
+    }
+
+    template <scalar Scalar> auto &operator/=(const Scalar &s) {
+        for (auto &elem : *static_cast<Derived *>(this)) {
+            elem /= s;
+        }
+        return *static_cast<Derived *>(this);
+    }
+
+    auto norm() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        auto it = derived->begin();
+        auto result = (*it++) * (*it++);
+        for (std::size_t i = 1; i < derived->size(); ++i) {
+            result += (*it++) * (*it++);
+        }
+        return squint::math::sqrt(result);
+    }
+
+    auto trace() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        if constexpr (fixed_shape_tensor<Derived>) {
+            if constexpr (Derived::rank() == 2) {
+                if (derived->shape()[0] != derived->shape()[1]) {
+                    throw std::runtime_error("Matrix must be square for trace");
+                }
+            }
+        }
+        if constexpr (dynamic_shape_tensor<Derived>) {
+            if constexpr (Derived::get_error_checking() == error_checking::enabled) {
+                if (derived->shape()[0] != derived->shape()[1]) {
+                    throw std::runtime_error("Matrix must be square for trace");
+                }
+            }
+        }
+        auto it = derived->begin();
+        auto result = *it++;
+        for (std::size_t i = 1; i < derived->shape()[0]; ++i) {
+            result += *it;
+            it += derived->strides()[0] + 1;
+        }
+        return result;
+    }
+
+    auto pinv() const {
+        const auto &derived = *static_cast<const Derived *>(this);
+        return (derived.transpose() * derived).inv() * derived.transpose();
+    }
+
+    auto mean() const { return sum() / static_cast<const Derived *>(this)->size(); }
+
+    auto sum() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        return std::accumulate(derived->begin(), derived->end(), typename Derived::value_type{});
+    }
+
+    auto min() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        return *std::min_element(derived->begin(), derived->end());
+    }
+
+    auto max() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        return *std::max_element(derived->begin(), derived->end());
+    }
+};
 
 // Fixed tensor with linear algebra
 template <typename Derived, error_checking ErrorChecking>
@@ -620,98 +712,6 @@ template <fixed_shape_tensor A, scalar Scalar> auto operator/(const A &a, const 
         elem = (*a_iter++) / s;
     }
     return result;
-}
-
-// Runtime shape checks
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_element_wise_op(const A &a, const B &b) {
-    auto min_dims = std::min(a.rank(), b.rank());
-    for (std::size_t i = 0; i < min_dims; ++i) {
-        if (a.shape()[i] != b.shape()[i]) {
-            return false;
-        }
-    }
-    return a.size() == b.size();
-}
-
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_matmul(const A &a, const B &b) {
-    const auto this_shape = a.shape();
-    const auto other_shape = b.shape();
-    const bool matmat = (a.rank() == 2) && (b.rank() == 2) && (this_shape[1] == other_shape[0]);
-    const bool matvec = (a.rank() == 2) && (b.rank() == 1) && (this_shape[1] == other_shape[0]);
-    return matmat || matvec;
-}
-
-// compatible for solve
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
-bool compatible_for_solve(const A &a, const B &b, const X &x) {
-    const auto a_shape = a.shape();
-    const auto b_shape = b.shape();
-    const auto x_shape = x.shape();
-
-    // Shape checks
-    if (a.rank() != 2) {
-        throw std::runtime_error("Matrix A must be 2-dimensional (matrix)");
-    }
-    if (b.rank() != 1 && b.rank() != 2) {
-        throw std::runtime_error("B must be 1D or 2D");
-    }
-    if (a_shape[0] != a_shape[1]) {
-        throw std::runtime_error("Matrix A must be square");
-    }
-    if (a_shape[0] != b_shape[0]) {
-        throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
-    }
-    if (x_shape != b_shape) {
-        throw std::runtime_error("Solution vector/matrix X must have the same shape as B");
-    }
-
-    // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
-
-    return true;
-}
-
-// compatible for solve_lls
-template <dynamic_shape_tensor A, dynamic_shape_tensor B, dynamic_shape_tensor X>
-bool compatible_for_solve_lls(const A &a, const B &b, const X &x) {
-    // Shape checks
-    if (a.rank() != 2) {
-        throw std::runtime_error("Matrix A must be 2-dimensional");
-    }
-    if (b.rank() != 1 && b.rank() != 2) {
-        throw std::runtime_error("B must be 1D or 2D");
-    }
-    if (a.shape()[0] != b.shape()[0]) {
-        throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
-    }
-    if (x.rank() != b.rank()) {
-        throw std::runtime_error("X dimensions must match B");
-    }
-    if (x.rank() == 2) {
-        if (b.shape()[1] != x.shape()[1]) {
-            throw std::runtime_error("vector/matrix B and vector/matrix X must have the same columns");
-        }
-    }
-    if (x.shape()[0] != a.shape()[1]) {
-        throw std::runtime_error("Matrix A and vector/matrix X dimensions must be compatible");
-    }
-
-    // Dimensionality checks
-    using x_type = decltype(typename B::value_type{} / typename A::value_type{});
-    static_assert(std::convertible_to<typename X::value_type, x_type>,
-                  "unexpected value type for solution vector/matrix X");
-
-    return true;
-}
-
-// compatible for cross
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_cross(const A &a, const B &b) {
-    if (a.size() != 3 || b.size() != 3) {
-        throw std::runtime_error("Cross product requires 3D vectors");
-    }
-    return true;
 }
 
 // Dynamic tensor with linear algebra
