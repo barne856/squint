@@ -574,6 +574,15 @@ using bmat3x4 = mat3x4_t<bool>;
 using bmat4x2 = mat4x2_t<bool>;
 using bmat4x3 = mat4x3_t<bool>;
 
+// General tensor shapes
+template <typename T, std::size_t... Dims>
+using ndarr_t = fixed_tensor<T, layout::column_major, error_checking::disabled, Dims...>;
+template <std::size_t... Dims> using indarr = ndarr_t<int, Dims...>;
+template <std::size_t... Dims> using undarr = ndarr_t<unsigned char, Dims...>;
+template <std::size_t... Dims> using ndarr = ndarr_t<float, Dims...>;
+template <std::size_t... Dims> using dndarr = ndarr_t<double, Dims...>;
+template <std::size_t... Dims> using bndarr = ndarr_t<bool, Dims...>;
+
 } // namespace squint
 
 #endif // SQUINT_FIXED_TENSOR_HPP

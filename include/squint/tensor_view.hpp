@@ -2,6 +2,7 @@
 #define SQUINT_TENSOR_VIEW_HPP
 
 #include "squint/iterable_tensor.hpp"
+#include "squint/linear_algebra.hpp"
 #include "squint/quantity.hpp"
 #include <array>
 #include <numeric>
@@ -11,16 +12,6 @@
 #include <vector>
 
 namespace squint {
-
-// Forward declarations
-template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims> class fixed_tensor;
-template <typename T, error_checking ErrorChecking> class dynamic_tensor;
-template <typename T, layout L, typename Strides, error_checking ErrorChecking, std::size_t... Dims>
-class fixed_tensor_view;
-template <typename T, layout L, typename Strides, error_checking ErrorChecking, std::size_t... Dims>
-class const_fixed_tensor_view;
-template <typename T, error_checking ErrorChecking> class dynamic_tensor_view;
-template <typename T, error_checking ErrorChecking> class const_dynamic_tensor_view;
 
 // Compile-time utilities
 template <std::size_t... Is> using index_sequence = std::index_sequence<Is...>;
@@ -86,7 +77,8 @@ class tensor_view_base : public iterable_tensor<Derived, T, ErrorChecking> {
 
 // Base class for fixed tensor views
 template <typename Derived, typename T, layout L, typename Strides, error_checking ErrorChecking, std::size_t... Dims>
-class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking> {
+class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking>,
+                               public fixed_linear_algebra_mixin<Derived, ErrorChecking> {
   protected:
     using tensor_view_base<Derived, T, ErrorChecking>::data_;
 
@@ -268,7 +260,8 @@ class const_fixed_tensor_view
 
 // Base class for dynamic tensor views
 template <typename Derived, typename T, error_checking ErrorChecking>
-class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking> {
+class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking>,
+                                 public dynamic_linear_algebra_mixin<Derived, ErrorChecking> {
   protected:
     std::vector<std::size_t> shape_;
     std::vector<std::size_t> strides_;

@@ -3,6 +3,7 @@
 
 #include "squint/dimension.hpp"
 #include <numeric>
+#include <utility>
 #ifdef BLAS_BACKEND_MKL
 #include <mkl.h>
 #define BLAS_INT MKL_INT
@@ -14,7 +15,6 @@
 
 #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
-#include "squint/tensor_view.hpp"
 #include <algorithm>
 #include <concepts>
 #include <string>
@@ -82,36 +82,39 @@ static constexpr bool compatible_for_blas_op()
 {
     // Type compatibility check
     if constexpr (quantitative<typename A::value_type> && quantitative<typename B::value_type>) {
-        static_assert(std::is_same_v<typename A::value_type::value_type, typename B::value_type::value_type>,
-                      "A and B underlying types must match");
+        static_assert(
+            std::is_same_v<const typename A::value_type::value_type, const typename B::value_type::value_type>,
+            "A and B underlying types must match");
     } else if constexpr (quantitative<typename A::value_type> && arithmetic<typename B::value_type>) {
-        static_assert(std::is_same_v<typename A::value_type::value_type, typename B::value_type>,
+        static_assert(std::is_same_v<const typename A::value_type::value_type, const typename B::value_type>,
                       "A and B underlying types must match");
     } else if constexpr (arithmetic<typename A::value_type> && quantitative<typename B::value_type>) {
-        static_assert(std::is_same_v<typename A::value_type, typename B::value_type::value_type>,
+        static_assert(std::is_same_v<const typename A::value_type, const typename B::value_type::value_type>,
                       "A and B underlying types must match");
     } else {
-        static_assert(std::is_same_v<typename A::value_type, typename B::value_type>,
+        static_assert(std::is_same_v<const typename A::value_type, const typename B::value_type>,
                       "A and B underlying types must match");
     }
 
     // Type checks for B
     if constexpr (quantitative<typename B::value_type>) {
-        static_assert(std::is_same_v<typename B::value_type::value_type, float> ||
-                          std::is_same_v<typename B::value_type::value_type, double>,
+        static_assert(std::is_same_v<const typename B::value_type::value_type, const float> ||
+                          std::is_same_v<const typename B::value_type::value_type, const double>,
                       "B's quantity underlying type must be float or double");
     } else if constexpr (arithmetic<typename B::value_type>) {
-        static_assert(std::is_same_v<typename B::value_type, float> || std::is_same_v<typename B::value_type, double>,
+        static_assert(std::is_same_v<const typename B::value_type, const float> ||
+                          std::is_same_v<const typename B::value_type, const double>,
                       "B's tensor underlying type must be float or double");
     }
 
     // Type checks for A
     if constexpr (quantitative<typename A::value_type>) {
-        static_assert(std::is_same_v<typename A::value_type::value_type, float> ||
-                          std::is_same_v<typename A::value_type::value_type, double>,
+        static_assert(std::is_same_v<const typename A::value_type::value_type, const float> ||
+                          std::is_same_v<const typename A::value_type::value_type, const double>,
                       "A's quantity underlying type must be float or double");
     } else if constexpr (arithmetic<typename A::value_type>) {
-        static_assert(std::is_same_v<typename A::value_type, float> || std::is_same_v<typename A::value_type, double>,
+        static_assert(std::is_same_v<const typename A::value_type, const float> ||
+                          std::is_same_v<const typename A::value_type, const double>,
                       "A's tensor underlying type must be float or double");
     }
 
@@ -181,6 +184,14 @@ template <fixed_shape_tensor A> static constexpr int get_ld() {
     return ((layout == layout::column_major && !is_transposed) || (layout == layout::row_major && is_transposed))
                ? (A::rank() == 1 ? A::constexpr_shape()[0] : strides[1])
                : strides[0];
+}
+
+// compatible_for_inv
+template <fixed_shape_tensor A> static constexpr bool compatible_for_inv() {
+    static_assert(A::rank() == 2, "Inverse operation is only defined for 2D tensors (matrices)");
+    constexpr auto shape = A::constexpr_shape();
+    static_assert(shape[0] == shape[1], "Matrix must be square for inversion");
+    return true;
 }
 
 // Helper function to build a new fixed tensor type from an existing one with a different value type
@@ -288,6 +299,18 @@ int get_ld(const A &a, const std::vector<std::size_t> &strides, layout layout, b
                : strides[0];
 }
 
+// compatible_for_inv
+template <dynamic_shape_tensor A> bool compatible_for_inv(const A &a) {
+    if (a.rank() != 2) {
+        throw std::runtime_error("Inverse operation is only defined for 2D tensors (matrices)");
+    }
+    const auto shape = a.shape();
+    if (shape[0] != shape[1]) {
+        throw std::runtime_error("Matrix must be square for inversion");
+    }
+    return true;
+}
+
 // Base linear algebra mixin
 template <typename Derived, error_checking ErrorChecking> class linear_algebra_mixin {
   public:
@@ -346,6 +369,16 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         return squint::math::sqrt(result);
     }
 
+    auto squared_norm() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        auto it = derived->begin();
+        auto result = (*it++) * (*it++);
+        for (std::size_t i = 1; i < derived->size(); ++i) {
+            result += (*it++) * (*it++);
+        }
+        return result;
+    }
+
     auto trace() const {
         const auto *derived = static_cast<const Derived *>(this);
         if constexpr (fixed_shape_tensor<Derived>) {
@@ -371,10 +404,6 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         return result;
     }
 
-    auto pinv() const {
-        // TODO
-    }
-
     auto mean() const { return sum() / static_cast<const Derived *>(this)->size(); }
 
     auto sum() const {
@@ -398,9 +427,18 @@ template <typename Derived, error_checking ErrorChecking>
 class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChecking> {
   public:
     template <fixed_shape_tensor B> auto operator/(const B &b) const {
+        auto derived = static_cast<const Derived *>(this);
         // Solve the general linear least squares problem
         // make a copy of A since it will be modified
-        auto A = *static_cast<const Derived *>(this);
+        // TODO
+        static_assert(false);
+        using value_type = decltype(derived->raw_data()[0]);
+        auto A =
+            build_fixed_tensor_type<Derived, value_type>(std::make_index_sequence<Derived::constexpr_shape().size()>{});
+        auto it = derived->begin();
+        for (auto &elem : A) {
+            elem = value_type(*it++);
+        }
         using x_type = decltype(typename B::value_type{} / typename Derived::value_type{});
         if constexpr (B::constexpr_shape().size() == 1) {
             fixed_tensor<x_type, Derived::get_layout(), Derived::get_error_checking(), Derived::constexpr_shape()[1]> x;
@@ -486,20 +524,17 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
     }
 
     auto inv() const {
-        static_assert(Derived::rank() == 2, "Inverse operation is only defined for 2D tensors (matrices)");
+        compatible_for_inv<Derived>();
+        compatible_for_blas_op<Derived, Derived>();
+
         const auto *derived = static_cast<const Derived *>(this);
         constexpr auto shape = Derived::constexpr_shape();
-        static_assert(shape[0] == shape[1], "Matrix must be square for inversion");
-        using blas_type = decltype(derived->raw_data()[0]);
-        static_assert(std::is_same_v<blas_type, const float &> || std::is_same_v<blas_type, const double &>,
-                      "Matrix must have float or double underlying type");
 
         using result_value_type = decltype(1 / typename Derived::value_type{});
         auto result = build_fixed_tensor_type<Derived, result_value_type>(std::make_index_sequence<2>{});
 
         constexpr int n = shape[0];
-        constexpr int lda =
-            (Derived::constexpr_shape()[0] != 1) ? Derived::constexpr_shape()[0] : Derived::constexpr_shape()[1];
+        constexpr int lda = get_ld<Derived>();
 
         std::vector<BLAS_INT> ipiv(n);
 
@@ -513,6 +548,7 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
         for (auto &elem : result) {
             elem = result_value_type(*it++);
         }
+        using blas_type = decltype(derived->raw_data()[0]);
 
         // LU decomposition
         if constexpr (std::is_same_v<blas_type, const float &>) {
@@ -537,6 +573,23 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
         }
 
         return result;
+    }
+
+    auto pinv() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        constexpr auto shape = Derived::constexpr_shape();
+        constexpr int m = shape[0];
+        constexpr int n = shape[1];
+
+        if constexpr (m >= n) {
+            // Overdetermined or square system: pinv(A) = (A^T * A)^-1 * A^T
+            auto AtA = derived->transpose() * (*derived);
+            return AtA.inv() * derived->transpose();
+        } else {
+            // Underdetermined system: pinv(A) = A^T * (A * A^T)^-1
+            auto AAt = (*derived) * derived->transpose();
+            return derived->transpose() * AAt.inv();
+        }
     }
 };
 
@@ -771,6 +824,7 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
                 return false;
             }
         }
+        return true;
     }
     template <tensor Other> bool operator!=(const Other &other) const { return !(*this == other); }
 
@@ -834,30 +888,33 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
     }
 
     auto inv() const {
-        if constexpr (Derived::get_error_checking() == error_checking::enabled) {
-            if (Derived::rank() != 2) {
-                throw std::runtime_error("Inverse operation is only defined for 2D tensors (matrices)");
-            }
-            if (Derived::shape()[0] != Derived::shape()[1]) {
-                throw std::runtime_error("Matrix must be square for inversion");
-            }
-        }
         const auto *derived = static_cast<const Derived *>(this);
-        using blas_type = decltype(derived->raw_data()[0]);
-        static_assert(std::is_same_v<blas_type, const float &> || std::is_same_v<blas_type, const double &>,
-                      "Matrix must have float or double underlying type");
+        if constexpr (Derived::get_error_checking() == error_checking::enabled) {
+            compatible_for_inv(*derived);
+        }
+        compatible_for_blas_op<Derived, Derived>();
+
         using result_value_type = decltype(1 / typename Derived::value_type{});
         auto result = dynamic_tensor<result_value_type, Derived::get_error_checking()>(
             {derived->shape()[0], derived->shape()[1]});
+
         const int n = derived->shape()[0];
-        const int lda = (derived->get_layout() == layout::row_major) ? derived->strides()[0] : derived->strides()[1];
+        const int lda = get_ld(*derived, derived->strides(), derived->get_layout(),
+                               is_transposed(*derived, derived->strides(), derived->get_layout()));
+
         std::vector<BLAS_INT> ipiv(n);
+
+        int lapack_layout = (derived->get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+
         int info;
+
         auto it = derived->begin();
         for (auto &elem : result) {
             elem = result_value_type(*it++);
         }
-        int lapack_layout = (derived->get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+
+        using blas_type = decltype(derived->raw_data()[0]);
+
         if constexpr (std::is_same_v<blas_type, const float &>) {
             info = LAPACKE_sgetrf(lapack_layout, n, n, result.raw_data(), lda, ipiv.data());
         } else {
@@ -875,6 +932,22 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
             throw std::runtime_error("Matrix inversion failed with error code " + std::to_string(info));
         }
         return result;
+    }
+
+    auto pinv() const {
+        const auto *derived = static_cast<const Derived *>(this);
+        const auto &shape = derived->shape();
+        const int m = shape[0];
+        const int n = shape[1];
+
+        if (m >= n) {
+            // Overdetermined or square system: pinv(A) = (A^T * A)^-1 * A^T
+            auto AtA = derived->transpose() * (*derived);
+            return AtA.inv() * derived->transpose();
+        }
+        // Underdetermined system: pinv(A) = A^T * (A * A^T)^-1
+        auto AAt = (*derived) * derived->transpose();
+        return derived->transpose() * AAt.inv();
     }
 };
 
@@ -936,15 +1009,13 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
     // Determine if matrix is transposed based on strides and layout
     // if column major and first stride isn't 1, then matrix is transposed
     // if row major and last stride isn't 1, then matrix is transposed
-    constexpr auto op_a =
-        is_transposed(a, a_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
-    constexpr auto op_b =
-        is_transposed(b, b_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+    const auto op_a = is_transposed(a, a_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
+    const auto op_b = is_transposed(b, b_strides, layout) ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
 
     // Determine leading dimensions based on layout and op
-    constexpr int lda = get_ld(a, a_strides, layout, op_a == CBLAS_TRANSPOSE::CblasTrans);
-    constexpr int ldb = get_ld(b, b_strides, layout, op_b == CBLAS_TRANSPOSE::CblasTrans);
-    constexpr int ldc = m;
+    const int lda = get_ld(a, a_strides, layout, op_a == CBLAS_TRANSPOSE::CblasTrans);
+    const int ldb = get_ld(b, b_strides, layout, op_b == CBLAS_TRANSPOSE::CblasTrans);
+    const int ldc = m;
 
     auto result =
         dynamic_tensor<decltype(typename A::value_type{} * typename B::value_type{}), A::get_error_checking()>(

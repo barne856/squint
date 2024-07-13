@@ -14,17 +14,22 @@
 #include <lapacke.h>
 #endif
 
+using namespace squint;
+
 int main() {
-    auto m = squint::mat2x4({1, 1, 2, 1, 3, 1, 4, 1});
-    auto b = squint::mat4x2({10, 5, 0, 0, 10, 5, 0, 0});
+    auto A = tens({2, 2}, {2, 1, 3, 4});
 
-    std::cout << "m = " << m << std::endl;
-    std::cout << "b = " << b << std::endl;
+    std::cout << A << std::endl;
+    std::cout << A.inv() << std::endl;
 
-    squint::solve_lls(m, b);
+    auto B = tens({2, 2}, {2, 3, 1, 4});
 
-    // std::cout << "x = " << b.subview<2>(squint::slice{0, 2}) << std::endl;
-    std::cout << "x = " << b << std::endl;
+    std::cout << B.transpose() << std::endl;
+    std::cout << B.transpose().inv() << std::endl;
+
+    std::cout << (A.inv() == A.inv()) << std::endl;
+
+    std::cout << approx_equal(A.inv(), A.pinv(), 0.003F) << std::endl;
 
     return 0;
 }
