@@ -57,26 +57,28 @@ template <std::size_t... Strides> struct strides_struct {
 };
 
 // Compile-time shape checks
-template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr bool compatible_for_element_wise_op() {
-    auto min_dims = std::min(A::constexpr_shape().size(), B::constexpr_shape().size());
-    for (std::size_t i = 0; i < min_dims; ++i) {
-        if (A::constexpr_shape()[i] != B::constexpr_shape()[i]) {
-            return false;
-        }
-    }
-    return A::size() == B::size();
+template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr void compatible_for_element_wise_op() {
+    constexpr auto min_dims = A::constexpr_shape().size() > B::constexpr_shape().size() ? B::constexpr_shape().size()
+                                                                                        : A::constexpr_shape().size();
+    return [&]<auto... I>(std::index_sequence<I...>) {
+        static_assert(((A::constexpr_shape()[I] == B::constexpr_shape()[I]) && ...),
+                      "Incompatible shapes for element-wise operation");
+    }(std::make_index_sequence<min_dims>{});
+    static_assert(A::size() == B::size(), "Tensors must have the same number of elements");
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr bool compatible_for_matmul() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> constexpr void compatible_for_matmul() {
     constexpr auto this_shape = A::constexpr_shape();
     constexpr auto other_shape = B::constexpr_shape();
     constexpr bool matmat = (A::rank() == 2) && (B::rank() == 2) && (this_shape[1] == other_shape[0]);
     constexpr bool matvec = (A::rank() == 2) && (B::rank() == 1) && (this_shape[1] == other_shape[0]);
-    return matmat || matvec;
+    constexpr bool vecmat =
+        (A::rank() == 1) && (B::rank() == 2) && (this_shape[0] == other_shape[1]) && other_shape[0] == 1;
+    static_assert(matmat || matvec || vecmat, "Incompatible shapes for matrix multiplication");
 }
 
 template <tensor A, tensor B>
-static constexpr bool compatible_for_blas_op()
+static constexpr void compatible_for_blas_op()
     requires((quantitative<typename B::value_type> || arithmetic<typename B::value_type>) &&
              (quantitative<typename A::value_type> || arithmetic<typename A::value_type>))
 {
@@ -117,11 +119,9 @@ static constexpr bool compatible_for_blas_op()
                           std::is_same_v<const typename A::value_type, const double>,
                       "A's tensor underlying type must be float or double");
     }
-
-    return true;
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr void compatible_for_solve() {
     constexpr auto a_shape = A::constexpr_shape();
     constexpr auto b_shape = B::constexpr_shape();
 
@@ -135,11 +135,9 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool comp
     // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
     // which is only possible if A is dimensionless
     static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
-
-    return true;
 }
 
-template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve_lls() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr void compatible_for_solve_lls() {
     // Shape checks
     static_assert(A::rank() == 1 || A::rank() == 2, "Matrix A must be 1D or 2D");
     static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
@@ -153,14 +151,11 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool comp
     // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
     // which is only possible if A is dimensionless
     static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
-
-    return true;
 }
 
 // compatible for cross
-template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_cross() {
+template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr void compatible_for_cross() {
     static_assert(A::size() == 3 && B::size() == 3, "Cross product requires 3D vectors");
-    return true;
 }
 
 // is transposed
@@ -187,11 +182,10 @@ template <fixed_shape_tensor A> static constexpr int get_ld() {
 }
 
 // compatible_for_inv
-template <fixed_shape_tensor A> static constexpr bool compatible_for_inv() {
+template <fixed_shape_tensor A> static constexpr void compatible_for_inv() {
     static_assert(A::rank() == 2, "Inverse operation is only defined for 2D tensors (matrices)");
     constexpr auto shape = A::constexpr_shape();
     static_assert(shape[0] == shape[1], "Matrix must be square for inversion");
-    return true;
 }
 
 // Helper function to build a new fixed tensor type from an existing one with a different value type
@@ -201,26 +195,31 @@ auto build_fixed_tensor_type(std::index_sequence<Is...> /*unused*/) {
 }
 
 // Runtime shape checks
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_element_wise_op(const A &a, const B &b) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void compatible_for_element_wise_op(const A &a, const B &b) {
     auto min_dims = std::min(a.rank(), b.rank());
     for (std::size_t i = 0; i < min_dims; ++i) {
         if (a.shape()[i] != b.shape()[i]) {
-            return false;
+            throw std::runtime_error("Incompatible shapes for element-wise operation");
         }
     }
-    return a.size() == b.size();
+    if (a.size() != b.size()) {
+        throw std::runtime_error("Tensors must have the same number of elements");
+    }
 }
 
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_matmul(const A &a, const B &b) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void compatible_for_matmul(const A &a, const B &b) {
     const auto this_shape = a.shape();
     const auto other_shape = b.shape();
     const bool matmat = (a.rank() == 2) && (b.rank() == 2) && (this_shape[1] == other_shape[0]);
     const bool matvec = (a.rank() == 2) && (b.rank() == 1) && (this_shape[1] == other_shape[0]);
-    return matmat || matvec;
+    const bool vecmat = (a.rank() == 1) && (b.rank() == 2) && (this_shape[0] == other_shape[1]) && other_shape[0] == 1;
+    if (!matmat && !matvec && !vecmat) {
+        throw std::runtime_error("Incompatible shapes for matrix multiplication");
+    }
 }
 
 // compatible for solve
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_solve(const A &a, const B &b) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void compatible_for_solve(const A &a, const B &b) {
     const auto a_shape = a.shape();
     const auto b_shape = b.shape();
 
@@ -237,17 +236,10 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_so
     if (a_shape[0] != b_shape[0]) {
         throw std::runtime_error("Matrix A and vector/matrix B dimensions must match");
     }
-
-    // Dimensionality checks
-    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
-    // which is only possible if A is dimensionless
-    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
-
-    return true;
 }
 
 // compatible for solve_lls
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_solve_lls(const A &a, const B &b) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void compatible_for_solve_lls(const A &a, const B &b) {
     // Shape checks
     if (a.rank() != 1 && a.rank() != 2) {
         throw std::runtime_error("Matrix A must be 1D or 2D");
@@ -262,21 +254,13 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_so
     if (b.shape()[0] != max_rows) {
         throw std::runtime_error("Unexpected number of rows for Matrix B");
     }
-
-    // Dimensionality checks
-    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
-    // which is only possible if A is dimensionless
-    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
-
-    return true;
 }
 
 // compatible for cross
-template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_cross(const A &a, const B &b) {
+template <dynamic_shape_tensor A, dynamic_shape_tensor B> void compatible_for_cross(const A &a, const B &b) {
     if (a.size() != 3 || b.size() != 3) {
         throw std::runtime_error("Cross product requires 3D vectors");
     }
-    return true;
 }
 
 // is transposed
@@ -300,7 +284,7 @@ int get_ld(const A &a, const std::vector<std::size_t> &strides, layout layout, b
 }
 
 // compatible_for_inv
-template <dynamic_shape_tensor A> bool compatible_for_inv(const A &a) {
+template <dynamic_shape_tensor A> void compatible_for_inv(const A &a) {
     if (a.rank() != 2) {
         throw std::runtime_error("Inverse operation is only defined for 2D tensors (matrices)");
     }
@@ -308,7 +292,6 @@ template <dynamic_shape_tensor A> bool compatible_for_inv(const A &a) {
     if (shape[0] != shape[1]) {
         throw std::runtime_error("Matrix must be square for inversion");
     }
-    return true;
 }
 
 // Base linear algebra mixin
@@ -319,9 +302,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
             compatible_for_element_wise_op<Derived, Other>();
         } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
                              Other::get_error_checking() == error_checking::enabled) {
-            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
-                throw std::runtime_error("Incompatible shapes for element-wise operation");
-            }
+            compatible_for_element_wise_op(*static_cast<Derived *>(this), other);
         }
         auto it = static_cast<Derived *>(this)->begin();
         for (const auto &elem : other) {
@@ -335,9 +316,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
             compatible_for_element_wise_op<Derived, Other>();
         } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
                              Other::get_error_checking() == error_checking::enabled) {
-            if (!compatible_for_element_wise_op(*static_cast<Derived *>(this), other)) {
-                throw std::runtime_error("Incompatible shapes for element-wise operation");
-            }
+            compatible_for_element_wise_op(*static_cast<Derived *>(this), other);
         }
         auto it = static_cast<Derived *>(this)->begin();
         for (const auto &elem : other) {
@@ -421,8 +400,7 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
         // Solve the general linear least squares problem
         // make a copy of A since it will be modified
         using value_type = decltype(typename Derived::value_type{} / typename Derived::value_type{});
-        auto a_copy =
-            build_fixed_tensor_type<A, value_type>(std::make_index_sequence<Derived::constexpr_shape().size()>{});
+        auto a_copy = build_fixed_tensor_type<A, value_type>(std::make_index_sequence<A::constexpr_shape().size()>{});
         auto it = a.begin();
         for (auto &elem : a_copy) {
             elem = value_type(*it++);
@@ -551,15 +529,16 @@ class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChe
         constexpr auto shape = Derived::constexpr_shape();
 
         using result_value_type = decltype(1 / typename Derived::value_type{});
+        // create result (will not be transposed, but will have the same layout as derived)
         auto result = build_fixed_tensor_type<Derived, result_value_type>(std::make_index_sequence<2>{});
 
         constexpr int n = shape[0];
-        constexpr int lda = get_ld<Derived>();
+        constexpr int lda = get_ld<decltype(result)>();
 
         std::vector<BLAS_INT> ipiv(n);
 
         // Determine LAPACK layout
-        constexpr int lapack_layout = (Derived::constexpr_shape()[0] != 1) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+        int lapack_layout = (Derived::get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
         int info;
 
@@ -649,7 +628,7 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator*(const A &a,
 
     constexpr int m = a_shape[0];
     constexpr int n = B::rank() == 2 ? b_shape[1] : 1;
-    constexpr int k = a_shape[1];
+    constexpr int k = A::rank() == 2 ? a_shape[1] : 1;
 
     // Determine if matrix is transposed
     constexpr auto op_a = is_transposed<A>() ? CBLAS_TRANSPOSE::CblasTrans : CBLAS_TRANSPOSE::CblasNoTrans;
@@ -877,9 +856,7 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
     template <tensor Other> bool operator==(const Other &other) const {
         if constexpr (Derived::get_error_checking() == error_checking::enabled ||
                       Other::get_error_checking() == error_checking::enabled) {
-            if (!compatible_for_element_wise_op(*static_cast<const Derived *>(this), other)) {
-                throw std::runtime_error("Incompatible shapes for element-wise operation");
-            }
+            compatible_for_element_wise_op(*static_cast<const Derived *>(this), other);
         }
         auto it = static_cast<const Derived *>(this)->begin();
         for (const auto &elem : other) {
@@ -903,11 +880,13 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
         }
         auto derived = static_cast<Derived *>(this);
         auto strides = derived->strides();
+        auto shape = derived->shape();
         for (std::size_t i = 0; i < index_permutation.size(); ++i) {
             strides[i] = derived->strides()[index_permutation[i]];
+            shape[i] = derived->shape()[index_permutation[i]];
         }
         return dynamic_tensor_view<typename Derived::value_type, Derived::get_error_checking()>(
-            derived->data(), derived->shape(), strides, derived->get_layout());
+            derived->data(), shape, strides, derived->get_layout());
     }
     auto transpose(std::vector<std::size_t> index_permutation) const {
         if constexpr (Derived::get_error_checking() == error_checking::enabled) {
@@ -921,11 +900,13 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
         }
         const auto derived = static_cast<const Derived *>(this);
         auto strides = derived->strides();
+        auto shape = derived->shape();
         for (std::size_t i = 0; i < index_permutation.size(); ++i) {
             strides[i] = derived->strides()[index_permutation[i]];
+            shape[i] = derived->shape()[index_permutation[i]];
         }
         return const_dynamic_tensor_view<typename Derived::value_type, Derived::get_error_checking()>(
-            derived->data(), derived->shape(), strides, derived->get_layout());
+            derived->data(), shape, strides, derived->get_layout());
     }
 
     auto transpose() {
@@ -962,12 +943,11 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
             {derived->shape()[0], derived->shape()[1]});
 
         const int n = derived->shape()[0];
-        const int lda = get_ld(*derived, derived->strides(), derived->get_layout(),
-                               is_transposed(*derived, derived->strides(), derived->get_layout()));
+        const int lda = get_ld(result, result.strides(), result.get_layout(), false);
 
         std::vector<BLAS_INT> ipiv(n);
 
-        int lapack_layout = (derived->get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
+        int lapack_layout = (result.get_layout() == layout::row_major) ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR;
 
         int info;
 
@@ -1018,9 +998,7 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
 template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator+(const A &a, const B &b) {
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_element_wise_op(a, b)) {
-            throw std::runtime_error("Incompatible shapes for element-wise operation");
-        }
+        compatible_for_element_wise_op(a, b);
     }
     auto result = a;
     auto it = result.begin();
@@ -1033,9 +1011,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator+(const A
 template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator-(const A &a, const B &b) {
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_element_wise_op(a, b)) {
-            throw std::runtime_error("Incompatible shapes for element-wise operation");
-        }
+        compatible_for_element_wise_op(a, b);
     }
     auto result = a;
     auto it = result.begin();
@@ -1049,9 +1025,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator-(const A
 template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A &a, const B &b) {
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_matmul(a, b)) {
-            throw std::runtime_error("Incompatible shapes for matrix multiplication");
-        }
+        compatible_for_matmul(a, b);
         // layouts must match
         if (a.get_layout() != a.get_layout()) {
             throw std::runtime_error("A and B layouts must match");
@@ -1067,7 +1041,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
 
     const int m = a_shape[0];
     const int n = b.rank() == 2 ? b_shape[1] : 1;
-    const int k = a_shape[1];
+    const int k = a.rank() == 2 ? a_shape[1] : 1;
 
     // Determine if matrix is transposed based on strides and layout
     // if column major and first stride isn't 1, then matrix is transposed
@@ -1080,15 +1054,15 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
     const int ldb = get_ld(b, b_strides, layout, op_b == CBLAS_TRANSPOSE::CblasTrans);
     const int ldc = m;
 
+    // Determine BLAS layout
+    auto blas_layout = (layout == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
+
     const auto shape =
         (n == 1) ? std::vector<std::size_t>{std::size_t(m)} : std::vector<std::size_t>{std::size_t(m), std::size_t(n)};
 
     auto result =
         dynamic_tensor<decltype(typename A::value_type{} * typename B::value_type{}), A::get_error_checking()>(
             shape, a.get_layout());
-
-    // Determine BLAS layout
-    auto blas_layout = (a.get_layout() == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
 
     if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
                   std::is_same_v<decltype(a.raw_data()), const float *>) {
@@ -1112,9 +1086,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto solve(A &a, B &b)
 
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_solve(a, b)) {
-            throw std::runtime_error("Incompatible shapes for solving linear system");
-        }
+        compatible_for_solve(a, b);
         // layouts must match
         if (a.get_layout() != b.get_layout()) {
             throw std::runtime_error("A and B layouts must match");
@@ -1125,6 +1097,9 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto solve(A &a, B &b)
         }
     }
     compatible_for_blas_op<A, B>();
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     const auto a_shape = a.shape();
     const auto b_shape = b.shape();
@@ -1167,9 +1142,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> void solve_lls(A &a, B
 
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_solve_lls(a, b)) {
-            throw std::runtime_error("Incompatible shapes for solving linear least squares");
-        }
+        compatible_for_solve_lls(a, b);
         // layouts must match
         if (a.get_layout() != b.get_layout()) {
             throw std::runtime_error("A and B layouts must match");
@@ -1180,6 +1153,9 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> void solve_lls(A &a, B
         }
     }
     compatible_for_blas_op<A, B>();
+    // A must be dimensionless since b is modified in-place to become x, therefore x must have the same units as b
+    // which is only possible if A is dimensionless
+    static_assert(dimensionless_tensor<A>, "A matrix must be dimensionless");
 
     const auto a_shape = a.shape();
     const auto b_shape = b.shape();
@@ -1213,9 +1189,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> void solve_lls(A &a, B
 template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto cross(const A &a, const B &b) {
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_cross(a, b)) {
-            throw std::runtime_error("Incompatible shapes for cross product");
-        }
+        compatible_for_cross(a, b);
     }
     using result_value_type = decltype(typename A::value_type{} * typename B::value_type{});
     auto result = dynamic_tensor<result_value_type, A::get_error_checking()>({3});
@@ -1236,9 +1210,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B, typename Epsilon>
 bool approx_equal(const A &a, const B &b, const Epsilon &epsilon) {
     if constexpr (A::get_error_checking() == error_checking::enabled ||
                   B::get_error_checking() == error_checking::enabled) {
-        if (!compatible_for_element_wise_op(a, b)) {
-            throw std::runtime_error("Incompatible shapes for element-wise operation");
-        }
+        compatible_for_element_wise_op(a, b);
     }
     auto it = a.begin();
     for (const auto &elem : b) {

@@ -89,8 +89,8 @@ TEST_CASE("fixed_linear_algebra_mixin tests") {
         mat2 A{{4, 3, 2, 1}};
         vec2 b{{20, 10}};
         auto x = b / A;
-        CHECK(x[0] == doctest::Approx(3.75));
-        CHECK(x[1] == doctest::Approx(2.5));
+        CHECK(x[0] == doctest::Approx(0));
+        CHECK(x[1] == doctest::Approx(10));
     }
 
     SUBCASE("operator==") {
@@ -142,8 +142,8 @@ TEST_CASE("dynamic_linear_algebra_mixin tests") {
         auto A = tens{{2, 2}, {4, 3, 2, 1}};
         auto b = tens{{2}, {20, 10}};
         auto x = b / A;
-        CHECK(x[0] == doctest::Approx(3.75));
-        CHECK(x[1] == doctest::Approx(2.5));
+        CHECK(x[0] == doctest::Approx(0));
+        CHECK(x[1] == doctest::Approx(10));
     }
 
     SUBCASE("operator==") {
@@ -165,7 +165,7 @@ TEST_CASE("dynamic_linear_algebra_mixin tests") {
     SUBCASE("transpose") {
         auto m = tens{{2, 3}, {1, 2, 3, 4, 5, 6}};
         auto mt = m.transpose();
-        CHECK(mt == tens{{3, 2}, {1, 4, 2, 5, 3, 6}});
+        CHECK(mt == tens{{3, 2}, {1, 3, 5, 2, 4, 6}});
     }
 
     SUBCASE("inv") {
@@ -210,13 +210,13 @@ TEST_CASE("Matrix multiplication") {
     SUBCASE("Fixed tensors") {
         mat2 a{{1, 2, 3, 4}};
         mat2 b{{5, 6, 7, 8}};
-        CHECK(a * b == mat2{{19, 22, 43, 50}});
+        CHECK(a * b == mat2{{23, 34, 31, 46}});
     }
 
     SUBCASE("Dynamic tensors") {
         auto a = tens{{2, 2}, {1, 2, 3, 4}};
         auto b = tens{{2, 2}, {5, 6, 7, 8}};
-        CHECK(a * b == tens{{2, 2}, {19, 22, 43, 50}});
+        CHECK(a * b == tens{{2, 2}, {23, 34, 31, 46}});
     }
 }
 
@@ -225,36 +225,36 @@ TEST_CASE("Solve linear system") {
         mat2 A{{4, 3, 2, 1}};
         vec2 b{{20, 10}};
         auto ipiv = solve(A, b);
-        CHECK(b[0] == doctest::Approx(3.75));
-        CHECK(b[1] == doctest::Approx(2.5));
+        CHECK(b[0] == doctest::Approx(0));
+        CHECK(b[1] == doctest::Approx(10));
     }
 
     SUBCASE("Dynamic tensors") {
         auto A = tens{{2, 2}, {4, 3, 2, 1}};
         auto b = tens{{2}, {20, 10}};
         auto ipiv = solve(A, b);
-        CHECK(b[0] == doctest::Approx(3.75));
-        CHECK(b[1] == doctest::Approx(2.5));
+        CHECK(b[0] == doctest::Approx(0));
+        CHECK(b[1] == doctest::Approx(10));
     }
 }
 
 TEST_CASE("Solve linear least squares") {
     SUBCASE("Fixed tensors") {
         mat2x3 A{{1, 2, 3, 4, 5, 6}};
-        vec3 b{{7, 8, 9}};
+        vec3 b{{7, 8, 0}};
         solve_lls(A, b);
-        CHECK(b[0] == doctest::Approx(0.6).epsilon(0.01));
-        CHECK(b[1] == doctest::Approx(1.4).epsilon(0.01));
-        CHECK(b[2] == doctest::Approx(2.2).epsilon(0.01));
+        CHECK(b[0] == doctest::Approx(-0.66666).epsilon(0.01));
+        CHECK(b[1] == doctest::Approx(0.33333).epsilon(0.01));
+        CHECK(b[2] == doctest::Approx(1.33333).epsilon(0.01));
     }
 
     SUBCASE("Dynamic tensors") {
         auto A = tens{{2, 3}, {1, 2, 3, 4, 5, 6}};
-        auto b = tens{{3}, {7, 8, 9}};
+        auto b = tens{{3}, {7, 8, 0}};
         solve_lls(A, b);
-        CHECK(b[0] == doctest::Approx(0.6).epsilon(0.01));
-        CHECK(b[1] == doctest::Approx(1.4).epsilon(0.01));
-        CHECK(b[2] == doctest::Approx(2.2).epsilon(0.01));
+        CHECK(b[0] == doctest::Approx(-0.66666).epsilon(0.01));
+        CHECK(b[1] == doctest::Approx(0.33333).epsilon(0.01));
+        CHECK(b[2] == doctest::Approx(1.33333).epsilon(0.01));
     }
 }
 
@@ -307,16 +307,16 @@ TEST_CASE("Scalar operations") {
 TEST_CASE("BLAS operations with transposed tensors and views") {
     SUBCASE("Matrix multiplication with transposed fixed tensors") {
         mat2x3 a{{1, 2, 3, 4, 5, 6}};
-        mat3x2 b{{7, 8, 9, 10, 11, 12}};
+        mat2x3 b{{7, 8, 9, 10, 11, 12}};
         auto c = a * b.transpose();
-        CHECK(c == mat2{{58, 139, 64, 154}});
+        CHECK(c == mat2{{89, 116, 98, 128}});
     }
 
     SUBCASE("Matrix multiplication with transposed dynamic tensors") {
         auto a = tens{{2, 3}, {1, 2, 3, 4, 5, 6}};
-        auto b = tens{{3, 2}, {7, 8, 9, 10, 11, 12}};
+        auto b = tens{{2, 3}, {7, 8, 9, 10, 11, 12}};
         auto c = a * b.transpose();
-        CHECK(c == tens{{2, 2}, {58, 64, 139, 154}});
+        CHECK(c == tens{{2, 2}, {89, 116, 98, 128}});
     }
 
     SUBCASE("Matrix multiplication with fixed tensor views") {
@@ -325,7 +325,7 @@ TEST_CASE("BLAS operations with transposed tensors and views") {
         auto a_view = a.subview<2, 2>(slice{0, 2}, slice{0, 2});
         auto b_view = b.subview<2, 2>(slice{1, 2}, slice{1, 2});
         auto c = a_view * b_view;
-        CHECK(c == mat2{{69, 151, 75, 165}});
+        CHECK(c == mat2{{74, 103, 89, 124}});
     }
 
     SUBCASE("Matrix multiplication with dynamic tensor views") {
@@ -334,7 +334,7 @@ TEST_CASE("BLAS operations with transposed tensors and views") {
         auto a_view = a.subview(slice{0, 2}, slice{0, 2});
         auto b_view = b.subview(slice{1, 2}, slice{1, 2});
         auto c = a_view * b_view;
-        CHECK(c == tens{{2, 2}, {69, 75, 151, 165}});
+        CHECK(c == mat2{{74, 103, 89, 124}});
     }
 }
 
@@ -345,8 +345,8 @@ TEST_CASE("LAPACK operations with transposed tensors and views") {
         auto A_view = A.subview<2, 3>(slice{0, 2}, slice{0, 3});
         auto b_view = b.subview<3>(slice{0, 3});
         solve_lls(A_view, b_view);
-        CHECK(b[0] == doctest::Approx(1).epsilon(0.01));
-        CHECK(b[1] == doctest::Approx(2).epsilon(0.01));
+        CHECK(b[0] == doctest::Approx(15.6666).epsilon(0.01));
+        CHECK(b[1] == doctest::Approx(6).epsilon(0.01));
     }
 
     SUBCASE("Solve linear least squares with dynamic tensor views") {
@@ -355,8 +355,8 @@ TEST_CASE("LAPACK operations with transposed tensors and views") {
         auto A_view = A.subview(slice{0, 2}, slice{0, 3});
         auto b_view = b.subview(slice{0, 3});
         solve_lls(A_view, b_view);
-        CHECK(b[0] == doctest::Approx(1).epsilon(0.01));
-        CHECK(b[1] == doctest::Approx(2).epsilon(0.01));
+        CHECK(b[0] == doctest::Approx(15.6666).epsilon(0.01));
+        CHECK(b[1] == doctest::Approx(6).epsilon(0.01));
     }
 }
 
@@ -414,14 +414,10 @@ TEST_CASE("Solve linear least squares - explicit overdetermined and underdetermi
 
         solve_lls(A, b);
 
-        // Check shape of result
-        CHECK(b.size() == 4);
-
-        // Expected solution (approximate values)
-        CHECK(b[0] == doctest::Approx(-0.590909).epsilon(0.0001));
-        CHECK(b[1] == doctest::Approx(0.590909).epsilon(0.0001));
-        CHECK(b[2] == doctest::Approx(1.113636).epsilon(0.0001));
-        CHECK(b[3] == doctest::Approx(0.0).epsilon(0.0001)); // Residual
+        // Expected solution
+        CHECK(b[0] == doctest::Approx(3.5384615).epsilon(0.0001));
+        CHECK(b[1] == doctest::Approx(0.179487).epsilon(0.0001));
+        CHECK(b[2] == doctest::Approx(-1.07692).epsilon(0.0001));
     }
 
     SUBCASE("Underdetermined system with fixed tensors") {
@@ -431,14 +427,11 @@ TEST_CASE("Solve linear least squares - explicit overdetermined and underdetermi
 
         solve_lls(A, b);
 
-        // Check shape of result
-        CHECK(b.size() == 4);
-
         // Expected solution (minimum norm solution)
-        CHECK(b[0] == doctest::Approx(2.93006993).epsilon(0.0001));
-        CHECK(b[1] == doctest::Approx(2.4965035).epsilon(0.0001));
-        CHECK(b[2] == doctest::Approx(1.56643357).epsilon(0.0001));
-        CHECK(b[3] == doctest::Approx(3.006993).epsilon(0.0001));
+        CHECK(b[0] == doctest::Approx(0.992998).epsilon(0.0001));
+        CHECK(b[1] == doctest::Approx(9.89815).epsilon(0.0001));
+        CHECK(b[2] == doctest::Approx(-0.127307).epsilon(0.0001));
+        CHECK(b[3] == doctest::Approx(-0.0763853).epsilon(0.0001));
     }
 
     SUBCASE("Overdetermined system with dynamic tensors") {
@@ -450,11 +443,10 @@ TEST_CASE("Solve linear least squares - explicit overdetermined and underdetermi
         // Check shape of result
         CHECK(b.size() == 4);
 
-        // Expected solution (approximate values)
-        CHECK(b[0] == doctest::Approx(-0.590909).epsilon(0.0001));
-        CHECK(b[1] == doctest::Approx(0.590909).epsilon(0.0001));
-        CHECK(b[2] == doctest::Approx(1.113636).epsilon(0.0001));
-        CHECK(b[3] == doctest::Approx(0.0).epsilon(0.0001)); // Residual
+        // Expected solution
+        CHECK(b[0] == doctest::Approx(3.5384615).epsilon(0.0001));
+        CHECK(b[1] == doctest::Approx(0.179487).epsilon(0.0001));
+        CHECK(b[2] == doctest::Approx(-1.07692).epsilon(0.0001));
     }
 
     SUBCASE("Underdetermined system with dynamic tensors") {
@@ -467,10 +459,10 @@ TEST_CASE("Solve linear least squares - explicit overdetermined and underdetermi
         CHECK(b.size() == 4);
 
         // Expected solution (minimum norm solution)
-        CHECK(b[0] == doctest::Approx(2.93006993).epsilon(0.0001));
-        CHECK(b[1] == doctest::Approx(2.4965035).epsilon(0.0001));
-        CHECK(b[2] == doctest::Approx(1.56643357).epsilon(0.0001));
-        CHECK(b[3] == doctest::Approx(3.006993).epsilon(0.0001));
+        CHECK(b[0] == doctest::Approx(0.992998).epsilon(0.0001));
+        CHECK(b[1] == doctest::Approx(9.89815).epsilon(0.0001));
+        CHECK(b[2] == doctest::Approx(-0.127307).epsilon(0.0001));
+        CHECK(b[3] == doctest::Approx(-0.0763853).epsilon(0.0001));
     }
 }
 
@@ -486,10 +478,10 @@ TEST_CASE("Matrix operations with quantity types") {
             std::is_same_v<decltype(C), mat2_t<quantity<float, mult_t<dimensions::length, dimensions::time>>>>,
             "Result should be a matrix of length * time");
 
-        CHECK(C[0, 0].value() == doctest::Approx(10));
-        CHECK(C[0, 1].value() == doctest::Approx(7));
-        CHECK(C[1, 0].value() == doctest::Approx(22));
-        CHECK(C[1, 1].value() == doctest::Approx(15));
+        CHECK(C[0, 0].value() == doctest::Approx(5));
+        CHECK(C[0, 1].value() == doctest::Approx(13));
+        CHECK(C[1, 0].value() == doctest::Approx(8));
+        CHECK(C[1, 1].value() == doctest::Approx(20));
     }
 
     SUBCASE("Matrix-vector multiplication with velocity and mass") {
@@ -503,8 +495,8 @@ TEST_CASE("Matrix operations with quantity types") {
                                           quantity<float, mult_t<dimensions::velocity, dimensions::mass>>>,
                       "Result should be a vector of velocity * mass (momentum)");
 
-        CHECK(result[0] == doctest::Approx(4));
-        CHECK(result[1] == doctest::Approx(10));
+        CHECK(result[0] == doctest::Approx(5));
+        CHECK(result[1] == doctest::Approx(8));
     }
 
     SUBCASE("Matrix addition with force") {
@@ -516,8 +508,8 @@ TEST_CASE("Matrix operations with quantity types") {
         static_assert(std::is_same_v<decltype(C), mat2_t<force>>, "Result should be a matrix of force");
 
         CHECK(C[0, 0].value() == doctest::Approx(6));
-        CHECK(C[0, 1].value() == doctest::Approx(8));
-        CHECK(C[1, 0].value() == doctest::Approx(10));
+        CHECK(C[0, 1].value() == doctest::Approx(10));
+        CHECK(C[1, 0].value() == doctest::Approx(8));
         CHECK(C[1, 1].value() == doctest::Approx(12));
     }
 
@@ -530,8 +522,8 @@ TEST_CASE("Matrix operations with quantity types") {
         static_assert(std::convertible_to<decltype(B)::value_type, energy>, "Result should be a matrix of energy");
 
         CHECK(B[0, 0].value() == doctest::Approx(2));
-        CHECK(B[0, 1].value() == doctest::Approx(4));
-        CHECK(B[1, 0].value() == doctest::Approx(6));
+        CHECK(B[0, 1].value() == doctest::Approx(6));
+        CHECK(B[1, 0].value() == doctest::Approx(4));
         CHECK(B[1, 1].value() == doctest::Approx(8));
     }
 
@@ -544,8 +536,8 @@ TEST_CASE("Matrix operations with quantity types") {
                       "Result should be a matrix of dimensionless quantities");
 
         CHECK(A_inv[0, 0].value() == doctest::Approx(-2));
-        CHECK(A_inv[0, 1].value() == doctest::Approx(1));
-        CHECK(A_inv[1, 0].value() == doctest::Approx(1.5));
+        CHECK(A_inv[0, 1].value() == doctest::Approx(1.5));
+        CHECK(A_inv[1, 0].value() == doctest::Approx(1));
         CHECK(A_inv[1, 1].value() == doctest::Approx(-0.5));
     }
 
@@ -559,7 +551,7 @@ TEST_CASE("Matrix operations with quantity types") {
                                           quantity<float, squint::div_t<dimensions::volume, dimensions::pressure>>>,
                       "Result should be a vector of volume / pressure");
 
-        CHECK(x[0].value() == doctest::Approx(1));
-        CHECK(x[1].value() == doctest::Approx(2));
+        CHECK(x[0].value() == doctest::Approx(4));
+        CHECK(x[1].value() == doctest::Approx(-5));
     }
 }

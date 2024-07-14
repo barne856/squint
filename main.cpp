@@ -17,15 +17,10 @@
 using namespace squint;
 
 int main() {
-    auto A = mat4x2_t<units::length>::random();
-    auto b = mat4x2::random();
+    mat3x4 A{{1, 1, 1, 1, 2, 3, 4, 5, 3, 5, 2, 4}};
+    vec3 b{{10, 20, 30}};
 
-    std::cout << b / A << std::endl;
-
-    auto Ad = tens_t<units::length>::random({2, 2});
-    auto bd = tens::random({4, 2});
-
-    std::cout << bd / Ad << std::endl;
+    std::cout << A.transpose() * (A * A.transpose()).inv() * b << std::endl;
 
     return 0;
 }
