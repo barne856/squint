@@ -31,7 +31,7 @@ template <typename T>
 concept dimensionless_tensor =
     tensor<T> && (arithmetic<typename T::value_type> ||
                   (quantitative<typename T::value_type> &&
-                   std::is_same_v<typename T::value_type::dimension, dimensions::dimensionless>));
+                   std::convertible_to<typename T::value_type::dimension_type, dimensions::dimensionless>));
 
 // checks if a compile-time list of indices has no duplicates
 template <size_t... indices> constexpr bool is_unique() {
@@ -141,10 +141,10 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool comp
 
 template <fixed_shape_tensor A, fixed_shape_tensor B> static constexpr bool compatible_for_solve_lls() {
     // Shape checks
-    static_assert(A::rank() == 2, "Matrix A must be 2-dimensional");
+    static_assert(A::rank() == 1 || A::rank() == 2, "Matrix A must be 1D or 2D");
     static_assert(B::rank() == 1 || B::rank() == 2, "B must be 1D or 2D");
 
-    constexpr auto x_rows = A::constexpr_shape()[1];
+    constexpr auto x_rows = A::constexpr_shape().size() > 1 ? A::constexpr_shape()[1] : 1;
     constexpr auto b_rows = A::constexpr_shape()[0];
     constexpr auto max_rows = x_rows > b_rows ? x_rows : b_rows;
     static_assert(B::constexpr_shape()[0] == max_rows, "Unexpected number of rows for Matrix B");
@@ -249,14 +249,14 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_so
 // compatible for solve_lls
 template <dynamic_shape_tensor A, dynamic_shape_tensor B> bool compatible_for_solve_lls(const A &a, const B &b) {
     // Shape checks
-    if (a.rank() != 2) {
-        throw std::runtime_error("Matrix A must be 2-dimensional");
+    if (a.rank() != 1 && a.rank() != 2) {
+        throw std::runtime_error("Matrix A must be 1D or 2D");
     }
     if (b.rank() != 1 && b.rank() != 2) {
         throw std::runtime_error("B must be 1D or 2D");
     }
 
-    const auto x_rows = a.shape()[1];
+    const auto x_rows = a.shape().size() > 1 ? a.shape()[1] : 1;
     const auto b_rows = a.shape()[0];
     const auto max_rows = x_rows > b_rows ? x_rows : b_rows;
     if (b.shape()[0] != max_rows) {
@@ -330,7 +330,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         return *static_cast<Derived *>(this);
     }
 
-    template <fixed_shape_tensor Other> auto &operator-=(const Other &other) {
+    template <tensor Other> auto &operator-=(const Other &other) {
         if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
             compatible_for_element_wise_op<Derived, Other>();
         } else if constexpr (Derived::get_error_checking() == error_checking::enabled ||
@@ -359,22 +359,14 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         return *static_cast<Derived *>(this);
     }
 
-    auto norm() const {
-        const auto *derived = static_cast<const Derived *>(this);
-        auto it = derived->begin();
-        auto result = (*it++) * (*it++);
-        for (std::size_t i = 1; i < derived->size(); ++i) {
-            result += (*it++) * (*it++);
-        }
-        return squint::math::sqrt(result);
-    }
+    auto norm() const { return squint::math::sqrt(squared_norm()); }
 
     auto squared_norm() const {
         const auto *derived = static_cast<const Derived *>(this);
-        auto it = derived->begin();
-        auto result = (*it++) * (*it++);
-        for (std::size_t i = 1; i < derived->size(); ++i) {
-            result += (*it++) * (*it++);
+        using squared_type = decltype(typename Derived::value_type{} * typename Derived::value_type{});
+        squared_type result{};
+        for (const auto &elem : *derived) {
+            result += elem * elem;
         }
         return result;
     }
@@ -395,11 +387,9 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
                 }
             }
         }
-        auto it = derived->begin();
-        auto result = *it++;
-        for (std::size_t i = 1; i < derived->shape()[0]; ++i) {
-            result += *it;
-            it += derived->strides()[0] + 1;
+        typename Derived::value_type result{};
+        for (std::size_t i = 0; i < derived->shape()[0]; ++i) {
+            result += derived->operator[](i, i);
         }
         return result;
     }
@@ -426,36 +416,66 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
 template <typename Derived, error_checking ErrorChecking>
 class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChecking> {
   public:
-    template <fixed_shape_tensor B> auto operator/(const B &b) const {
+    template <fixed_shape_tensor A> auto operator/(const A &a) const {
         auto derived = static_cast<const Derived *>(this);
         // Solve the general linear least squares problem
         // make a copy of A since it will be modified
-        // TODO
-        static_assert(false);
-        using value_type = decltype(derived->raw_data()[0]);
-        auto A =
-            build_fixed_tensor_type<Derived, value_type>(std::make_index_sequence<Derived::constexpr_shape().size()>{});
-        auto it = derived->begin();
-        for (auto &elem : A) {
+        using value_type = decltype(typename Derived::value_type{} / typename Derived::value_type{});
+        auto a_copy =
+            build_fixed_tensor_type<A, value_type>(std::make_index_sequence<Derived::constexpr_shape().size()>{});
+        auto it = a.begin();
+        for (auto &elem : a_copy) {
             elem = value_type(*it++);
         }
-        using x_type = decltype(typename B::value_type{} / typename Derived::value_type{});
-        if constexpr (B::constexpr_shape().size() == 1) {
-            fixed_tensor<x_type, Derived::get_layout(), Derived::get_error_checking(), Derived::constexpr_shape()[1]> x;
-            solve_lls(A, b, x);
-            return x;
+        auto b_copy = *derived;
+        using x_type = decltype(typename Derived::value_type{} / typename A::value_type{});
+        constexpr auto a_shape = A::constexpr_shape();
+        constexpr auto x_rows = a_shape.size() > 1 ? a_shape[1] : 1;
+        constexpr auto b_rows = a_shape[0];
+        constexpr auto max_rows = x_rows > b_rows ? x_rows : b_rows;
+        constexpr auto result_rows = x_rows;
+        if constexpr (Derived::constexpr_shape().size() == 1) {
+            fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), max_rows> x;
+
+            auto x_view = x.template subview<result_rows>(slice{0, result_rows});
+            auto b_view = b_copy.template subview<result_rows>(slice{0, result_rows});
+
+            auto x_it = x_view.begin();
+            for (const auto &elem : b_view) {
+                *x_it++ = x_type(elem);
+            }
+
+            solve_lls(a_copy, x);
+            fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows> result;
+            result.template subview<result_rows>(slice{0, result_rows}) =
+                x.template subview<result_rows>(slice{0, result_rows});
+            return result;
         } else {
-            fixed_tensor<x_type, Derived::get_layout(), Derived::get_error_checking(), Derived::constexpr_shape()[1],
-                         B::constexpr_shape()[1]>
-                x;
-            solve_lls(A, b, x);
-            return x;
+            fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), max_rows, Derived::constexpr_shape()[1]> x;
+            auto x_view = x.template subview<result_rows, Derived::constexpr_shape()[1]>(
+                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]});
+            auto b_view = b_copy.template subview<result_rows, Derived::constexpr_shape()[1]>(
+                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]});
+
+            auto x_it = x_view.begin();
+            for (const auto &elem : b_view) {
+                *x_it++ = x_type(elem);
+            }
+
+            solve_lls(a_copy, x);
+            fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows, Derived::constexpr_shape()[1]>
+                result;
+            result.template subview<result_rows, Derived::constexpr_shape()[1]>(
+                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]}) =
+                x.template subview<result_rows, Derived::constexpr_shape()[1]>(slice{0, result_rows},
+                                                                               slice{0, Derived::constexpr_shape()[1]});
+            return result;
         }
     }
 
     template <fixed_shape_tensor Other> bool operator==(const Other &other) const {
         compatible_for_element_wise_op<Derived, Other>();
-        auto it = static_cast<Derived *>(this)->begin();
+        auto it = static_cast<const Derived *>(this)->begin();
         for (const auto &elem : other) {
             if (*it++ != elem) {
                 return false;
@@ -628,7 +648,7 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator*(const A &a,
     constexpr auto layout = A::get_layout();
 
     constexpr int m = a_shape[0];
-    constexpr int n = b_shape[1];
+    constexpr int n = B::rank() == 2 ? b_shape[1] : 1;
     constexpr int k = a_shape[1];
 
     // Determine if matrix is transposed
@@ -639,23 +659,36 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto operator*(const A &a,
     constexpr int lda = get_ld<A>();
     constexpr int ldb = get_ld<B>();
     constexpr int ldc = m;
-    auto result = fixed_tensor<decltype(typename A::value_type{} * typename B::value_type{}), layout,
-                               A::get_error_checking(), m, n>();
 
     // Determine BLAS layout
     constexpr auto blas_layout =
         (layout == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
 
-    if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
-                  std::is_same_v<decltype(a.raw_data()), const float *>) {
-        cblas_sgemm(blas_layout, op_a, op_b, m, n, k, 1.0F, const_cast<float *>(a.raw_data()), lda,
-                    const_cast<float *>(b.raw_data()), ldb, 0.0F, result.raw_data(), ldc);
+    if constexpr (n == 1) {
+        auto result = fixed_tensor<decltype(typename A::value_type{} * typename B::value_type{}), layout,
+                                   A::get_error_checking(), m>();
+        if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
+                      std::is_same_v<decltype(a.raw_data()), const float *>) {
+            cblas_sgemm(blas_layout, op_a, op_b, m, n, k, 1.0F, const_cast<float *>(a.raw_data()), lda,
+                        const_cast<float *>(b.raw_data()), ldb, 0.0F, result.raw_data(), ldc);
+        } else {
+            cblas_dgemm(blas_layout, op_a, op_b, m, n, k, 1.0, const_cast<double *>(a.raw_data()), lda,
+                        const_cast<double *>(b.raw_data()), ldb, 0.0, result.raw_data(), ldc);
+        }
+        return result;
     } else {
-        cblas_dgemm(blas_layout, op_a, op_b, m, n, k, 1.0, const_cast<double *>(a.raw_data()), lda,
-                    const_cast<double *>(b.raw_data()), ldb, 0.0, result.raw_data(), ldc);
+        auto result = fixed_tensor<decltype(typename A::value_type{} * typename B::value_type{}), layout,
+                                   A::get_error_checking(), m, n>();
+        if constexpr (std::is_same_v<decltype(a.raw_data()), float *> ||
+                      std::is_same_v<decltype(a.raw_data()), const float *>) {
+            cblas_sgemm(blas_layout, op_a, op_b, m, n, k, 1.0F, const_cast<float *>(a.raw_data()), lda,
+                        const_cast<float *>(b.raw_data()), ldb, 0.0F, result.raw_data(), ldc);
+        } else {
+            cblas_dgemm(blas_layout, op_a, op_b, m, n, k, 1.0, const_cast<double *>(a.raw_data()), lda,
+                        const_cast<double *>(b.raw_data()), ldb, 0.0, result.raw_data(), ldc);
+        }
+        return result;
     }
-
-    return result;
 }
 
 // Solve linear system of equations Ax = b
@@ -713,7 +746,7 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> void solve_lls(A &a, B &b)
     constexpr auto layout = A::get_layout();
 
     constexpr int m = a_shape[0];
-    constexpr int n = a_shape[1];
+    constexpr int n = a_shape.size() > 1 ? a_shape[1] : 1;
     constexpr int nrhs = (B::rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
@@ -747,13 +780,12 @@ template <fixed_shape_tensor A, fixed_shape_tensor B> auto cross(const A &a, con
     auto result = fixed_tensor<result_value_type, A::get_layout(), A::get_error_checking(), 3>();
 
     // get flat iterator for both tensors
-    auto a_it = a.begin();
-    auto b_it = b.begin();
+    auto a_flat = a.flatten();
+    auto b_flat = b.flatten();
 
-    // Calculate cross product (used iterators since shapes may not be one dimensional)
-    result[0] = (*a_it)[1] * (*b_it)[2] - (*a_it)[2] * (*b_it)[1];
-    result[1] = (*a_it)[2] * (*b_it)[0] - (*a_it)[0] * (*b_it)[2];
-    result[2] = (*a_it)[0] * (*b_it)[1] - (*a_it)[1] * (*b_it)[0];
+    result[0] = a_flat[1] * b_flat[2] - a_flat[2] * b_flat[1];
+    result[1] = a_flat[2] * b_flat[0] - a_flat[0] * b_flat[2];
+    result[2] = a_flat[0] * b_flat[1] - a_flat[1] * b_flat[0];
 
     return result;
 }
@@ -797,19 +829,50 @@ template <fixed_shape_tensor A, scalar Scalar> auto operator/(const A &a, const 
 template <typename Derived, error_checking ErrorChecking>
 class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChecking> {
   public:
-    template <tensor B> auto operator/(const B &b) const {
-        // solve the general linear least squares problem
-        // make a copy of A since it will be modified
-        auto A = *static_cast<const Derived *>(this);
-        using x_type = decltype(typename B::value_type{} / typename Derived::value_type{});
-        if (b.rank() == 1) {
-            dynamic_tensor<x_type, Derived::get_error_checking()> x({A.shape()[1]});
-            solve_lls(A, b, x);
-            return x;
+    template <tensor A> auto operator/(const A &a) const {
+        const auto *derived = static_cast<const Derived *>(this);
+
+        using value_type = decltype(typename Derived::value_type{} / typename Derived::value_type{});
+        auto a_copy = dynamic_tensor<value_type, Derived::get_error_checking()>(a.shape());
+        auto it = a.begin();
+        for (auto &elem : a_copy) {
+            elem = value_type(*it++);
         }
-        dynamic_tensor<x_type, Derived::get_error_checking()> x({A.shape()[1], b.shape()[1]});
-        solve_lls(A, b, x);
-        return x;
+        auto b_copy = *derived;
+        using x_type = decltype(typename Derived::value_type{} / typename A::value_type{});
+        const auto a_shape = a.shape();
+        const auto b_shape = derived->shape();
+        const auto x_rows = a_shape.size() > 1 ? a_shape[1] : 1;
+        const auto b_rows = a_shape[0];
+        const auto max_rows = x_rows > b_rows ? x_rows : b_rows;
+        const auto result_rows = x_rows;
+        if (derived->rank() == 1) {
+            dynamic_tensor<x_type, Derived::get_error_checking()> x({max_rows});
+            auto x_view = x.subview(slice{0, result_rows});
+            auto b_view = b_copy.subview(slice{0, result_rows});
+            auto x_it = x_view.begin();
+            for (const auto &elem : b_view) {
+                *x_it++ = x_type(elem);
+            }
+            solve_lls(a_copy, x);
+            dynamic_tensor<x_type, Derived::get_error_checking()> result({result_rows});
+            result.subview(slice{0, result_rows}) = x.subview(slice{0, result_rows});
+            return result;
+        }
+        dynamic_tensor<x_type, Derived::get_error_checking()> x({max_rows, b_shape[1]});
+
+        auto x_view = x.subview(slice{0, result_rows}, slice{0, b_shape[1]});
+        auto b_view = b_copy.subview(slice{0, result_rows}, slice{0, b_shape[1]});
+        auto x_it = x_view.begin();
+        for (const auto &elem : b_view) {
+            *x_it++ = x_type(elem);
+        }
+
+        solve_lls(a_copy, x);
+        dynamic_tensor<x_type, Derived::get_error_checking()> result({result_rows, b_shape[1]});
+        result.subview(slice{0, result_rows}, slice{0, b_shape[1]}) =
+            x.subview(slice{0, result_rows}, slice{0, b_shape[1]});
+        return result;
     }
     template <tensor Other> bool operator==(const Other &other) const {
         if constexpr (Derived::get_error_checking() == error_checking::enabled ||
@@ -1003,7 +1066,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
     const auto layout = a.get_layout();
 
     const int m = a_shape[0];
-    const int n = b_shape[1];
+    const int n = b.rank() == 2 ? b_shape[1] : 1;
     const int k = a_shape[1];
 
     // Determine if matrix is transposed based on strides and layout
@@ -1017,9 +1080,12 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto operator*(const A
     const int ldb = get_ld(b, b_strides, layout, op_b == CBLAS_TRANSPOSE::CblasTrans);
     const int ldc = m;
 
+    const auto shape =
+        (n == 1) ? std::vector<std::size_t>{std::size_t(m)} : std::vector<std::size_t>{std::size_t(m), std::size_t(n)};
+
     auto result =
         dynamic_tensor<decltype(typename A::value_type{} * typename B::value_type{}), A::get_error_checking()>(
-            {std::size_t(m), std::size_t(n)}, a.get_layout());
+            shape, a.get_layout());
 
     // Determine BLAS layout
     auto blas_layout = (a.get_layout() == layout::row_major) ? CBLAS_ORDER::CblasRowMajor : CBLAS_ORDER::CblasColMajor;
@@ -1119,7 +1185,7 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> void solve_lls(A &a, B
     const auto b_shape = b.shape();
 
     const int m = a_shape[0];
-    const int n = a_shape[1];
+    const int n = a_shape.size() > 1 ? a_shape[1] : 1;
     const int nrhs = (b.rank() == 1) ? 1 : b_shape[1];
 
     // Determine leading dimensions based on layout
@@ -1155,13 +1221,12 @@ template <dynamic_shape_tensor A, dynamic_shape_tensor B> auto cross(const A &a,
     auto result = dynamic_tensor<result_value_type, A::get_error_checking()>({3});
 
     // get flat iterator for both tensors
-    auto a_it = a.begin();
-    auto b_it = b.begin();
+    auto a_flat = a.flatten();
+    auto b_flat = b.flatten();
 
-    // Calculate cross product (used iterators since shapes may not be one dimensional)
-    result[0] = (*a_it)[1] * (*b_it)[2] - (*a_it)[2] * (*b_it)[1];
-    result[1] = (*a_it)[2] * (*b_it)[0] - (*a_it)[0] * (*b_it)[2];
-    result[2] = (*a_it)[0] * (*b_it)[1] - (*a_it)[1] * (*b_it)[0];
+    result[0] = a_flat[1] * b_flat[2] - a_flat[2] * b_flat[1];
+    result[1] = a_flat[2] * b_flat[0] - a_flat[0] * b_flat[2];
+    result[2] = a_flat[0] * b_flat[1] - a_flat[1] * b_flat[0];
 
     return result;
 }

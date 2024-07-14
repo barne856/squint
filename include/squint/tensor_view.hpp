@@ -196,6 +196,9 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
     using base_type::strides;
     using base_type::subview;
 
+    // assignment operator
+    auto &operator=(const fixed_tensor_view &other) { return base_type::operator=(other); }
+
     // Non-const version of at
     template <typename... Indices> constexpr T &at(Indices... indices) {
         return const_cast<T &>(base_type::at(indices...));
@@ -246,7 +249,6 @@ class const_fixed_tensor_view
                                              Strides, ErrorChecking, Dims...>;
 
   public:
-    using base_type::operator=;
     using base_type::at;
     using base_type::at_impl;
     using base_type::base_type;
@@ -405,6 +407,9 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     using base_type::strides;
     using base_type::subview;
 
+    // assignment operator
+    auto &operator=(const dynamic_tensor_view &other) { return base_type::operator=(other); }
+
     template <typename... Indices> T &at(Indices... indices) { return const_cast<T &>(base_type::at(indices...)); }
 
     using base_type::at;
@@ -414,7 +419,6 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
 
     // Non-const version of subview
     template <typename... Slices> auto subview(Slices... slices) {
-        static_assert(sizeof...(Slices) <= std::numeric_limits<std::size_t>::max(), "Too many slice arguments");
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_subview_bounds({slices...});
         }
@@ -476,7 +480,6 @@ class const_dynamic_tensor_view
     using base_type = dynamic_tensor_view_base<const_dynamic_tensor_view<T, ErrorChecking>, const T, ErrorChecking>;
 
   public:
-    using base_type::operator=;
     using base_type::at;
     using base_type::at_impl;
     using base_type::base_type;

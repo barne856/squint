@@ -17,19 +17,15 @@
 using namespace squint;
 
 int main() {
-    auto A = tens({2, 2}, {2, 1, 3, 4});
+    auto A = mat4x2_t<units::length>::random();
+    auto b = mat4x2::random();
 
-    std::cout << A << std::endl;
-    std::cout << A.inv() << std::endl;
+    std::cout << b / A << std::endl;
 
-    auto B = tens({2, 2}, {2, 3, 1, 4});
+    auto Ad = tens_t<units::length>::random({2, 2});
+    auto bd = tens::random({4, 2});
 
-    std::cout << B.transpose() << std::endl;
-    std::cout << B.transpose().inv() << std::endl;
-
-    std::cout << (A.inv() == A.inv()) << std::endl;
-
-    std::cout << approx_equal(A.inv(), A.pinv(), 0.003F) << std::endl;
+    std::cout << bd / Ad << std::endl;
 
     return 0;
 }

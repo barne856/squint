@@ -259,10 +259,16 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         dynamic_tensor result(shape, l);
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<T> dis(low, high);
-
-        for (std::size_t i = 0; i < result.size(); ++i) {
-            result.data_[i] = dis(gen);
+        if constexpr (quantitative<T>) {
+            std::uniform_real_distribution<typename T::value_type> dis(low.value(), high.value());
+            for (std::size_t i = 0; i < result.size(); ++i) {
+                result.data_[i] = T{dis(gen)};
+            }
+        } else {
+            std::uniform_real_distribution<T> dis(low, high);
+            for (std::size_t i = 0; i < result.size(); ++i) {
+                result.data_[i] = dis(gen);
+            }
         }
 
         return result;
