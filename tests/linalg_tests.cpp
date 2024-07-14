@@ -495,8 +495,8 @@ TEST_CASE("Matrix operations with quantity types") {
                                           quantity<float, mult_t<dimensions::velocity, dimensions::mass>>>,
                       "Result should be a vector of velocity * mass (momentum)");
 
-        CHECK(result[0] == doctest::Approx(5));
-        CHECK(result[1] == doctest::Approx(8));
+        CHECK(result[0].value() == doctest::Approx(5));
+        CHECK(result[1].value() == doctest::Approx(8));
     }
 
     SUBCASE("Matrix addition with force") {
