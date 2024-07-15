@@ -319,7 +319,346 @@ auto flattened = tensor.flatten();
 
 ## API Reference
 
-(The API Reference section remains unchanged from the original README)
+### Dimension System
+
+The dimension system is implemented using `std::ratio` for compile-time fraction representation.
+
+#### Base Dimensions
+
+```cpp
+namespace squint::dimensions {
+    using length = dimension<1, 0, 0, 0, 0, 0, 0>;
+    using time = dimension<0, 1, 0, 0, 0, 0, 0>;
+    using mass = dimension<0, 0, 1, 0, 0, 0, 0>;
+    using temperature = dimension<0, 0, 0, 1, 0, 0, 0>;
+    using current = dimension<0, 0, 0, 0, 1, 0, 0>;
+    using amount_of_substance = dimension<0, 0, 0, 0, 0, 1, 0>;
+    using luminous_intensity = dimension<0, 0, 0, 0, 0, 0, 1>;
+}
+```
+
+#### Compound Dimensions
+
+Compound dimensions are created through template metaprogramming. For example:
+
+```cpp
+using velocity = dim_div<length, time>;
+using acceleration = dim_div<velocity, time>;
+using force = dim_mult<mass, acceleration>;
+```
+
+### Quantity System
+
+The `quantity` class template is the core of the SQUINT library.
+
+```cpp
+template <typename T, typename D, error_checking ErrorChecking = error_checking::disabled>
+class quantity;
+```
+
+#### Template Parameters
+
+- `T`: The underlying arithmetic type (e.g., `float`, `double`, `int`)
+- `D`: The dimension type
+- `ErrorChecking`: Error checking policy (`error_checking::enabled` or `error_checking::disabled`)
+
+#### Constructors
+
+```cpp
+quantity();  // Default constructor, initializes to T{}
+explicit quantity(const T& value);  // Constructs from value
+quantity(const U& value);  // Implicit conversion for dimensionless quantities
+```
+
+#### Public Methods
+
+```cpp
+constexpr T value() const noexcept;  // Returns underlying value
+template <template <typename, typename> typename TargetUnit, typename TargetErrorChecking = ErrorChecking>
+constexpr auto as() const;  // Converts to different unit
+template <int N>
+constexpr auto pow() const;  // Raises quantity to power N
+template <int N>
+auto root() const;  // Takes Nth root
+constexpr auto sqrt() const;  // Square root
+```
+
+#### Operators
+
+- Arithmetic operators: `+`, `-`, `*`, `/`
+- Comparison operators: `==`, `!=`, `<`, `<=`, `>`, `>=`
+
+### Tensor System
+
+#### Fixed Tensor
+
+```cpp
+template <typename T, layout L, error_checking ErrorChecking, size_t... Dims>
+class fixed_tensor;
+```
+
+##### Template Parameters
+
+- `T`: The underlying data type
+- `L`: Memory layout (`layout::row_major` or `layout::column_major`)
+- `ErrorChecking`: Error checking policy
+- `Dims...`: Compile-time dimensions of the tensor
+
+##### Constructors
+
+```cpp
+fixed_tensor();  // Default constructor
+fixed_tensor(const std::array<T, total_size>& elements);  // Constructs from flat array
+explicit fixed_tensor(const T& value);  // Fills tensor with single value
+fixed_tensor(const BlockTensor& block);  // Constructs from smaller tensor block
+```
+
+##### Public Methods
+
+```cpp
+constexpr size_t rank() const noexcept;  // Returns tensor rank
+constexpr size_t size() const noexcept;  // Returns total number of elements
+constexpr auto shape() const noexcept;  // Returns shape of tensor
+constexpr auto strides() const noexcept;  // Returns strides of tensor
+T& at(size_t... indices);  // Element access with bounds checking
+T& operator[](size_t... indices);  // Element access without bounds checking
+T* data() noexcept;  // Returns pointer to underlying data
+auto subview(Slices... slices);  // Creates subview of tensor
+auto view();  // Creates view of entire tensor
+template <size_t... NewDims>
+auto reshape();  // Reshapes tensor
+auto flatten();  // Returns flattened view of tensor
+auto rows();  // Returns row views
+auto cols();  // Returns column views
+```
+
+##### Static Methods
+
+```cpp
+static auto zeros();  // Creates tensor filled with zeros
+static auto ones();  // Creates tensor filled with ones
+static auto full(const T& value);  // Creates tensor filled with specific value
+static auto random(T min, T max);  // Creates tensor with random values
+static auto I();  // Creates identity tensor
+static auto diag(const T& value);  // Creates diagonal tensor
+```
+
+#### Dynamic Tensor
+
+```cpp
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+class dynamic_tensor;
+```
+
+##### Template Parameters
+
+- `T`: The underlying data type
+- `ErrorChecking`: Error checking policy
+
+##### Constructors
+
+```cpp
+dynamic_tensor();  // Default constructor
+dynamic_tensor(std::vector<size_t> shape, layout l = layout::column_major);  // Constructs with given shape
+dynamic_tensor(std::vector<size_t> shape, const std::vector<T>& elements, layout l = layout::column_major);  // Constructs from elements
+```
+
+##### Public Methods
+
+Similar to `fixed_tensor`, plus:
+
+```cpp
+void reshape(std::vector<size_t> new_shape);  // Reshape tensor in-place
+```
+
+#### Tensor Views
+
+```cpp
+template <typename T, layout L, error_checking ErrorChecking, size_t... Dims>
+class fixed_tensor_view;
+
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+class dynamic_tensor_view;
+```
+
+These provide non-owning views into tensor data, with similar methods to their owning counterparts.
+
+### Units Namespace
+
+The `units` namespace contains various unit types and conversion functions. Some of the key unit types include:
+
+```cpp
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct length_t;
+
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct time_t;
+
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct mass_t;
+
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct temperature_t;
+
+template <typename T, error_checking ErrorChecking = error_checking::disabled>
+struct velocity_t;
+
+// ... and more
+```
+
+Each unit type provides static methods for creating quantities in different units. For example:
+
+```cpp
+auto len = length_t<double>::meters(5.0);
+auto spd = velocity_t<double>::kilometers_per_hour(60.0);
+```
+
+### Constants Namespace
+
+The `constants` namespace provides template structs with various mathematical and physical constants:
+
+```cpp
+template <typename T>
+struct math_constants {
+    static constexpr auto pi = quantity<T, dimensionless>(3.14159265358979323846);
+    static constexpr auto e = quantity<T, dimensionless>(2.71828182845904523536);
+    static constexpr auto sqrt2 = quantity<T, dimensionless>(1.41421356237309504880);
+    // ... and more
+};
+
+template <typename T>
+struct si_constants {
+    static constexpr auto c = quantity<T, velocity>(299792458.0);  // Speed of light
+    static constexpr auto h = quantity<T, energy_time>(6.62607015e-34);  // Planck constant
+    static constexpr auto G = quantity<T, force_length_squared_per_mass_squared>(6.67430e-11);  // Gravitational constant
+    // ... and more
+};
+
+template <typename T>
+struct astro_constants {
+    static constexpr auto AU = quantity<T, length>(1.495978707e11);  // Astronomical unit
+    static constexpr auto parsec = quantity<T, length>(3.0856775814913673e16);
+    static constexpr auto light_year = quantity<T, length>(9.4607304725808e15);
+    // ... and more
+};
+
+template <typename T>
+struct atomic_constants {
+    static constexpr auto R_inf = quantity<T, wave_number>(10973731.568160);  // Rydberg constant
+    static constexpr auto a_0 = quantity<T, length>(5.29177210903e-11);  // Bohr radius
+    // ... and more
+};
+```
+
+### Math Namespace
+
+The `math` namespace provides overloads for common math functions to work with quantities:
+
+```cpp
+template <typename T, typename D>
+quantity<T, D> abs(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dim_root<D, 2>> sqrt(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> exp(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> log(const quantity<T, D>& q);
+
+template <typename T, typename D1, typename D2>
+quantity<T, dim_mult<D1, D2>> pow(const quantity<T, D1>& base, const quantity<T, D2>& exponent);
+
+// Trigonometric functions
+template <typename T, typename D>
+quantity<T, dimensionless> sin(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> cos(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> tan(const quantity<T, D>& q);
+
+// Inverse trigonometric functions
+template <typename T, typename D>
+quantity<T, D> asin(const quantity<T, dimensionless>& q);
+
+template <typename T, typename D>
+quantity<T, D> acos(const quantity<T, dimensionless>& q);
+
+template <typename T, typename D>
+quantity<T, D> atan(const quantity<T, dimensionless>& q);
+
+template <typename T, typename D1, typename D2>
+quantity<T, D1> atan2(const quantity<T, D1>& y, const quantity<T, D2>& x);
+
+// Hyperbolic functions
+template <typename T, typename D>
+quantity<T, dimensionless> sinh(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> cosh(const quantity<T, D>& q);
+
+template <typename T, typename D>
+quantity<T, dimensionless> tanh(const quantity<T, D>& q);
+
+// Inverse hyperbolic functions
+template <typename T, typename D>
+quantity<T, D> asinh(const quantity<T, dimensionless>& q);
+
+template <typename T, typename D>
+quantity<T, D> acosh(const quantity<T, dimensionless>& q);
+
+template <typename T, typename D>
+quantity<T, D> atanh(const quantity<T, dimensionless>& q);
+```
+
+### Linear Algebra Operations
+
+The SQUINT library provides various linear algebra operations for tensors:
+
+```cpp
+// Element-wise operations
+template <typename T, layout L, error_checking E, size_t... Dims>
+auto operator+(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+
+template <typename T, layout L, error_checking E, size_t... Dims>
+auto operator-(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+
+template <typename T, layout L, error_checking E, size_t... Dims>
+auto operator*(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+
+// Matrix multiplication
+template <typename T, layout L, error_checking E, size_t M, size_t N, size_t P>
+auto matmul(const fixed_tensor<T, L, E, M, N>& lhs, const fixed_tensor<T, L, E, N, P>& rhs);
+
+// Transposition
+template <typename T, layout L, error_checking E, size_t... Dims>
+auto transpose(const fixed_tensor<T, L, E, Dims...>& tensor);
+
+// Matrix inversion
+template <typename T, layout L, error_checking E, size_t N>
+auto inv(const fixed_tensor<T, L, E, N, N>& matrix);
+
+// Pseudo-inverse
+template <typename T, layout L, error_checking E, size_t M, size_t N>
+auto pinv(const fixed_tensor<T, L, E, M, N>& matrix);
+
+// Solve linear system
+template <typename T, layout L, error_checking E, size_t N>
+auto solve(const fixed_tensor<T, L, E, N, N>& A, const fixed_tensor<T, L, E, N>& b);
+
+// Solve linear least squares
+template <typename T, layout L, error_checking E, size_t M, size_t N>
+auto solve_lls(const fixed_tensor<T, L, E, M, N>& A, const fixed_tensor<T, L, E, M>& b);
+
+// Cross product (for 3D vectors)
+template <typename T, layout L, error_checking E>
+auto cross(const fixed_tensor<T, L, E, 3>& lhs, const fixed_tensor<T, L, E, 3>& rhs);
+```
+
+These operations are also available for `dynamic_tensor` with appropriate interfaces.
 
 ## Building and Testing
 
