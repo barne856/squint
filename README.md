@@ -615,47 +615,77 @@ quantity<T, D> atanh(const quantity<T, dimensionless>& q);
 
 The SQUINT library provides various linear algebra operations for tensors:
 
+
+Element-wise operations:
+
 ```cpp
-// Element-wise operations
-template <typename T, layout L, error_checking E, size_t... Dims>
-auto operator+(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+// Addition
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto operator+(const A &a, const B &b);
 
-template <typename T, layout L, error_checking E, size_t... Dims>
-auto operator-(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+// Subtraction
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto operator-(const A &a, const B &b);
 
-template <typename T, layout L, error_checking E, size_t... Dims>
-auto operator*(const fixed_tensor<T, L, E, Dims...>& lhs, const fixed_tensor<T, L, E, Dims...>& rhs);
+// Scalar multiplication
+template <fixed_shape_tensor A, scalar Scalar>
+auto operator*(const A &a, const Scalar &s);
+template <fixed_shape_tensor A, scalar Scalar>
+auto operator*(const Scalar &s, const A &a);
 
-// Matrix multiplication
-template <typename T, layout L, error_checking E, size_t M, size_t N, size_t P>
-auto matmul(const fixed_tensor<T, L, E, M, N>& lhs, const fixed_tensor<T, L, E, N, P>& rhs);
-
-// Transposition
-template <typename T, layout L, error_checking E, size_t... Dims>
-auto transpose(const fixed_tensor<T, L, E, Dims...>& tensor);
-
-// Matrix inversion
-template <typename T, layout L, error_checking E, size_t N>
-auto inv(const fixed_tensor<T, L, E, N, N>& matrix);
-
-// Pseudo-inverse
-template <typename T, layout L, error_checking E, size_t M, size_t N>
-auto pinv(const fixed_tensor<T, L, E, M, N>& matrix);
-
-// Solve linear system
-template <typename T, layout L, error_checking E, size_t N>
-auto solve(const fixed_tensor<T, L, E, N, N>& A, const fixed_tensor<T, L, E, N>& b);
-
-// Solve linear least squares
-template <typename T, layout L, error_checking E, size_t M, size_t N>
-auto solve_lls(const fixed_tensor<T, L, E, M, N>& A, const fixed_tensor<T, L, E, M>& b);
-
-// Cross product (for 3D vectors)
-template <typename T, layout L, error_checking E>
-auto cross(const fixed_tensor<T, L, E, 3>& lhs, const fixed_tensor<T, L, E, 3>& rhs);
+// Scalar division
+template <fixed_shape_tensor A, scalar Scalar>
+auto operator/(const A &a, const Scalar &s);
 ```
 
-These operations are also available for `dynamic_tensor` with appropriate interfaces.
+Matrix operations
+
+```cpp
+// Matrix multiplication
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto operator*(const A &a, const B &b);
+
+// Solve linear system
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto solve(A &a, B &b);
+
+// Solve linear least squares
+template <fixed_tensor A, fixed_tensor B>
+auto solve_lls(A& a, B& b);
+
+// Cross product (for 3D vectors)
+template <fixed_tensor A, fixed_tensor B>
+auto cross(const A& lhs, const B& rhs);
+```
+
+Class Methods:
+
+```cpp
+// Transposition (returning a tensor view)
+auto transpose();
+// Matrix inversion (returning a new tensor)
+auto inv();
+// Pseudo-inverse (returning a new tensor)
+auto pinv();
+
+auto squared_norm();
+auto trace();
+auto mean();
+auto sum();
+auto min();
+auto max();
+
+template <tensor Other>
+auto &operator+=(const Other &other);
+template <tensor Other>
+auto &operator-=(const Other &other);
+template <scalar Scalar>
+auto &operator*=(const Scalar &s);
+template <scalar Scalar>
+auto &operator/=(const Scalar &s);
+```
+
+These operations are also available for `dynamic_tensor` with appropriate interfaces and also work with tensor views.
 
 ## Building and Testing
 
