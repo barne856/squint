@@ -325,17 +325,14 @@ The dimension system is implemented using `std::ratio` for compile-time fraction
 
 #### Base Dimensions
 
-```cpp
-namespace squint::dimensions {
-    using length = dimension<1, 0, 0, 0, 0, 0, 0>;
-    using time = dimension<0, 1, 0, 0, 0, 0, 0>;
-    using mass = dimension<0, 0, 1, 0, 0, 0, 0>;
-    using temperature = dimension<0, 0, 0, 1, 0, 0, 0>;
-    using current = dimension<0, 0, 0, 0, 1, 0, 0>;
-    using amount_of_substance = dimension<0, 0, 0, 0, 0, 1, 0>;
-    using luminous_intensity = dimension<0, 0, 0, 0, 0, 0, 1>;
-}
-```
+- `squint::dimensions::length`
+- `squint::dimensions::time`
+- `squint::dimensions::mass`
+- `squint::dimensions::temperature`
+- `squint::dimensions::current`
+- `squint::dimensions::amount_of_substance`
+- `squint::dimensions::luminous_intensity`
+
 
 #### Compound Dimensions
 
