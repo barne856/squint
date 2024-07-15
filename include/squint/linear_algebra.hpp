@@ -1,9 +1,6 @@
 #ifndef SQUINT_LINEAR_ALGEBRA_HPP
 #define SQUINT_LINEAR_ALGEBRA_HPP
 
-#include "squint/dimension.hpp"
-#include <numeric>
-#include <utility>
 #ifdef BLAS_BACKEND_MKL
 #include <mkl.h>
 #define BLAS_INT MKL_INT
@@ -13,18 +10,16 @@
 #define BLAS_INT int
 #endif
 
-#include "squint/quantity.hpp"
+#include "squint/dimension.hpp"
 #include "squint/tensor_base.hpp"
 #include <algorithm>
 #include <concepts>
+#include <numeric>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace squint {
-
-// concept for scalar is arithmetic or quantitative
-template <typename T>
-concept scalar = arithmetic<T> || quantitative<T>;
 
 // concept for dimensionless tensor
 template <typename T>
@@ -32,6 +27,12 @@ concept dimensionless_tensor =
     tensor<T> && (arithmetic<typename T::value_type> ||
                   (quantitative<typename T::value_type> &&
                    std::convertible_to<typename T::value_type::dimension_type, dimensions::dimensionless>));
+
+template <typename T>
+concept dimensionless_fixed_tensor = fixed_shape_tensor<T> && dimensionless_tensor<T>;
+
+template <typename T>
+concept dimensionless_dynamic_tensor = dynamic_shape_tensor<T> && dimensionless_tensor<T>;
 
 // checks if a compile-time list of indices has no duplicates
 template <size_t... indices> constexpr bool is_unique() {
@@ -338,7 +339,14 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
         return *static_cast<Derived *>(this);
     }
 
-    auto norm() const { return squint::math::sqrt(squared_norm()); }
+    auto norm() const {
+        if constexpr (quantitative<typename Derived::value_type>) {
+            using root_type = root_t<typename Derived::value_type::dimension_type, 2>;
+            return root_type(std::sqrt(squared_norm()));
+        } else {
+            return std::sqrt(squared_norm());
+        }
+    }
 
     auto squared_norm() const {
         const auto *derived = static_cast<const Derived *>(this);
@@ -1244,6 +1252,9 @@ template <dynamic_shape_tensor A, scalar Scalar> auto operator/(const A &a, cons
     }
     return result;
 }
+
+// Normalize
+template <tensor T> auto normalize(const T &a) { return a / a.norm(); }
 
 } // namespace squint
 

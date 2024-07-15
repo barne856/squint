@@ -8,6 +8,7 @@
 #ifndef SQUINT_QUANTITY_HPP
 #define SQUINT_QUANTITY_HPP
 
+#include "squint/core.hpp"
 #include "squint/dimension.hpp"
 #include <cassert>
 #include <cmath>
@@ -18,10 +19,6 @@
 #include <type_traits>
 
 namespace squint {
-
-// Define a type to enable or disable error checking
-enum class error_checking { enabled, disabled };
-
 template <error_checking ErrorChecking1, error_checking ErrorChecking2> struct resulting_error_checking {
     static constexpr auto value = ErrorChecking1 == error_checking::enabled || ErrorChecking2 == error_checking::enabled
                                       ? error_checking::enabled
@@ -56,9 +53,6 @@ template <typename T> constexpr T sqrt_constexpr(T x) {
                                                             : std::numeric_limits<T>::quiet_NaN();
 }
 } // namespace detail
-
-template <typename T>
-concept arithmetic = std::is_arithmetic_v<T>;
 
 template <arithmetic T, dimensional D, error_checking E = error_checking::disabled> class quantity {
   public:
@@ -409,28 +403,6 @@ std::istream &operator>>(std::istream &is, quantity<T, D, ErrorChecking> &q) {
         q = quantity<T, D, ErrorChecking>(value);
     }
     return is;
-}
-
-// Concept for quantities
-template <typename T>
-concept quantitative = requires {
-    typename T::value_type;
-    typename T::dimension_type;
-};
-
-// approx equal for arithmetic types
-template <typename T>
-    requires arithmetic<T>
-bool approx_equal(T a, T b, T epsilon = 128 * 1.192092896e-04, T abs_th = std::numeric_limits<T>::epsilon()) {
-    assert(std::numeric_limits<T>::epsilon() <= epsilon);
-    assert(epsilon < 1.F);
-
-    if (a == b)
-        return true;
-
-    auto diff = std::abs(a - b);
-    auto norm = std::min((std::abs(a) + std::abs(b)), std::numeric_limits<T>::max());
-    return diff < std::max(abs_th, epsilon * norm);
 }
 
 // approx equal for quantities
@@ -1289,6 +1261,10 @@ template <typename T> auto atanh(const T &x) {
 }
 
 } // namespace math
+
+template <typename T>
+concept dimensionless_quantity =
+    quantitative<T> && std::is_same_v<typename T::dimension_type, dimensions::dimensionless>;
 
 } // namespace squint
 

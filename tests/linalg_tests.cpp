@@ -1,9 +1,8 @@
-#include <concepts>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "squint/dynamic_tensor.hpp"
-#include "squint/fixed_tensor.hpp"
-#include "squint/linear_algebra.hpp"
+#include "squint/tensor.hpp"
+#include "squint/quantity.hpp"
+#include <concepts>
 
 using namespace squint;
 

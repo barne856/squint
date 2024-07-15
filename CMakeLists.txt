@@ -128,6 +128,7 @@ if(SQUINT_BUILD_TESTS)
     add_squint_test(dimension_tests)
     add_squint_test(tensor_tests)
     add_squint_test(linalg_tests)
+    add_squint_test(geometry_tests)
 endif()
 
 # Main executable (temporary testing purposes)

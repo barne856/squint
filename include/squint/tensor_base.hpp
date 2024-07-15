@@ -1,16 +1,13 @@
 #ifndef SQUINT_TENSOR_BASE_HPP
 #define SQUINT_TENSOR_BASE_HPP
 
-#include "squint/quantity.hpp"
+#include "squint/core.hpp"
 #include <cstddef>
 #include <functional>
 #include <iostream>
 #include <vector>
 
 namespace squint {
-
-// Layout options
-enum class layout { row_major, column_major };
 
 // Forward declarations
 template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims> class fixed_tensor;

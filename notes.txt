@@ -1,5 +1,0 @@
-TODO
-
-BLAS ops require same layout
-
-BLAS ops do not handle transpose correctly

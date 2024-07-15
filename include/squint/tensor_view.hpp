@@ -3,7 +3,6 @@
 
 #include "squint/iterable_tensor.hpp"
 #include "squint/linear_algebra.hpp"
-#include "squint/quantity.hpp"
 #include <array>
 #include <numeric>
 #include <stdexcept>

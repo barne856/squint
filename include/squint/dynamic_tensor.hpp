@@ -3,7 +3,7 @@
 
 #include "squint/iterable_tensor.hpp"
 #include "squint/linear_algebra.hpp"
-#include "squint/quantity.hpp"
+// #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
 #include <numeric>
