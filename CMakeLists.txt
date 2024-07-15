@@ -17,8 +17,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 
-
-
 # Function to setup BLAS backend
 function(setup_blas_backend)
     if(BLAS_BACKEND STREQUAL "OpenBLAS")
@@ -86,11 +84,7 @@ function(setup_mkl)
 endfunction()
 
 # Option to control building tests
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    option(SQUINT_BUILD_TESTS "Build the tests" ON)
-else()
-    option(SQUINT_BUILD_TESTS "Build the tests" OFF)
-endif()
+option(SQUINT_BUILD_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
 
 # Create interface library for SQUINT
 add_library(SQUINT INTERFACE)
@@ -130,3 +124,5 @@ if(SQUINT_BUILD_TESTS)
     add_squint_test(linalg_tests)
     add_squint_test(geometry_tests)
 endif()
+
+add_library(SQUINT::SQUINT ALIAS SQUINT)
