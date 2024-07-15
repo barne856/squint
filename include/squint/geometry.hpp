@@ -17,7 +17,7 @@ concept transformation_matrix = fixed_shape_tensor<T> && dimensionless_tensor<T>
 // Affine Transformations
 // Translation
 template <transformation_matrix T, arithmetic U>
-auto translate(T &matrix, vec3_t<units::length_t<U>> &x, units::length_t<U> unit_length = units::length_t<U>{1}) {
+auto translate(T &matrix, const vec3_t<units::length_t<U>> &x, units::length_t<U> unit_length = units::length_t<U>{1}) {
     matrix[0, 3] += x[0] / unit_length;
     matrix[1, 3] += x[1] / unit_length;
     matrix[2, 3] += x[2] / unit_length;
