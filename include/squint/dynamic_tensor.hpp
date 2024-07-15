@@ -274,7 +274,7 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         return result;
     }
 
-    static dynamic_tensor I(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
+    static dynamic_tensor eye(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (!std::equal(shape.begin() + 1, shape.end(), shape.begin())) {
                 throw std::invalid_argument("All dimensions must be equal for identity tensor");

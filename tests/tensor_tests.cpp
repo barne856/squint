@@ -832,7 +832,7 @@ TEST_CASE("fixed_tensor static methods") {
     SUBCASE("I") {
         using square_tensor_type =
             squint::fixed_tensor<float, squint::layout::row_major, squint::error_checking::enabled, 3, 3>;
-        auto t = square_tensor_type::I();
+        auto t = square_tensor_type::eye();
         CHECK(t.at(0, 0) == 1.0F);
         CHECK(t.at(1, 1) == 1.0F);
         CHECK(t.at(2, 2) == 1.0F);
@@ -914,7 +914,7 @@ TEST_CASE("dynamic_tensor static methods") {
 
     SUBCASE("I") {
         std::vector<std::size_t> square_shape = {3, 3};
-        auto t = tensor_type::I(square_shape);
+        auto t = tensor_type::eye(square_shape);
         CHECK(t.at_impl({0, 0}) == 1.0F);
         CHECK(t.at_impl({1, 1}) == 1.0F);
         CHECK(t.at_impl({2, 2}) == 1.0F);

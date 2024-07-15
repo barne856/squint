@@ -287,7 +287,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         return result;
     }
 
-    static constexpr fixed_tensor I() {
+    static constexpr fixed_tensor eye() {
         static_assert(((Dims == Dims) && ...), "All dimensions must be equal for identity tensor");
         fixed_tensor result;
         result.fill(T{}); // Fill with zeros

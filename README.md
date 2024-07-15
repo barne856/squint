@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
+1. [Key Features](#key-features)
 2. [Design Principles](#design-principles)
 3. [Core Components](#core-components)
    - [Dimension System](#dimension-system)
@@ -32,9 +32,16 @@
    - [On Linux](#on-linux)
    - [Running Tests](#running-tests)
 
-## Introduction
+## What is This?
 
 SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring robust dimensional analysis, unit conversion, and linear algebra operations to C++. By leveraging C++'s template metaprogramming capabilities, Squint provides a powerful set of tools that enhance code safety, readability, and expressiveness without compromising performance.
+
+### Warranty Void if Used for Actual Science
+
+This library is for entertainment purposes only. If you're looking for a library to calculate the trajectory of your next Mars mission or design a bridge that won't collapse, maybe look elsewhere? SQUINT is best used for those times when you're sitting alone on a Friday night, wondering how to calculate the cross product of your life choices with a vector of missed opportunities. For all other use cases, proceed with caution.
+
+
+## Key Features
 
 Key features of Squint include:
 
@@ -264,6 +271,259 @@ int main() {
 
 ## Advanced Usage
 
+### Tensor Views and Reshaping
+
+SQUINT provides powerful capabilities for creating views and subviews of tensors, as well as reshaping operations. These features allow for efficient and flexible manipulation of tensor data without copying the underlying memory.
+
+#### Creating Views
+
+```cpp
+mat3x4_t<float> tensor{{/* ... */}};
+
+// Create a view of the entire tensor
+auto view = tensor.view();
+```
+
+A view provides a non-owning reference to the tensor data, allowing you to perform operations on the tensor without modifying its shape or storage.
+
+#### Subviews and Slicing
+
+Subviews allow you to work with a portion of a tensor. They are created using the `subview` method, which takes slice objects as arguments:
+
+```cpp
+// Create a subview
+auto subview = tensor.subview<2, 2>(slice{0, 2}, slice{1, 2});
+```
+
+Each `slice` object consists of two components:
+1. A starting offset
+2. The size of the slice in that dimension
+
+For example, `slice{0, 2}` means "start at index 0 and take 2 elements".
+
+The template arguments to `subview<2, 2>` specify the dimensions of the resulting subview.
+
+Here's a more detailed example:
+
+```cpp
+// column major order
+mat4_t<float> matrix{{
+    1, 2, 3, 4,
+    5, 6, 7, 8,
+    9, 10, 11, 12,
+    13, 14, 15, 16
+}};
+// matrix contains:
+// [
+//    [1, 5, 9, 13],
+//    [2, 6, 10, 14],
+//    [3, 7, 11, 15],
+//    [4, 8, 12, 16]
+// ]
+
+// Create a 2x3 subview starting from row 1, column 1
+auto subview = matrix.subview<2, 3>(slice{1, 2}, slice{1, 3});
+
+// subview now contains:
+// [
+//    [6, 10, 14],
+//    [7, 11, 15]
+// ]
+```
+
+#### Subview Iterations
+
+SQUINT provides convenient methods to iterate over subviews of a tensor:
+
+```cpp
+// Iterate over all 2x2 subviews of the matrix
+for (auto subview : matrix.subviews<2, 2>()) {
+    // Process each 2x2 subview
+}
+
+// Iterate over rows
+for (auto row : matrix.rows()) {
+    // Process each row
+}
+
+// Iterate over columns
+for (auto col : matrix.cols()) {
+    // Process each column
+}
+
+// Get a specific row or column
+auto thirdRow = matrix.row(2);
+auto secondColumn = matrix.col(1);
+```
+
+#### Reshaping
+
+Reshaping allows you to change the dimensions of a tensor without changing its data:
+
+```cpp
+mat3x4_t<float> tensor{{/* ... */}};
+
+// Reshape the 3x4 tensor into a 6x2 tensor
+auto reshaped = tensor.reshape<6, 2>();
+
+// Flatten the tensor into a 1D vector
+auto flattened = tensor.flatten();
+```
+
+When reshaping, the total number of elements must remain the same. The `reshape` method returns a view of the original data with the new shape.
+
+#### Combining Operations
+
+These operations can be combined for powerful data manipulation:
+
+```cpp
+mat4_t<float> bigMatrix{{/* ... */}};
+
+// Create a view of the upper-left 3x3 submatrix, then flatten it
+auto flattened_subview = bigMatrix.subview<3, 3>(slice{0, 3}, slice{0, 3}).flatten();
+
+// Reshape a subview
+auto reshaped_subview = bigMatrix.subview<2, 4>(slice{1, 2}, slice{0,4}).reshape<4, 2>();
+```
+
+These advanced features allow for efficient and expressive tensor manipulations, enabling complex operations without unnecessary data copying.
+
+
+### Tensor Division Operator
+
+SQUINT implements a powerful and flexible `operator/` for tensors, which performs general matrix division. This operation is equivalent to solving a general linear system or finding the minimum norm solution, depending on the shapes of the tensors involved.
+
+#### Functionality
+
+The `operator/` for tensors in SQUINT is designed to handle various scenarios:
+
+1. **General Linear System**: When the dimensions are compatible for a standard linear system (Ax = B).
+2. **Overdetermined System**: When there are more equations than unknowns, resulting in a least squares solution.
+3. **Underdetermined System**: When there are fewer equations than unknowns, resulting in a minimum norm solution.
+
+#### Usage
+
+The general syntax for using the division operator is:
+
+```cpp
+auto x = B / A;
+```
+
+Where `A` and `B` are tensors, and the operation solves the system Ax = B for x.
+
+#### Behavior Based on Tensor Shapes
+
+1. **Square Matrices (N x N)**:
+   - Performs standard matrix division (equivalent to A⁻¹B).
+   - Example:
+     ```cpp
+     mat3 A{{1, 2, 3, 4, 5, 6, 7, 8, 9}};
+     vec3 B{{1, 2, 3}};
+     auto x = B / A;  // Solves Ax = B
+     ```
+
+2. **Overdetermined System (M x N, where M > N)**:
+   - Computes the least squares solution.
+   - Minimizes ||Ax - B||².
+   - Example:
+     ```cpp
+     mat<4, 3> A{{/* ... */}};
+     vec<4> B{{/* ... */}};
+     auto x = B / A;  // Least squares solution
+     ```
+
+3. **Underdetermined System (M x N, where M < N)**:
+   - Computes the minimum norm solution.
+   - Finds x with minimum ||x|| that satisfies Ax = B.
+   - Example:
+     ```cpp
+     mat<3, 4> A{{/* ... */}};
+     vec<3> B{{/* ... */}};
+     auto x = B / A;  // Minimum norm solution
+     ```
+
+4. **Matrix-Matrix Division**:
+   - Solves AX = B for X, where A, B, and X are matrices.
+   - Example:
+     ```cpp
+     mat3 A{{/* ... */}};
+     mat<3, 2> B{{/* ... */}};
+     auto X = B / A;  // Solves AX = B
+     ```
+
+#### Implementation Details
+
+- The `operator/` uses efficient LAPACK routines under the hood for numerical stability and performance.
+- For overdetermined systems, it uses a QR factorization with column pivoting.
+- For underdetermined systems, it uses an LQ factorization.
+
+#### Error Handling
+
+- If the system is singular (i.e., A is not invertible for square matrices), a `std::runtime_error` is thrown.
+- For error checked types, the operation checks for compatible dimensions and throws a `std::invalid_argument` if the shapes are incompatible.
+
+#### Performance Considerations
+
+- The division operator is more computationally expensive than basic arithmetic operations.
+- For repeated solutions with the same left-hand side (A), consider using SQUINT's `solve` or `solve_lls` functions directly for better performance.
+
+This tensor division operator provides a intuitive and mathematically consistent way to solve linear systems and perform matrix divisions in SQUINT, handling various cases seamlessly based on the shapes of the input tensors.
+
+#### Dimensional Consistency with Quantities
+
+One of the powerful features of SQUINT's tensor division operator is its ability to maintain dimensional consistency when working with tensors of quantities. This ensures that the results of your calculations are not only mathematically correct but also physically meaningful.
+
+- **Automatic Dimension Handling**: When you use `operator/` with tensors of quantities, SQUINT automatically handles the dimensions, ensuring that the resulting tensor has the correct units.
+
+- **Error Prevention**: The dimensional analysis helps prevent errors in physical calculations by catching dimensionally inconsistent operations at compile-time.
+
+- **Intuitive Results**: The resulting dimensions follow the expected physical laws, making the code more intuitive and self-documenting.
+
+Example of dimensionally consistent division:
+
+```cpp
+// Define a 3x3 matrix of quantities with units of length/time (e.g., velocity)
+mat3_t<velocity> A{{
+    velocity::meters_per_second(1), velocity::meters_per_second(2), velocity::meters_per_second(3),
+    velocity::meters_per_second(4), velocity::meters_per_second(5), velocity::meters_per_second(6),
+    velocity::meters_per_second(7), velocity::meters_per_second(8), velocity::meters_per_second(9)
+}};
+
+// Define a vector of quantities with units of length
+vec3_t<length> B{{
+    length::meters(1),
+    length::meters(2),
+    length::meters(3)
+}};
+
+// Perform the division
+auto X = B / A;
+
+// X now contains quantities with units of time
+// This is dimensionally consistent: length / (length/time) = time
+```
+
+In this example:
+- `A` has units of velocity (length/time)
+- `B` has units of length
+- The resulting `X` has units of time, which is dimensionally consistent with solving the equation Ax = B
+
+This dimensional consistency applies to all cases of the tensor division operator, including:
+- Square matrix division
+- Overdetermined systems (least squares solutions)
+- Underdetermined systems (minimum norm solutions)
+- Matrix-matrix divisions
+
+#### Compile-Time Dimension Checking
+
+SQUINT performs dimension checking at compile-time, which means:
+- Dimensionally incorrect operations will result in compile-time errors, catching potential mistakes early in the development process.
+- There's no runtime overhead for dimension checking, maintaining zero overhead.
+
+#### Note on Dimensionless Quantities
+
+When working with dimensionless quantities or mixing dimensioned and dimensionless quantities, SQUINT handles these cases appropriately. Dimensionless quantities can be used freely in any position without affecting the dimensional analysis and built in arithmetic types are treated as dimensionless.
+
 ### Working with Mixed Types
 
 Squint supports operations between quantities with different underlying types:
@@ -308,7 +568,7 @@ mat3x4_t<float> tensor{{/* ... */}};
 auto view = tensor.view();
 
 // Create a subview
-auto subview = tensor.subview<2, 2>(slice{0, 2}, slice{1, 3});
+auto subview = tensor.subview<2, 2>(slice{0, 2}, slice{1, 2});
 
 // Reshape tensor
 auto reshaped = tensor.reshape<6, 2>();
@@ -417,16 +677,20 @@ constexpr size_t rank() const noexcept;  // Returns tensor rank
 constexpr size_t size() const noexcept;  // Returns total number of elements
 constexpr auto shape() const noexcept;  // Returns shape of tensor
 constexpr auto strides() const noexcept;  // Returns strides of tensor
-T& at(size_t... indices);  // Element access with bounds checking
-T& operator[](size_t... indices);  // Element access without bounds checking
+T& at(size_t... indices);  // Element access
+T& operator[](size_t... indices);  // Element access
 T* data() noexcept;  // Returns pointer to underlying data
 auto subview(Slices... slices);  // Creates subview of tensor
+template<size_t... SubviewShape>
+auto subviews(); // Iterator of subviews
 auto view();  // Creates view of entire tensor
 template <size_t... NewDims>
 auto reshape();  // Reshapes tensor
 auto flatten();  // Returns flattened view of tensor
-auto rows();  // Returns row views
-auto cols();  // Returns column views
+auto rows();  // Iterator of row views
+auto cols();  // Iterator of column views
+auto row(size_t index) // View of a single row
+auto col(size_t index) // View of a single col
 ```
 
 ##### Static Methods
@@ -436,7 +700,7 @@ static auto zeros();  // Creates tensor filled with zeros
 static auto ones();  // Creates tensor filled with ones
 static auto full(const T& value);  // Creates tensor filled with specific value
 static auto random(T min, T max);  // Creates tensor with random values
-static auto I();  // Creates identity tensor
+static auto eye();  // Creates identity tensor
 static auto diag(const T& value);  // Creates diagonal tensor
 ```
 
@@ -645,6 +909,10 @@ Matrix operations
 template <fixed_shape_tensor A, fixed_shape_tensor B>
 auto operator*(const A &a, const B &b);
 
+// Matrix division (general linear least squares or least norm solution)
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto operator*(const A &a, const B &b);
+
 // Solve linear system
 template <fixed_shape_tensor A, fixed_shape_tensor B>
 auto solve(A &a, B &b);
@@ -769,6 +1037,32 @@ Both functions will throw a `std::runtime_error` if:
 Users should ensure proper error handling when using these functions, as they can throw exceptions.
 
 ## Building and Testing
+
+### Compiler Support
+
+SQUINT requires a C++ compiler with support for C++23 features, particularly multidimensional subscript operators. Currently, the library supports the following compilers:
+
+- GCC (g++) version 12 or later
+- Clang version 15 or later
+
+#### Unsupported Compilers
+
+Microsoft Visual C++ (MSVC) is currently **not supported** by SQUINT. This is due to MSVC's lack of support for multidimensional subscript operators, which are a key feature used in SQUINT for tensor indexing and manipulation.
+
+#### Compiler-Specific Notes
+
+##### GCC (g++)
+- Minimum version: 12
+- Fully supports all SQUINT features
+
+##### Clang
+- Minimum version: 15
+- Fully supports all SQUINT features
+
+##### MSVC
+- Not currently supported
+- SQUINT relies heavily on multidimensional subscript operators, which are not yet implemented in MSVC
+- Support may be added in the future if MSVC implements this standard C++23 feature
 
 ### On Windows
 

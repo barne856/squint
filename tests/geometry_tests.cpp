@@ -9,7 +9,7 @@ using namespace squint;
 auto pi = squint::constants::math_constants<float>::pi;
 
 TEST_CASE("Translation") {
-    auto matrix = mat4::I();
+    auto matrix = mat4::eye();
     auto translation = vec3_t<units::length>{{units::length(1.0F), units::length(2.0F), units::length(3.0F)}};
 
     SUBCASE("Default unit length") {
@@ -29,7 +29,7 @@ TEST_CASE("Translation") {
 }
 
 TEST_CASE("Rotation") {
-    auto matrix = mat4::I();
+    auto matrix = mat4::eye();
 
     float angle = static_cast<float>(pi) / 2.0F; // 90 degrees
 
@@ -52,7 +52,7 @@ TEST_CASE("Rotation") {
 }
 
 TEST_CASE("Scale") {
-    auto matrix = mat4::I();
+    auto matrix = mat4::eye();
     auto scale_factors = vec3{{2.0F, 3.0F, 4.0F}};
 
     scale(matrix, scale_factors);

@@ -29,8 +29,8 @@ template <transformation_matrix T, dimensionless_scalar U> auto rotate(T &matrix
     U s = std::sin(angle);
     auto norm_axis = normalize(axis);
     U t = U{1} - c;
-    auto rotation = mat4_t<U>::I();
-    auto A = mat3_t<U>::I() * c;
+    auto rotation = mat4_t<U>::eye();
+    auto A = mat3_t<U>::eye() * c;
     auto B = mat3_t<U>{
         {U{0}, norm_axis[2], -norm_axis[1], -norm_axis[2], U{0}, norm_axis[0], norm_axis[1], -norm_axis[0], U{0}}};
     auto C = t * (norm_axis * norm_axis.transpose());
