@@ -687,6 +687,87 @@ auto &operator/=(const Scalar &s);
 
 These operations are also available for `dynamic_tensor` with appropriate interfaces and also work with tensor views.
 
+### `solve_lls` (Linear Least Squares Solver)
+
+#### Purpose
+Solves the linear least squares problem Ax = b or finds the minimum norm solution.
+
+#### Function Signature
+```cpp
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+void solve_lls(A &a, B &b)
+
+template <dynamic_shape_tensor A, dynamic_shape_tensor B>
+void solve_lls(A &a, B &b)
+```
+
+#### Parameters
+- `a`: Input matrix A (m x n)
+- `b`: Input/output matrix or vector B (m x nrhs) or (m)
+
+#### Behavior
+1. **In-place Operation**: This function overwrites both input matrices `a` and `b`.
+   - Matrix `a` is overwritten with details of its factorization.
+   - Matrix `b` is overwritten with the solution `x`.
+
+2. **Size Requirements**:
+   - For `b`, the user must provide a tensor large enough to accommodate the largest possible solution.
+   - If m >= n (overdetermined or square system):
+     - `b` should have at least n rows.
+   - If m < n (underdetermined system):
+     - `b` should have at least m rows.
+
+3. **Output**:
+   - The solution `x` is stored in the first n rows of `b` if m >= n, or in the first m rows of `b` if m < n.
+
+#### Notes
+- The function uses the LAPACKE_sgels/LAPACKE_dgels routines from LAPACK.
+- It's the user's responsibility to ensure `b` is large enough for any case.
+- The original content of `b` beyond the actual solution size is preserved.
+
+### `solve` (Linear System Solver)
+
+#### Purpose
+Solves the linear system of equations Ax = b.
+
+#### Function Signature
+```cpp
+template <fixed_shape_tensor A, fixed_shape_tensor B>
+auto solve(A &a, B &b)
+
+template <dynamic_shape_tensor A, dynamic_shape_tensor B>
+auto solve(A &a, B &b)
+```
+
+#### Parameters
+- `a`: Input square matrix A (n x n)
+- `b`: Input/output matrix or vector B (n x nrhs) or (n)
+
+#### Behavior
+1. **In-place Operation**: This function overwrites both input matrices `a` and `b`.
+   - Matrix `a` is overwritten with the factors L and U from the factorization A = P*L*U.
+   - Matrix `b` is overwritten with the solution `x`.
+
+2. **Size Requirements**:
+   - Matrix `a` must be square (n x n).
+   - Matrix `b` must have n rows and can have any number of columns (nrhs).
+
+3. **Output**:
+   - The solution `x` replaces `b`.
+   - The function returns a vector of pivot indices.
+
+#### Notes
+- The function uses the LAPACKE_sgesv/LAPACKE_dgesv routines from LAPACK.
+- `A` must be dimensionless (units cancel out) since `b` is modified in-place to become `x`.
+- The pivot indices can be used to determine the permutation matrix P.
+
+#### Error Handling
+Both functions will throw a `std::runtime_error` if:
+- The shapes of `a` and `b` are incompatible.
+- The LAPACK routine fails (non-zero info returned).
+
+Users should ensure proper error handling when using these functions, as they can throw exceptions.
+
 ## Building and Testing
 
 ### On Windows
