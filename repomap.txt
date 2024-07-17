@@ -1,0 +1,34 @@
+.
+├── .clang-format
+├── .clang-tidy
+├── .clangd
+├── .devcontainer
+│   ├── Dockerfile
+│   └── devcontainer.json
+├── .github
+│   └── workflows
+│       └── ci.yml
+├── .gitignore
+├── CMakeLists.txt
+├── README.md
+├── compile.py
+├── include
+│   └── squint
+│       ├── core.hpp
+│       ├── dimension.hpp
+│       ├── dynamic_tensor.hpp
+│       ├── fixed_tensor.hpp
+│       ├── geometry.hpp
+│       ├── iterable_tensor.hpp
+│       ├── linear_algebra.hpp
+│       ├── quantity.hpp
+│       ├── tensor.hpp
+│       ├── tensor_base.hpp
+│       └── tensor_view.hpp
+├── repomap.txt
+└── tests
+    ├── dimension_tests.cpp
+    ├── geometry_tests.cpp
+    ├── linalg_tests.cpp
+    ├── quantity_tests.cpp
+    └── tensor_tests.cpp
