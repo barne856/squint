@@ -43,3 +43,20 @@ Build and Utility:
 ├── CMakeLists.txt: CMake build configuration
 ├── compile.py: Utility script for file operations and token counting
 └── README.md: Project documentation
+
+External Dependencies:
+├── Catch2 (v3.x): Modern C++ test framework
+│   ├── TEST_CASE macro: Defines a test case
+│   ├── SECTION macro: Defines a section within a test case
+│   ├── REQUIRE and CHECK macros: Assert conditions in tests
+│   └── Matchers: Powerful comparison mechanisms for test assertions
+├── fmt (v9.x): A modern formatting library for C++
+│   ├── fmt::format: Main formatting function
+│   ├── fmt::print: Formatted printing to stdout
+│   └── fmt::format_to: Formatting to an output iterator
+└── {other_dependency}: Brief description
+    ├── Key API 1: Description
+    ├── Key API 2: Description
+    └── ...
+
+Note: These dependencies are not included in the repository but are required for building and testing the project.
