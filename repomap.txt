@@ -1,60 +1,45 @@
-.
-├── .clang-format
-├── .clang-tidy
-├── .clangd
-├── .devcontainer
-│   ├── Dockerfile
-│   └── devcontainer.json
-├── .github
-│   └── workflows
-│       └── ci.yml
-├── .gitignore
-├── CMakeLists.txt
-├── README.md
-├── compile.py
-│   ├── read_files()
-│   ├── write_combined_file()
-│   └── count_tokens()
-├── include
-│   └── squint
-│       ├── core.hpp
-│       ├── dimension.hpp
-│       ├── dynamic_tensor.hpp
-│       ├── fixed_tensor.hpp
-│       ├── geometry.hpp
-│       ├── iterable_tensor.hpp
-│       ├── linear_algebra.hpp
-│       ├── quantity.hpp
-│       ├── tensor.hpp
-│       ├── tensor_base.hpp
-│       └── tensor_view.hpp
-├── repomap.txt
-└── tests
-    ├── dimension_tests.cpp
-    ├── geometry_tests.cpp
-    ├── linalg_tests.cpp
-    ├── quantity_tests.cpp
-    │   ├── TEST_CASE("Quantity Construction and Basic Operations")
-    │   │   ├── SUBCASE("Copy constructor")
-    │   │   └── SUBCASE("Move constructor")
-    │   ├── TEST_CASE("Error Handling and Edge Cases")
-    │   │   ├── SUBCASE("Integer Overflow")
-    │   │   │   ├── SUBCASE("Addition")
-    │   │   │   └── SUBCASE("Subtraction")
-    │   │   ├── SUBCASE("Floating-Point Underflow")
-    │   │   ├── SUBCASE("No Error Checking")
-    │   │   └── SUBCASE("Edge Cases")
-    │   │       ├── SUBCASE("NaN Handling")
-    │   │       └── SUBCASE("Infinity Handling")
-    │   └── TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations")
-    │       └── SUBCASE("Error checking behavior")
-    └── tensor_tests.cpp
-        ├── TEST_CASE("Fixed Tensor Creation and Basic Operations")
-        │   ├── SUBCASE("Copy constructor")
-        │   └── SUBCASE("Move constructor")
-        ├── TEST_CASE("Dynamic Tensor Creation and Basic Operations")
-        │   ├── SUBCASE("Copy constructor")
-        │   └── SUBCASE("Move constructor")
-        └── TEST_CASE("dynamic_tensor fill and flatten methods")
-            ├── SUBCASE("fill")
-            └── SUBCASE("view flatten")
+squint - C++ Dimensional Analysis and Tensor Library
+
+include/squint/
+├── core.hpp: Core types and utilities
+├── dimension.hpp: Dimension system and units
+│   ├── struct dimension<L, M, T, I, Θ, N, J>: Represents physical dimensions
+│   └── using dimensions: Predefined dimension types (length, mass, time, etc.)
+├── quantity.hpp: Dimensional quantities
+│   └── template <typename T, typename D, error_checking E = error_checking::disabled> class quantity
+│       ├── Constructors, assignment operators
+│       ├── Arithmetic operations (+, -, *, /, %)
+│       ├── Comparison operations (==, !=, <, <=, >, >=)
+│       └── Utility methods (value(), dimensions(), etc.)
+├── tensor.hpp: Main tensor interface
+│   └── template <typename T, typename... Dims> class tensor
+├── fixed_tensor.hpp: Fixed-size tensor implementation
+│   └── template <typename T, layout L, error_checking E, size_t... Dims> class fixed_tensor : public tensor<T, Dims...>
+├── dynamic_tensor.hpp: Dynamic-size tensor implementation
+│   └── template <typename T, error_checking E = error_checking::disabled> class dynamic_tensor : public tensor<T>
+├── tensor_base.hpp: Base class for tensor implementations
+├── tensor_view.hpp: Non-owning view of tensor data
+├── iterable_tensor.hpp: Tensor iteration utilities
+├── geometry.hpp: Geometric operations and types
+└── linear_algebra.hpp: Linear algebra operations
+
+Key Features:
+- Compile-time dimensional analysis
+- Fixed and dynamic size tensors
+- Error checking options (enabled/disabled)
+- Quantity operations with automatic dimension handling
+- Tensor operations (element-wise arithmetic, matrix multiplication, etc.)
+- Geometric and linear algebra utilities
+
+Tests:
+tests/
+├── dimension_tests.cpp
+├── geometry_tests.cpp
+├── linalg_tests.cpp
+├── quantity_tests.cpp
+└── tensor_tests.cpp
+
+Build and Utility:
+├── CMakeLists.txt: CMake build configuration
+├── compile.py: Utility script for file operations and token counting
+└── README.md: Project documentation
