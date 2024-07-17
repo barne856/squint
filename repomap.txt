@@ -12,6 +12,9 @@
 ├── CMakeLists.txt
 ├── README.md
 ├── compile.py
+│   ├── read_files()
+│   ├── write_combined_file()
+│   └── count_tokens()
 ├── include
 │   └── squint
 │       ├── core.hpp
@@ -31,4 +34,27 @@
     ├── geometry_tests.cpp
     ├── linalg_tests.cpp
     ├── quantity_tests.cpp
+    │   ├── TEST_CASE("Quantity Construction and Basic Operations")
+    │   │   ├── SUBCASE("Copy constructor")
+    │   │   └── SUBCASE("Move constructor")
+    │   ├── TEST_CASE("Error Handling and Edge Cases")
+    │   │   ├── SUBCASE("Integer Overflow")
+    │   │   │   ├── SUBCASE("Addition")
+    │   │   │   └── SUBCASE("Subtraction")
+    │   │   ├── SUBCASE("Floating-Point Underflow")
+    │   │   ├── SUBCASE("No Error Checking")
+    │   │   └── SUBCASE("Edge Cases")
+    │   │       ├── SUBCASE("NaN Handling")
+    │   │       └── SUBCASE("Infinity Handling")
+    │   └── TEST_CASE("Mixed Error-Checked and Non-Error-Checked Quantity Operations")
+    │       └── SUBCASE("Error checking behavior")
     └── tensor_tests.cpp
+        ├── TEST_CASE("Fixed Tensor Creation and Basic Operations")
+        │   ├── SUBCASE("Copy constructor")
+        │   └── SUBCASE("Move constructor")
+        ├── TEST_CASE("Dynamic Tensor Creation and Basic Operations")
+        │   ├── SUBCASE("Copy constructor")
+        │   └── SUBCASE("Move constructor")
+        └── TEST_CASE("dynamic_tensor fill and flatten methods")
+            ├── SUBCASE("fill")
+            └── SUBCASE("view flatten")
