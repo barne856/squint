@@ -36,6 +36,15 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
     constexpr fixed_tensor() = default;
     // insert elements into the layout
     constexpr fixed_tensor(const std::array<T, total_size> &elements) : data_(elements) {}
+    // Construct from initializer list
+    constexpr fixed_tensor(std::initializer_list<T> init) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (init.size() != total_size) {
+                throw std::invalid_argument("Initializer list size must match total size");
+            }
+        }
+        std::copy(init.begin(), init.end(), data_.begin());
+    }
     // Fill the tensor with a single value
     explicit constexpr fixed_tensor(const T &value) { data_.fill(value); }
     // Fill the tensor with a single block or view
