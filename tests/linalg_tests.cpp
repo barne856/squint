@@ -95,6 +95,12 @@ TEST_CASE("linear_algebra_mixin tests") {
         CHECK(n[1] == doctest::Approx(0.8F));
         CHECK(n[2] == doctest::Approx(0.0F));
     }
+
+    SUBCASE("dot") {
+        vec3 a{{1, 2, 3}};
+        vec3 b{{4, 5, 6}};
+        CHECK(dot(a, b) == 32);
+    }
 }
 
 TEST_CASE("fixed_linear_algebra_mixin tests") {

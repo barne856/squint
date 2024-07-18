@@ -1253,8 +1253,30 @@ template <dynamic_shape_tensor A, scalar Scalar> auto operator/(const A &a, cons
     return result;
 }
 
+template <tensor A, tensor B> void compatible_for_dot(const A &a, const B &b) {
+    if (a.size() != b.size()) {
+        throw std::runtime_error("Tensors must have the same size");
+    }
+    if (a.get_layout() != b.get_layout()) {
+        throw std::runtime_error("Tensors must have the same layout");
+    }
+}
+
 // Normalize
 template <tensor T> auto normalize(const T &a) { return a / a.norm(); }
+template <tensor A, tensor B> auto dot(const A &a, const B &b) {
+    if constexpr (A::get_error_checking() == error_checking::enabled ||
+                  B::get_error_checking() == error_checking::enabled) {
+        compatible_for_dot(a, b);
+    }
+    auto it_a = a.begin();
+    auto it_b = b.begin();
+    auto result = *it_a++ * *it_b++;
+    for (; it_a != a.end(); ++it_a, ++it_b) {
+        result += *it_a * *it_b;
+    }
+    return result;
+}
 
 } // namespace squint
 
