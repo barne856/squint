@@ -81,6 +81,20 @@ TEST_CASE("linear_algebra_mixin tests") {
         vec4 v{{4, 2, 3, 1}};
         CHECK(v.max() == 4);
     }
+
+    SUBCASE("normalize (quantity type)") {
+        auto n = normalize(vec3_t<units::length>({units::length(3), units::length(4), units::length(0)}));
+        CHECK(n[0] == doctest::Approx(0.6F));
+        CHECK(n[1] == doctest::Approx(0.8F));
+        CHECK(n[2] == doctest::Approx(0.0F));
+    }
+
+    SUBCASE("normalize (float type)") {
+        auto n = normalize(vec3_t<float>({3, 4, 0}));
+        CHECK(n[0] == doctest::Approx(0.6F));
+        CHECK(n[1] == doctest::Approx(0.8F));
+        CHECK(n[2] == doctest::Approx(0.0F));
+    }
 }
 
 TEST_CASE("fixed_linear_algebra_mixin tests") {

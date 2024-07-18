@@ -11,6 +11,7 @@
 #endif
 
 #include "squint/dimension.hpp"
+#include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include <algorithm>
 #include <concepts>
@@ -341,8 +342,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
 
     auto norm() const {
         if constexpr (quantitative<typename Derived::value_type>) {
-            using root_type = root_t<typename Derived::value_type::dimension_type, 2>;
-            return root_type(std::sqrt(squared_norm()));
+            return math::sqrt(squared_norm());
         } else {
             return std::sqrt(squared_norm());
         }
