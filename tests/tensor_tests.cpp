@@ -24,7 +24,7 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
     }
 
     SUBCASE("Constructor with value") {
-        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{3};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t(3);
         CHECK(t[0, 0] == 3);
         CHECK(t[0, 1] == 3);
         CHECK(t[0, 2] == 3);
@@ -563,7 +563,7 @@ TEST_CASE("Tensor View Edge Cases") {
     }
 
     SUBCASE("Fixed tensor view with single element") {
-        fixed_tensor<int, layout::row_major, error_checking::disabled, 1, 1> t{{42}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 1, 1> t{42};
         auto view = t.view();
         CHECK(view.size() == 1);
         CHECK(view[0, 0] == 42);
