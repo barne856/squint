@@ -32,17 +32,6 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
         data_.resize(total_size);
     }
-    // Construct from initializer list
-    dynamic_tensor(std::vector<std::size_t> shape, std::initializer_list<T> init, layout layout = layout::column_major)
-        : shape_(std::move(shape)), layout_(layout) {
-        std::size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (init.size() != total_size) {
-                throw std::invalid_argument("Initializer list size must match total size");
-            }
-        }
-        data_ = std::vector<T>(init);
-    }
     // Construct from vector of elements
     dynamic_tensor(std::vector<std::size_t> shape, const std::vector<T> &elements, layout layout = layout::column_major)
         : shape_(std::move(shape)), layout_(layout) {
