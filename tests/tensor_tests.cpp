@@ -4,6 +4,13 @@
 
 using namespace squint;
 
+TEST_CASE("Fixed Tensor Sizeof Test") {
+    SUBCASE("Mat4") {
+        auto A = mat4::eye();
+        CHECK(sizeof(A) == 4 * 4 * sizeof(float));
+    }
+}
+
 TEST_CASE("Fixed Tensor Creation and Basic Operations") {
     SUBCASE("Default constructor") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t;

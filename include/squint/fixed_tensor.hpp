@@ -31,8 +31,6 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
   public:
     using value_type = T;
     using iterable_tensor<fixed_tensor<T, L, ErrorChecking, Dims...>, T, ErrorChecking>::subviews;
-    // virtual destructor
-    virtual ~fixed_tensor() = default;
     constexpr fixed_tensor() = default;
     // insert elements into the layout
     constexpr fixed_tensor(const std::array<T, total_size> &elements) : data_(elements) {}

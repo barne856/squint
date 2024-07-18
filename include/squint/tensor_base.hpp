@@ -129,8 +129,8 @@ template <typename Derived, typename T, error_checking ErrorChecking> class tens
         }
     }
 
-    virtual T *data() = 0;
-    virtual const T *data() const = 0;
+    T *data() { return static_cast<Derived *>(this)->data(); }
+    const T *data() const { return static_cast<const Derived *>(this)->data(); }
 
     // Helper function to recursively unpack indices for fixed tensors
     template <size_t... Is>
