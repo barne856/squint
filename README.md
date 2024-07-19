@@ -16,8 +16,6 @@
    - [Linear Algebra Operations](#linear-algebra-operations)
 5. [Advanced Usage](#advanced-usage)
    - [Working with Mixed Types](#working-with-mixed-types)
-   - [Combining Quantities and Tensors](#combining-quantities-and-tensors)
-   - [Tensor Views and Reshaping](#tensor-views-and-reshaping)
 6. [API Reference](#api-reference)
    - [Dimension System](#dimension-system-1)
    - [Quantity System](#quantity-system-1)
@@ -525,47 +523,6 @@ quantity<float, length> l_float(3.0F);
 quantity<int, length> l_int(2);
 
 auto result = l_double + l_float + l_int; // result is quantity<double, length>
-```
-
-### Combining Quantities and Tensors
-
-One of the powerful features of Squint is the ability to create tensors of quantities, allowing for type-safe multi-dimensional physical calculations.
-
-```cpp
-// A 3D vector of times
-vec3_t<time> times = {
-    time::seconds(1.0),
-    time::seconds(2.0),
-    time::seconds(3.0)
-};
-
-// A 3x3 matrix of velocities
-mat3_t<velocity> velocity_field = {
-    velocity::meters_per_second(1.0), velocity::meters_per_second(2.0), velocity::meters_per_second(3.0),
-    velocity::meters_per_second(4.0), velocity::meters_per_second(5.0), velocity::meters_per_second(6.0),
-    velocity::meters_per_second(7.0), velocity::meters_per_second(8.0), velocity::meters_per_second(9.0)
-};
-
-// Perform operations
-auto lengths = velocity_field * times; // Results in a vec3_t<quantity<double, length>>
-```
-
-### Tensor Views and Reshaping
-
-```cpp
-mat3x4_t<float> tensor{{/* ... */}};
-
-// Create a view
-auto view = tensor.view();
-
-// Create a subview
-auto subview = tensor.subview<2, 2>(slice{0, 2}, slice{1, 2});
-
-// Reshape tensor
-auto reshaped = tensor.reshape<6, 2>();
-
-// Flatten tensor
-auto flattened = tensor.flatten();
 ```
 
 ## API Reference
