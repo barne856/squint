@@ -36,11 +36,6 @@
 
 SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring robust dimensional analysis, unit conversion, and linear algebra operations to C++. By leveraging C++'s template metaprogramming capabilities, Squint provides a powerful set of tools that enhance code safety, readability, and expressiveness without compromising performance.
 
-### Warranty Void if Used for Actual Science
-
-This library is for entertainment purposes only. If you're looking for a library to calculate the trajectory of your next Mars mission or design a bridge that won't collapse, maybe look elsewhere? SQUINT is best used for those times when you're sitting alone on a Friday night, wondering how to calculate the cross product of your life choices with a vector of missed opportunities. For all other use cases, proceed with caution.
-
-
 ## Key Features
 
 Key features of Squint include:
