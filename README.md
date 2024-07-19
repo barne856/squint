@@ -3,23 +3,22 @@
 ## Table of Contents
 
 1. [Key Features](#key-features)
-2. [Design Principles](#design-principles)
-3. [Core Components](#core-components)
+2. [Core Components](#core-components)
    - [Dimension System](#dimension-system)
    - [Quantity System](#quantity-system)
    - [Tensor System](#tensor-system)
    - [Units and Constants](#units-and-constants)
-4. [Installation](#installation)
-5. [Usage](#usage)
+3. [Installation](#installation)
+4. [Usage](#usage)
    - [Basic Quantity Operations](#basic-quantity-operations)
    - [Using Physical Constants](#using-physical-constants)
    - [Basic Tensor Operations](#basic-tensor-operations)
    - [Linear Algebra Operations](#linear-algebra-operations)
-6. [Advanced Usage](#advanced-usage)
+5. [Advanced Usage](#advanced-usage)
    - [Working with Mixed Types](#working-with-mixed-types)
    - [Combining Quantities and Tensors](#combining-quantities-and-tensors)
    - [Tensor Views and Reshaping](#tensor-views-and-reshaping)
-7. [API Reference](#api-reference)
+6. [API Reference](#api-reference)
    - [Dimension System](#dimension-system-1)
    - [Quantity System](#quantity-system-1)
    - [Tensor System](#tensor-system-1)
@@ -27,36 +26,33 @@
    - [Constants Namespace](#constants-namespace)
    - [Math Namespace](#math-namespace)
    - [Linear Algebra Operations](#linear-algebra-operations-1)
-8. [Building and Testing](#building-and-testing)
+7. [Building and Testing](#building-and-testing)
    - [On Windows](#on-windows)
    - [On Linux](#on-linux)
    - [Running Tests](#running-tests)
 
 ## What is This?
 
-SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring robust dimensional analysis, unit conversion, and linear algebra operations to C++. By leveraging C++'s template metaprogramming capabilities, Squint provides a powerful set of tools that enhance code safety, readability, and expressiveness without compromising performance.
+SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring together compile-time dimensional analysis, unit conversion, and linear algebra operations in C++. Squint provides a powerful API that can enhance code safety, readability, and expressiveness without compromising performance.
+
+With SQUINT, you can:
+
+- Catch unit-related errors at compile-time
+- Perform intuitive arithmetic with physical quantities
+- Manipulate multi-dimensional data
+- Conduct complex linear algebra operations safely and efficiently
+
+Whether you're simulating physical systems, rendering 3D geometry, or developing cutting-edge algorithms, SQUINT provides the tools you need to write cleaner, safer, and more expressive code.
 
 ## Key Features
 
-Key features of Squint include:
-
-1. **Dimensional Analysis**: Squint implements a compile-time dimensional analysis system that catches unit-related errors at compile-time, preventing common mistakes in scientific and engineering calculations.
-2. **Unit Conversions**: The library offers a wide range of predefined units and easy-to-use conversion functions, simplifying the often error-prone process of unit conversion.
-3. **Quantity System**: Squint's quantity system allows for intuitive representation of physical quantities, complete with unit information, enabling natural arithmetic operations between quantities of compatible dimensions.
-4. **Tensor Operations**: The library provides both fixed-size and dynamic-size tensor classes, supporting various linear algebra operations, element-wise arithmetic, and advanced indexing, views, and slicing capabilities.
-5. **Error Checking**: Optional runtime error checking for operations like overflow, underflow, division by zero, compatible matrix shapes for operations, and bounds checking adds an extra layer of safety to numerical computations.
-6. **Constants and Common Functions**: Squint includes a comprehensive set of mathematical and physical constants, as well as functions commonly used in scientific computing.
-7. **Performance**: Despite its high-level abstractions, Squint is designed with performance in mind, utilizing template metaprogramming techniques to minimize or eliminate runtime overhead.
-
-## Design Principles
-
-Squint is built on several core principles that guide its design and implementation:
-
-1. **Type Safety**: Squint leverages C++'s strong type system to catch errors at compile-time rather than runtime.
-2. **Expressiveness**: The library aims to allow users to write code that closely mirrors mathematical and physical equations.
-3. **Flexibility**: Squint is designed to be flexible, allowing users to work with different numeric types and providing both fixed-size and dynamic-size tensors.
-4. **Performance**: Squint uses template metaprogramming techniques to minimize or eliminate runtime overhead.
-5. **Extensibility**: The library is designed to be extensible, allowing users to define their own units, dimensions, and potentially even custom tensor types.
+- **Dimensional Analysis**: Catch unit-related errors before they become runtime bugs.
+- **Unit Conversions**: Say goodbye to manual unit conversion headaches.
+- **Quantity System**: Represent physical quantities with built-in unit information.
+- **Tensor Operations**: Handle multi-dimensional data with both fixed-size and dynamic tensors (n-d arrays).
+- **Error Checking**: Optional runtime checks for operations like overflow and division by zero.
+- **Constants and Functions**: A comprehensive set of mathematical and physical constants.
+- **Performance-Oriented**: Designed to minimize runtime overhead without sacrificing functionality.
 
 ## Core Components
 
