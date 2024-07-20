@@ -18,8 +18,6 @@ template <typename T, layout L, typename Strides, error_checking ErrorChecking, 
 class const_fixed_tensor_view;
 template <typename T, error_checking ErrorChecking> class dynamic_tensor_view;
 template <typename T, error_checking ErrorChecking> class const_dynamic_tensor_view;
-template <typename T, layout L, error_checking ErrorChecking, std::size_t... Dims> class fixed_tensor;
-template <typename T, error_checking ErrorChecking> class dynamic_tensor;
 
 // Tensor slice
 struct slice {

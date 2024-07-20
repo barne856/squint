@@ -1,6 +1,12 @@
 #ifndef SQUINT_CORE_HPP
 #define SQUINT_CORE_HPP
 
+#ifdef _WIN32
+#define __declspec(empty_bases) __declspec(empty_bases)
+#else
+#define __declspec(empty_bases)
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <concepts>
