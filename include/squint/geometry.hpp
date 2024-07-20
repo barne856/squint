@@ -58,7 +58,7 @@ auto ortho(units::length_t<T> left, units::length_t<T> right, units::length_t<T>
 
     result[0, 0] = unit_length * T{2} / width;
     result[1, 1] = unit_length * T{2} / height;
-    result[2, 2] = -unit_length * T{1} / depth;
+    result[2, 2] = unit_length * T{1} / depth;
     result[0, 3] = -(right + left) / width;
     result[1, 3] = -(top + bottom) / height;
     result[2, 3] = -near_plane / depth;
@@ -77,9 +77,9 @@ auto perspective(T fovy, T aspect, units::length_t<U> near_plane, units::length_
 
     result[0, 0] = U{1} / (aspect * tanHalfFovy);
     result[1, 1] = U{1} / tanHalfFovy;
-    result[2, 2] = far_plane / depth;
+    result[2, 2] = -(far_plane) / depth;
     result[2, 3] = (-far_plane * near_plane) / (depth * unit_length);
-    result[3, 2] = U{1};
+    result[3, 2] = -U{1};
 
     return result;
 }
