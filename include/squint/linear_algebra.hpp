@@ -297,7 +297,7 @@ template <dynamic_shape_tensor A> void compatible_for_inv(const A &a) {
 }
 
 // Base linear algebra mixin
-template <typename Derived, error_checking ErrorChecking> class linear_algebra_mixin {
+template <typename Derived, error_checking ErrorChecking> class __declspec(empty_bases) linear_algebra_mixin {
   public:
     template <tensor Other> auto &operator+=(const Other &other) {
         if constexpr (fixed_shape_tensor<Derived> && fixed_shape_tensor<Other>) {
@@ -401,7 +401,7 @@ template <typename Derived, error_checking ErrorChecking> class linear_algebra_m
 
 // Fixed tensor with linear algebra
 template <typename Derived, error_checking ErrorChecking>
-class fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChecking> {
+class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorChecking> {
   public:
     template <fixed_shape_tensor A> auto operator/(const A &a) const {
         auto derived = static_cast<const Derived *>(this);

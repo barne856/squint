@@ -286,7 +286,7 @@ template <typename TensorType> class const_dynamic_subview_iterator : public sub
 
 // Mixin class for iterable tensors
 template <typename Derived, typename T, error_checking ErrorChecking>
-class iterable_tensor : public tensor_base<Derived, T, ErrorChecking> {
+class __declspec(empty_bases) iterable_tensor : public tensor_base<Derived, T, ErrorChecking> {
   public:
     using iterator = flat_iterator<Derived>;
     using const_iterator = flat_iterator<const Derived>;

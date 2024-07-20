@@ -57,7 +57,7 @@ template <typename T>
 concept dynamic_shape_tensor = tensor<T> && !has_constexpr_shape<T> && !has_constexpr_strides<T>;
 
 // Base tensor class using CRTP
-template <typename Derived, typename T, error_checking ErrorChecking> class tensor_base {
+template <typename Derived, typename T, error_checking ErrorChecking> class __declspec(empty_bases) tensor_base {
   public:
     using value_type = T;
 
