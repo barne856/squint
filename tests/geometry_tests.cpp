@@ -73,10 +73,10 @@ TEST_CASE("Orthographic Projection") {
         auto result = ortho(left, right, bottom, top, near_plane, far_plane);
         CHECK(result[0, 0] == doctest::Approx(1.0F));
         CHECK(result[1, 1] == doctest::Approx(1.0F));
-        CHECK(result[2, 2] == doctest::Approx(-0.0200200F).epsilon(0.0001F));
+        CHECK(result[2, 2] == doctest::Approx(-0.0100100F).epsilon(0.0001F));
         CHECK(result[0, 3] == doctest::Approx(0.0F));
         CHECK(result[1, 3] == doctest::Approx(0.0F));
-        CHECK(result[2, 3] == doctest::Approx(-1.002002F).epsilon(0.0001F));
+        CHECK(result[2, 3] == doctest::Approx(-0.001001F).epsilon(0.0001F));
         CHECK(result[3, 3] == doctest::Approx(1.0F));
     }
 
@@ -85,10 +85,10 @@ TEST_CASE("Orthographic Projection") {
         auto result = ortho(left, right, bottom, top, near_plane, far_plane, unit_length);
         CHECK(result[0, 0] == doctest::Approx(1.0F * 2.0F));
         CHECK(result[1, 1] == doctest::Approx(1.0F * 2.0F));
-        CHECK(result[2, 2] == doctest::Approx(-0.0200200F * 2.0F).epsilon(0.0001F));
+        CHECK(result[2, 2] == doctest::Approx(-0.0100100F * 2.0F).epsilon(0.0001F));
         CHECK(result[0, 3] == doctest::Approx(0.0F));
         CHECK(result[1, 3] == doctest::Approx(0.0F));
-        CHECK(result[2, 3] == doctest::Approx(-0.501001F * 2.0F).epsilon(0.0001F));
+        CHECK(result[2, 3] == doctest::Approx(-0.001001F).epsilon(0.0001F));
     }
 }
 
@@ -102,9 +102,9 @@ TEST_CASE("Perspective Projection") {
         auto result = perspective(fovy, aspect, near_plane, far_plane);
         CHECK(result[0, 0] == doctest::Approx(1.3578979F).epsilon(0.0001F));
         CHECK(result[1, 1] == doctest::Approx(2.4142134F).epsilon(0.0001F));
-        CHECK(result[2, 2] == doctest::Approx(-1.002002F).epsilon(0.0001F));
-        CHECK(result[2, 3] == doctest::Approx(-0.2002002F).epsilon(0.0001F));
-        CHECK(result[3, 2] == doctest::Approx(-1.0F));
+        CHECK(result[2, 2] == doctest::Approx(1.001001F).epsilon(0.0001F));
+        CHECK(result[2, 3] == doctest::Approx(-0.1001002F).epsilon(0.0001F));
+        CHECK(result[3, 2] == doctest::Approx(1.0F));
     }
 
     SUBCASE("Custom unit length") {
@@ -112,8 +112,8 @@ TEST_CASE("Perspective Projection") {
         auto result = perspective(fovy, aspect, near_plane, far_plane, unit_length);
         CHECK(result[0, 0] == doctest::Approx(1.3578979F).epsilon(0.0001F));
         CHECK(result[1, 1] == doctest::Approx(2.4142134F).epsilon(0.0001F));
-        CHECK(result[2, 2] == doctest::Approx(-1.002002F).epsilon(0.0001F));
-        CHECK(result[2, 3] == doctest::Approx(-0.1001001F).epsilon(0.0001F));
-        CHECK(result[3, 2] == doctest::Approx(-1.0F));
+        CHECK(result[2, 2] == doctest::Approx(1.001001F).epsilon(0.0001F));
+        CHECK(result[2, 3] == doctest::Approx(-0.0500500F).epsilon(0.0001F));
+        CHECK(result[3, 2] == doctest::Approx(1.0F));
     }
 }
