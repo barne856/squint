@@ -58,18 +58,33 @@ function(setup_mkl)
     find_package(MKL QUIET)
     
     if(NOT MKL_FOUND)
-        # If not found, look for MKL in the default apt installation directory
-        set(MKLROOT "/usr/include/mkl" CACHE PATH "Root directory of MKL installation")
+        # Check for MKL in common locations
+        set(MKL_LOCATIONS
+            "/usr/include/mkl"
+            "/opt/intel/oneapi/mkl/latest"
+            "$ENV{MKLROOT}"
+        )
         
-        if(NOT EXISTS ${MKLROOT})
+        foreach(location ${MKL_LOCATIONS})
+            if(EXISTS "${location}")
+                set(MKLROOT "${location}" CACHE PATH "Root directory of MKL installation" FORCE)
+                break()
+            endif()
+        endforeach()
+        
+        if(NOT MKLROOT)
             message(FATAL_ERROR "MKL not found. Please specify the correct MKLROOT.")
         endif()
         
         # Set include directories
-        target_include_directories(SQUINT INTERFACE ${MKLROOT})
+        target_include_directories(SQUINT INTERFACE ${MKLROOT}/include)
         
         # Set library directories
-        target_link_directories(SQUINT INTERFACE /usr/lib/x86_64-linux-gnu)
+        if(EXISTS "${MKLROOT}/lib/intel64")
+            target_link_directories(SQUINT INTERFACE ${MKLROOT}/lib/intel64)
+        else()
+            target_link_directories(SQUINT INTERFACE /usr/lib/x86_64-linux-gnu)
+        endif()
         
         # Link against MKL libraries
         target_link_libraries(SQUINT INTERFACE 
@@ -81,6 +96,9 @@ function(setup_mkl)
     
     # Add compile definition for MKL
     target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_MKL)
+    
+    # Set MKLROOT in the parent scope
+    set(MKLROOT ${MKLROOT} PARENT_SCOPE)
 endfunction()
 
 # Option to control building tests
