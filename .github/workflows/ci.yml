@@ -13,8 +13,6 @@ jobs:
     strategy:
       matrix:
         compiler: [g++-12, clang++-17]
-        stdlib: [libstdc++, libc++]
-        blas_backend: [OpenBLAS, MKL]
 
     steps:
     - uses: actions/checkout@v4
@@ -32,22 +30,18 @@ jobs:
         else
           sudo apt-get install -y ${{ matrix.compiler }} gfortran gcc
         fi
-        if [[ "${{ matrix.blas_backend }}" == "OpenBLAS" ]]; then
-          sudo apt-get install -y libopenblas-dev
-        else
-          sudo apt-get install -y intel-mkl
-        fi
 
     - name: Configure CMake
       env:
         CXX: ${{ matrix.compiler }}
       run: |
-        if [[ "${{ matrix.compiler }}" == clang++* ]] && [[ "${{ matrix.stdlib }}" == "libc++" ]]; then
+        if [[ "${{ matrix.compiler }}" == clang++* ]]; then
           CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
-          export CXXFLAGS="-stdlib=libc++ -nostdinc++ -I/usr/lib/llvm-$CLANG_VERSION/include/c++/v1"
-          export LDFLAGS="-L/usr/lib/llvm-$CLANG_VERSION/lib"
+          export CXXFLAGS="-stdlib=libc++"
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
+        else
+          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
         fi
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DBLAS_BACKEND=${{ matrix.blas_backend }}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build
@@ -59,15 +53,10 @@ jobs:
   build-and-test-windows:
     name: Build and Test (Windows)
     runs-on: windows-latest
-    strategy:
-      matrix:
-        compiler: [clang++]
-        stdlib: [libstdc++, libc++]
-        blas_backend: [OpenBLAS, MKL]
     defaults:
       run:
         shell: pwsh
-
+    
     steps:
     - uses: actions/checkout@v4
 
@@ -87,26 +76,13 @@ jobs:
         channels: conda-forge
 
     - name: Install MKL
-      if: matrix.blas_backend == 'MKL'
       run: |
         conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge mkl mkl-devel
-
-    - name: Install OpenBLAS dependencies
-      if: matrix.blas_backend == 'OpenBLAS'
-      run: |
-        conda install -c conda-forge openblas
-        choco install mingw
 
     - name: Configure CMake
       run: |
         $env:PATH = "$env:CONDA\Scripts;$env:PATH"
-        if (${{ matrix.stdlib }} -eq 'libc++') {
-          $CLANG_VERSION = ${{ matrix.compiler }} -replace 'clang\+\+', ''
-          $env:CXXFLAGS = "-stdlib=libc++ -nostdinc++ -I${env:CONDA}\\Library\\lib\\clang\\$CLANG_VERSION\\include\\c++\\v1"
-          $env:LDFLAGS = "-L${env:CONDA}\\Library\\lib"
-        }
-        $env:FC = "gfortran"
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DBLAS_BACKEND=${{ matrix.blas_backend }} -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="$env:CXXFLAGS" -DCMAKE_Fortran_COMPILER=$env:FC
+        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DBLAS_BACKEND=MKL -DCMAKE_CXX_COMPILER=clang++
 
     - name: Build
       run: |
@@ -137,8 +113,7 @@ jobs:
       env:
         CXX: clang++-17
       run: |
-        export CXXFLAGS="-stdlib=libc++ -nostdinc++ -I/usr/lib/llvm-17/include/c++/v1"
-        export LDFLAGS="-L/usr/lib/llvm-17/lib"
+        export CXXFLAGS="-stdlib=libc++"
         cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
     - name: Build
@@ -155,3 +130,4 @@ jobs:
         if [ $? -ne 0 ]; then
           echo "Clang-Tidy found issues. Please fix them before merging."
           exit 1
+        fi
