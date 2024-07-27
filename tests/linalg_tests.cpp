@@ -341,8 +341,8 @@ TEST_CASE("BLAS operations with transposed tensors and views") {
     SUBCASE("Matrix multiplication with fixed tensor views") {
         mat3 a{{1, 2, 3, 4, 5, 6, 7, 8, 9}};
         mat3 b{{10, 11, 12, 13, 14, 15, 16, 17, 18}};
-        auto a_view = a.subview<2, 2>(slice{0, 2}, slice{0, 2});
-        auto b_view = b.subview<2, 2>(slice{1, 2}, slice{1, 2});
+        auto a_view = a.subview<2, 2>(0,0);
+        auto b_view = b.subview<2, 2>(1,1);
         auto c = a_view * b_view;
         CHECK(c == mat2{{74, 103, 89, 124}});
     }
@@ -350,8 +350,8 @@ TEST_CASE("BLAS operations with transposed tensors and views") {
     SUBCASE("Matrix multiplication with dynamic tensor views") {
         auto a = tens{{3, 3}, {1, 2, 3, 4, 5, 6, 7, 8, 9}};
         auto b = tens{{3, 3}, {10, 11, 12, 13, 14, 15, 16, 17, 18}};
-        auto a_view = a.subview(slice{0, 2}, slice{0, 2});
-        auto b_view = b.subview(slice{1, 2}, slice{1, 2});
+        auto a_view = a.subview({2,2}, {0,0});
+        auto b_view = b.subview({2,2}, {1,1});
         auto c = a_view * b_view;
         CHECK(c == mat2{{74, 103, 89, 124}});
     }
@@ -361,8 +361,8 @@ TEST_CASE("LAPACK operations with transposed tensors and views") {
     SUBCASE("Solve linear least squares with fixed tensor views") {
         mat3 A{{1, 2, 3, 4, 5, 6, 7, 8, 9}};
         vec3 b{{14, 32, 50}};
-        auto A_view = A.subview<2, 3>(slice{0, 2}, slice{0, 3});
-        auto b_view = b.subview<3>(slice{0, 3});
+        auto A_view = A.subview<2, 3>(0,0);
+        auto b_view = b.subview<3>(0);
         solve_lls(A_view, b_view);
         CHECK(b[0] == doctest::Approx(15.6666).epsilon(0.01));
         CHECK(b[1] == doctest::Approx(6).epsilon(0.01));
@@ -371,8 +371,8 @@ TEST_CASE("LAPACK operations with transposed tensors and views") {
     SUBCASE("Solve linear least squares with dynamic tensor views") {
         auto A = tens{{3, 3}, {1, 2, 3, 4, 5, 6, 7, 8, 9}};
         auto b = tens{{3}, {14, 32, 50}};
-        auto A_view = A.subview(slice{0, 2}, slice{0, 3});
-        auto b_view = b.subview(slice{0, 3});
+        auto A_view = A.subview({2,3}, {0,0});
+        auto b_view = b.subview({3}, {0});
         solve_lls(A_view, b_view);
         CHECK(b[0] == doctest::Approx(15.6666).epsilon(0.01));
         CHECK(b[1] == doctest::Approx(6).epsilon(0.01));
@@ -404,7 +404,7 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
 
     SUBCASE("Invert fixed tensor view") {
         mat3 A{{1, 2, 3, 4, 5, 6, 7, 8, 9}};
-        auto A_view = A.subview<2, 2>(slice{0, 2}, slice{0, 2});
+        auto A_view = A.subview<2, 2>(0,0);
         auto A_view_inv = A_view.inv();
         auto I = A_view * A_view_inv;
         CHECK(I[0, 0] == doctest::Approx(1.0));
@@ -415,7 +415,7 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
 
     SUBCASE("Invert dynamic tensor view") {
         auto A = tens{{3, 3}, {1, 2, 3, 4, 5, 6, 7, 8, 9}};
-        auto A_view = A.subview(slice{0, 2}, slice{0, 2});
+        auto A_view = A.subview({2,2}, {0,0} );
         auto A_view_inv = A_view.inv();
         auto I = A_view * A_view_inv;
         CHECK(I[0, 0] == doctest::Approx(1.0));

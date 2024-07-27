@@ -205,12 +205,12 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
 
     constexpr auto view() const { return make_fixed_tensor_view(*this); }
 
-    template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) {
-        return view().template subview<NewDims...>(slices...);
+    template <std::size_t... NewDims, typename... Offset> auto subview(Offset... start) {
+        return view().template subview<NewDims...>(start...);
     }
 
-    template <std::size_t... NewDims, typename... Slices> auto subview(Slices... slices) const {
-        return view().template subview<NewDims...>(slices...);
+    template <std::size_t... NewDims, typename... Offset> auto subview(Offset... start) const {
+        return view().template subview<NewDims...>(start...);
     }
 
     static constexpr fixed_tensor zeros() {
@@ -349,7 +349,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         } else {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<1, std::get<Is + 1>(dims)...>(slice{index, 1}, slice{0, Is}...);
+                return this->template subview<1, std::get<Is + 1>(dims)...>(index, 0 * Is...);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         }
     }
@@ -366,7 +366,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         } else {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<1, std::get<Is + 1>(dims)...>(slice{index, 1}, slice{0, Is}...);
+                return this->template subview<1, std::get<Is + 1>(dims)...>(index, 0 * Is...);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         }
     }
@@ -404,11 +404,11 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         if constexpr (sizeof...(Dims) > 1) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<std::get<Is>(dims)..., 1>(slice{0, Is}..., slice{index, 1});
+                return this->template subview<std::get<Is>(dims)..., 1>(0 *Is..., index);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         } else {
             // For 1D tensors
-            return this->template subview<Dims...>(slice{0, size()});
+            return this->template subview<Dims...>(0);
         }
     }
 
@@ -421,11 +421,11 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         if constexpr (sizeof...(Dims) > 1) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<std::get<Is>(dims)..., 1>(slice{0, Is}..., slice{index, 1});
+                return this->template subview<std::get<Is>(dims)..., 1>(0 *Is..., index);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         } else {
             // For 1D tensors
-            return this->template subview<Dims...>(slice{0, size()});
+            return this->template subview<Dims...>(0);
         }
     }
 

@@ -19,12 +19,6 @@ class const_fixed_tensor_view;
 template <typename T, error_checking ErrorChecking> class dynamic_tensor_view;
 template <typename T, error_checking ErrorChecking> class const_dynamic_tensor_view;
 
-// Tensor slice
-struct slice {
-    std::size_t start;
-    std::size_t size;
-};
-
 // Tensor concept
 template <typename T>
 concept tensor = requires(T t) {
@@ -115,13 +109,12 @@ template <typename Derived, typename T, error_checking ErrorChecking> class __de
         }
     }
 
-    void check_subview_bounds(const std::vector<slice> &slices) const {
-        const auto &shape = this->shape();
-        if (slices.size() > shape.size()) {
-            throw std::out_of_range("Too many slices");
+    void check_subview_bounds(const std::vector<std::size_t> &shape, const std::vector<std::size_t>& start) const {
+        if (shape.size() != start.size() || shape.size() != this->shape().size()) {
+            throw std::out_of_range("Invalid number of sizes or offsets");
         }
-        for (size_t i = 0; i < slices.size(); ++i) {
-            if (slices[i].start + slices[i].size > shape[i]) {
+        for (size_t i = 0; i < shape.size(); ++i) {
+            if (start[i] + shape[i] > this->shape()[i]) {
                 throw std::out_of_range("Subview out of bounds");
             }
         }

@@ -220,7 +220,7 @@ int main() {
     auto view = t.view();
 
     // Create a subview
-    auto subview = t.subview<2, 2>(slice{0, 2}, slice{1, 2});
+    auto subview = t.subview<2, 2>(0, 1);
 
     return 0;
 }
@@ -275,20 +275,16 @@ auto view = tensor.view();
 
 A view provides a non-owning reference to the tensor data, allowing you to perform operations on the tensor without modifying its shape or storage.
 
-#### Subviews and Slicing
+#### Subviews
 
-Subviews allow you to work with a portion of a tensor. They are created using the `subview` method, which takes slice objects as arguments:
+Subviews allow you to work with a portion of a tensor. They are created using the `subview` method, which takes subview shape and offsets as arguments:
 
 ```cpp
-// Create a subview
-auto subview = tensor.subview<2, 2>(slice{0, 2}, slice{1, 2});
+// Create a subview from a dynamic shape tensro
+auto dynamic_subview = tensor.subview({2,2}, {1,2});
+// Fixed shape tensor (only offsets are required since the shape is a compile time constant)
+auto subview = tensor.subview<2, 2>(1, 2);
 ```
-
-Each `slice` object consists of two components:
-1. A starting offset
-2. The size of the slice in that dimension
-
-For example, `slice{0, 2}` means "start at index 0 and take 2 elements".
 
 The template arguments to `subview<2, 2>` specify the dimensions of the resulting subview.
 
@@ -311,7 +307,7 @@ mat4_t<float> matrix{{
 // ]
 
 // Create a 2x3 subview starting from row 1, column 1
-auto subview = matrix.subview<2, 3>(slice{1, 2}, slice{1, 3});
+auto subview = matrix.subview<2, 3>(1, 1);
 
 // subview now contains:
 // [
@@ -369,10 +365,10 @@ These operations can be combined for powerful data manipulation:
 mat4_t<float> bigMatrix{{/* ... */}};
 
 // Create a view of the upper-left 3x3 submatrix, then flatten it
-auto flattened_subview = bigMatrix.subview<3, 3>(slice{0, 3}, slice{0, 3}).flatten();
+auto flattened_subview = bigMatrix.subview<3, 3>(0, 0).flatten();
 
 // Reshape a subview
-auto reshaped_subview = bigMatrix.subview<2, 4>(slice{1, 2}, slice{0,4}).reshape<4, 2>();
+auto reshaped_subview = bigMatrix.subview<2, 4>(1, 0).reshape<4, 2>();
 ```
 
 These advanced features allow for efficient and expressive tensor manipulations, enabling complex operations without unnecessary data copying.
@@ -628,7 +624,7 @@ constexpr auto strides() const noexcept;  // Returns strides of tensor
 T& at(size_t... indices);  // Element access
 T& operator[](size_t... indices);  // Element access
 T* data() noexcept;  // Returns pointer to underlying data
-auto subview(Slices... slices);  // Creates subview of tensor
+auto subview(Offsets... start);  // Creates subview of tensor
 template<size_t... SubviewShape>
 auto subviews(); // Iterator of subviews
 auto view();  // Creates view of entire tensor

@@ -423,8 +423,8 @@ class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra
         if constexpr (Derived::constexpr_shape().size() == 1) {
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), max_rows> x;
 
-            auto x_view = x.template subview<result_rows>(slice{0, result_rows});
-            auto b_view = b_copy.template subview<result_rows>(slice{0, result_rows});
+            auto x_view = x.template subview<result_rows>(0);
+            auto b_view = b_copy.template subview<result_rows>(0);
 
             auto x_it = x_view.begin();
             for (const auto &elem : b_view) {
@@ -433,15 +433,15 @@ class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra
 
             solve_lls(a_copy, x);
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows> result;
-            result.template subview<result_rows>(slice{0, result_rows}) =
-                x.template subview<result_rows>(slice{0, result_rows});
+            result.template subview<result_rows>(0) =
+                x.template subview<result_rows>(0);
             return result;
         } else {
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), max_rows, Derived::constexpr_shape()[1]> x;
             auto x_view = x.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]});
+                0, 0);
             auto b_view = b_copy.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]});
+                0, 0);
 
             auto x_it = x_view.begin();
             for (const auto &elem : b_view) {
@@ -452,9 +452,9 @@ class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows, Derived::constexpr_shape()[1]>
                 result;
             result.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                slice{0, result_rows}, slice{0, Derived::constexpr_shape()[1]}) =
-                x.template subview<result_rows, Derived::constexpr_shape()[1]>(slice{0, result_rows},
-                                                                               slice{0, Derived::constexpr_shape()[1]});
+                0, 0) =
+                x.template subview<result_rows, Derived::constexpr_shape()[1]>(0,
+                                                                               0);
             return result;
         }
     }
@@ -835,21 +835,21 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
         const auto result_rows = x_rows;
         if (derived->rank() == 1) {
             dynamic_tensor<x_type, Derived::get_error_checking()> x({max_rows});
-            auto x_view = x.subview(slice{0, result_rows});
-            auto b_view = b_copy.subview(slice{0, result_rows});
+            auto x_view = x.subview({result_rows}, {0});
+            auto b_view = b_copy.subview({result_rows}, {0});
             auto x_it = x_view.begin();
             for (const auto &elem : b_view) {
                 *x_it++ = x_type(elem);
             }
             solve_lls(a_copy, x);
             dynamic_tensor<x_type, Derived::get_error_checking()> result({result_rows});
-            result.subview(slice{0, result_rows}) = x.subview(slice{0, result_rows});
+            result.subview({result_rows}, {0}) = x.subview({result_rows}, {0});
             return result;
         }
         dynamic_tensor<x_type, Derived::get_error_checking()> x({max_rows, b_shape[1]});
 
-        auto x_view = x.subview(slice{0, result_rows}, slice{0, b_shape[1]});
-        auto b_view = b_copy.subview(slice{0, result_rows}, slice{0, b_shape[1]});
+        auto x_view = x.subview({result_rows, b_shape[1]}, {0, 0});
+        auto b_view = b_copy.subview({result_rows, b_shape[1]}, {0, 0});
         auto x_it = x_view.begin();
         for (const auto &elem : b_view) {
             *x_it++ = x_type(elem);
@@ -857,8 +857,8 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
 
         solve_lls(a_copy, x);
         dynamic_tensor<x_type, Derived::get_error_checking()> result({result_rows, b_shape[1]});
-        result.subview(slice{0, result_rows}, slice{0, b_shape[1]}) =
-            x.subview(slice{0, result_rows}, slice{0, b_shape[1]});
+        result.subview({result_rows, b_shape[1]}, {0, 0}) =
+            x.subview({result_rows, b_shape[1]}, {0, 0});
         return result;
     }
     template <tensor Other> bool operator==(const Other &other) const {

@@ -164,13 +164,13 @@ TEST_CASE("Fixed Tensor Views") {
     }
 
     SUBCASE("Create subview") {
-        auto subview = t.subview<2, 2>(slice{0, 2}, slice{1, 2});
+        auto subview = t.subview<2, 2>(0,1);
         CHECK(subview[0, 0] == 2);
         CHECK(subview[1, 1] == 7);
     }
 
     SUBCASE("Modify through subview") {
-        auto subview = t.subview<2, 2>(slice{0, 2}, slice{1, 2});
+        auto subview = t.subview<2, 2>(0,1);
         subview[0, 1] = 100;
         CHECK(t[0, 2] == 100);
     }
@@ -219,6 +219,16 @@ TEST_CASE("Fixed Tensor Iteration") {
             values.push_back(value);
         }
         CHECK(values == std::vector<int>{1, 4, 2, 5, 3, 6});
+    }
+
+    SUBCASE("Non const iteration") {
+        auto &non_const_t = t;
+        std::vector<int> values;
+        for (auto &value : non_const_t) {
+            value += 1;
+            values.push_back(value);
+        }
+        CHECK(values == std::vector<int>{2, 5, 3, 6, 4, 7});
     }
 }
 
@@ -410,22 +420,15 @@ TEST_CASE("Dynamic Tensor Views") {
     }
 
     SUBCASE("Create subview") {
-        auto subview = t.subview(slice{0, 2}, slice{1, 2});
+        auto subview = t.subview({2,2}, {0,1});
         CHECK(subview[0, 0] == 2);
         CHECK(subview[1, 1] == 7);
     }
 
     SUBCASE("Modify through subview") {
-        auto subview = t.subview(slice{0, 2}, slice{1, 2});
+        auto subview = t.subview({2,2}, {0,1});
         subview[0, 1] = 100;
         CHECK(t[0, 2] == 100);
-    }
-
-    SUBCASE("Subview with vector of slices") {
-        std::vector<slice> slices = {slice{0, 2}, slice{1, 2}};
-        auto subview = t.subview(slices);
-        CHECK(subview[0, 0] == 2);
-        CHECK(subview[1, 1] == 7);
     }
 
     SUBCASE("Assign from const tensor") {
@@ -652,7 +655,7 @@ TEST_CASE("Tensor View Slicing") {
         }
 
         auto view = t.view();
-        auto subview = view.subview<2, 3>(slice{0, 2}, slice{1, 3});
+        auto subview = view.subview<2, 3>(0,1);
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
         CHECK(subview[0, 0] == 2);
         CHECK(subview[1, 2] == 8);
@@ -665,7 +668,7 @@ TEST_CASE("Tensor View Slicing") {
         }
 
         auto view = t.view();
-        auto subview = view.subview(slice{0, 2}, slice{1, 3});
+        auto subview = view.subview({2,3}, {0,1}); 
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
         CHECK(subview[0, 0] == 2);
         CHECK(subview[1, 2] == 8);
@@ -749,8 +752,8 @@ TEST_CASE("Fixed Tensor with Error Checking") {
     // t.at(0, 0, 0);
 
     SUBCASE("Subview out of bounds") {
-        CHECK_THROWS_AS((t.subview<2, 2>(slice{1, 2}, slice{0, 2})), std::out_of_range);
-        CHECK_THROWS_AS((t.subview<2, 2>(slice{0, 2}, slice{2, 2})), std::out_of_range);
+        CHECK_THROWS_AS((t.subview<2, 2>(1,0)), std::out_of_range);
+        CHECK_THROWS_AS((t.subview<2, 2>(0,2)), std::out_of_range);
     }
 }
 
@@ -768,8 +771,8 @@ TEST_CASE("Dynamic Tensor with Error Checking") {
     }
 
     SUBCASE("Subview out of bounds") {
-        CHECK_THROWS_AS(t.subview(slice{2, 1}, slice{0, 3}), std::out_of_range);
-        CHECK_THROWS_AS(t.subview(slice{0, 2}, slice{3, 1}), std::out_of_range);
+        CHECK_THROWS_AS(t.subview({2,3}, {1,3}), std::out_of_range);
+        CHECK_THROWS_AS(t.subview({2,1}, {0,3}), std::out_of_range);
     }
 }
 
@@ -780,7 +783,7 @@ TEST_CASE("Tensor View Error Checking") {
 
         CHECK_THROWS_AS(view.at(2, 0), std::out_of_range);
         CHECK_THROWS_AS(view.at(0, 3), std::out_of_range);
-        CHECK_THROWS_AS((view.subview<2, 2>(slice{1, 2}, slice{0, 2})), std::out_of_range);
+        CHECK_THROWS_AS((view.subview<2, 2>(1,0)), std::out_of_range);
     }
 
     SUBCASE("Dynamic tensor view with error checking") {
@@ -789,7 +792,7 @@ TEST_CASE("Tensor View Error Checking") {
 
         CHECK_THROWS_AS(view.at(2, 0), std::out_of_range);
         CHECK_THROWS_AS(view.at(0, 3), std::out_of_range);
-        CHECK_THROWS_AS(view.subview(slice{2, 1}, slice{0, 3}), std::out_of_range);
+        CHECK_THROWS_AS(view.subview({1,3}, {2,0}), std::out_of_range);
     }
 }
 
@@ -798,14 +801,14 @@ TEST_CASE("Error Checking Disabled") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
         // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
         // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
-        CHECK_NOTHROW(t.subview<2, 2>(slice{1, 2}, slice{0, 2})); // This would be invalid, but no check is performed
+        CHECK_NOTHROW(t.subview<2, 2>(1,0)); // This would be invalid, but no check is performed
     }
 
     SUBCASE("Dynamic tensor without error checking") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3});
         // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
         // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
-        CHECK_NOTHROW(t.subview(slice{2, 1}, slice{0, 3})); // This would be invalid, but no check is performed
+        CHECK_NOTHROW(t.subview({1,0}, {2,3})); // This would be invalid, but no check is performed
     }
 }
 

@@ -35,7 +35,7 @@ template <transformation_matrix T, dimensionless_scalar U> auto rotate(T &matrix
         {U{0}, norm_axis[2], -norm_axis[1], -norm_axis[2], U{0}, norm_axis[0], norm_axis[1], -norm_axis[0], U{0}}};
     auto C = t * (norm_axis * norm_axis.transpose());
     auto R = A + s * B + C;
-    rotation.template subview<3, 3>(slice{0, 3}, slice{0, 3}) = R;
+    rotation.template subview<3, 3>(0,0) = R;
     matrix = rotation * matrix;
 }
 

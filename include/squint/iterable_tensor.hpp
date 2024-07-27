@@ -168,12 +168,12 @@ template <typename TensorType> class subview_iterator_base {
     bool operator!=(const subview_iterator_base &other) const { return !(*this == other); }
 
   protected:
-    std::vector<slice> get_slices() const {
-        std::vector<slice> slices;
+    std::vector<std::size_t> get_offset() const {
+        std::vector<std::size_t> start;
         for (std::size_t i = 0; i < current_indices_.size(); ++i) {
-            slices.push_back({current_indices_[i] * subview_shape_[i], subview_shape_[i]});
+            start.push_back(current_indices_[i] * subview_shape_[i]);
         }
-        return slices;
+        return start;
     }
 };
 
@@ -203,7 +203,7 @@ class fixed_subview_iterator : public subview_iterator_base<TensorType> {
   private:
     template <std::size_t... Is> auto make_subview(std::index_sequence<Is...> /*unused*/) const {
         return this->tensor_->template subview<SubviewDims...>(
-            slice{this->current_indices_[Is] * this->subview_shape_[Is], this->subview_shape_[Is]}...);
+            (this->current_indices_[Is] * this->subview_shape_[Is])...);
     }
 };
 
@@ -234,7 +234,7 @@ class const_fixed_subview_iterator : public subview_iterator_base<const TensorTy
   private:
     template <std::size_t... Is> auto make_subview(std::index_sequence<Is...> /*unused*/) const {
         return this->tensor_->template subview<SubviewDims...>(
-            slice{this->current_indices_[Is] * this->subview_shape_[Is], this->subview_shape_[Is]}...);
+            (this->current_indices_[Is] * this->subview_shape_[Is])...);
     }
 };
 
@@ -247,7 +247,7 @@ template <typename TensorType> class dynamic_subview_iterator : public subview_i
                              const std::vector<std::size_t> &subview_shape)
         : Base(tensor, start_indices, subview_shape) {}
 
-    auto operator*() const { return this->tensor_->subview(this->get_slices()); }
+    auto operator*() const { return this->tensor_->subview(this->subview_shape_, this->get_offset()); }
 
     dynamic_subview_iterator &operator++() {
         Base::operator++();
@@ -270,7 +270,7 @@ template <typename TensorType> class const_dynamic_subview_iterator : public sub
                                    const std::vector<std::size_t> &subview_shape)
         : Base(tensor, start_indices, subview_shape) {}
 
-    auto operator*() const { return this->tensor_->subview(this->get_slices()); }
+    auto operator*() const { return this->tensor_->subview(this->subview_shape_, this->get_offset()); }
 
     const_dynamic_subview_iterator &operator++() {
         Base::operator++();

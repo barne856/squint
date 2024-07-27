@@ -159,32 +159,18 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
 
     auto view() const { return make_dynamic_tensor_view(*this); }
 
-    template <typename... Slices> auto subview(Slices... slices) {
+    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, slices.size}...});
+            this->check_subview_bounds(shape, start);
         }
-        return view().subview(slices...);
+        return view().subview(shape, start);
     }
 
-    template <typename... Slices> auto subview(Slices... slices) const {
+    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, slices.size}...});
+            this->check_subview_bounds(shape, start);
         }
-        return view().subview(slices...);
-    }
-
-    auto subview(const std::vector<slice> &slices) {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds(slices);
-        }
-        return view().subview(slices);
-    }
-
-    auto subview(const std::vector<slice> &slices) const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds(slices);
-        }
-        return view().subview(slices);
+        return view().subview(shape, start);
     }
 
     static dynamic_tensor zeros(const std::vector<std::size_t> &shape, layout l = layout::column_major) {
@@ -344,12 +330,11 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
                 throw std::out_of_range("Row index out of range");
             }
         }
-        std::vector<slice> row_slices(shape_.size());
-        row_slices[0] = slice{index, 1};
-        for (std::size_t i = 1; i < shape_.size(); ++i) {
-            row_slices[i] = slice{0, shape_[i]};
-        }
-        return this->subview(row_slices);
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[0] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[0] = 1;
+        return this->subview(shape, start);
     }
 
     auto row(std::size_t index) const {
@@ -358,12 +343,11 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
                 throw std::out_of_range("Row index out of range");
             }
         }
-        std::vector<slice> row_slices(shape_.size());
-        row_slices[0] = slice{index, 1};
-        for (std::size_t i = 1; i < shape_.size(); ++i) {
-            row_slices[i] = slice{0, shape_[i]};
-        }
-        return this->subview(row_slices);
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[0] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[0] = 1;
+        return this->subview(shape, start);
     }
 
     auto col(std::size_t index) {
@@ -372,12 +356,11 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
                 throw std::out_of_range("Column index out of range");
             }
         }
-        std::vector<slice> col_slices(shape_.size());
-        col_slices[shape_.size() - 1] = slice{index, 1};
-        for (std::size_t i = 0; i < shape_.size() - 1; ++i) {
-            col_slices[i] = slice{0, shape_[i]};
-        }
-        return this->subview(col_slices);
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[shape_.size() - 1] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[shape_.size() - 1] = 1;
+        return this->subview(shape, start);
     }
 
     auto col(std::size_t index) const {
@@ -386,12 +369,11 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
                 throw std::out_of_range("Column index out of range");
             }
         }
-        std::vector<slice> col_slices(shape_.size());
-        col_slices[shape_.size() - 1] = slice{index, 1};
-        for (std::size_t i = 0; i < shape_.size() - 1; ++i) {
-            col_slices[i] = slice{0, shape_[i]};
-        }
-        return this->subview(col_slices);
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[shape_.size() - 1] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[shape_.size() - 1] = 1;
+        return this->subview(shape, start);
     }
 
   private:

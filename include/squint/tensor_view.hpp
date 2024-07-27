@@ -130,13 +130,15 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
         return data_[calculate_offset_runtime(indices)];
     }
 
-    template <std::size_t... NewDims, typename... Slices> constexpr auto subview(Slices... slices) const {
-        static_assert(sizeof...(NewDims) == sizeof...(Slices), "Number of new dimensions must match number of slices");
-        static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many slice arguments");
+    template <std::size_t... NewDims, typename... Offset> constexpr auto subview(Offset... start) const {
+        static_assert(sizeof...(NewDims) == sizeof...(Offset), "Number of new dimensions must match number of offsets");
+        static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many offset arguments");
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, NewDims}...});
+            std::vector<std::size_t> new_shape = {NewDims...}; 
+            std::vector<std::size_t> new_indices = {static_cast<std::size_t>(start)...};
+            this->check_subview_bounds(new_shape, new_indices);
         }
-        return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, slices...);
+        return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, start...);
     }
 
     constexpr auto view() const { return *this; }
@@ -168,9 +170,10 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
     }
 
   private:
-    template <std::size_t... NewDims, std::size_t... Is, typename... Slices>
-    constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Slices... slices) const {
-        T *new_data = data_ + (0 + ... + (std::get<Is>(std::forward_as_tuple(slices...)).start * Strides::value[Is]));
+    template <std::size_t... NewDims, std::size_t... Is, typename... Offset>
+    constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Offset... start) const {
+        auto start_arr = std::array<std::size_t, sizeof...(Offset)>{static_cast<std::size_t>(start)...};
+        T *new_data = data_ + (0 + ... + (start_arr[Is] * Strides::value[Is]));
 
         using new_strides = compile_time_view_strides<L, Strides, NewDims...>;
 
@@ -208,13 +211,15 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
 
     T &at_impl(const std::vector<std::size_t> &indices) { return const_cast<T &>(base_type::at_impl(indices)); }
 
-    template <std::size_t... NewDims, typename... Slices> constexpr auto subview(Slices... slices) {
-        static_assert(sizeof...(NewDims) == sizeof...(Slices), "Number of new dimensions must match number of slices");
-        static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many slice arguments");
+    template <std::size_t... NewDims, typename... Offset> constexpr auto subview(Offset... start) {
+        static_assert(sizeof...(NewDims) == sizeof...(Offset), "Number of new dimensions must match number of offsets");
+        static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many offset arguments");
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slice{slices.start, NewDims}...});
+            std::vector<std::size_t> new_shape = {NewDims...}; 
+            std::vector<std::size_t> new_indices = {static_cast<std::size_t>(start)...};
+            this->check_subview_bounds(new_shape, new_indices);
         }
-        return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, slices...);
+        return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, start...);
     }
 
     constexpr auto view() const { return *this; }
@@ -229,9 +234,10 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
 
   private:
     using base_type::data_;
-    template <std::size_t... NewDims, std::size_t... Is, typename... Slices>
-    constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Slices... slices) {
-        T *new_data = data_ + (0 + ... + (std::get<Is>(std::forward_as_tuple(slices...)).start * Strides::value[Is]));
+    template <std::size_t... NewDims, std::size_t... Is, typename... Offset>
+    constexpr auto create_subview(std::index_sequence<Is...> /*unused*/, Offset... start) {
+        auto start_arr = std::array<std::size_t, sizeof...(Offset)>{static_cast<std::size_t>(start)...};
+        T *new_data = data_ + (0 + ... + (start_arr[Is] * Strides::value[Is]));
 
         using new_strides = compile_time_view_strides<L, Strides, NewDims...>;
 
@@ -312,30 +318,11 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
 
     const T &at_impl(const std::vector<std::size_t> &indices) const { return data_[calculate_offset(indices)]; }
 
-    template <typename... Slices> auto subview(Slices... slices) const {
-        static_assert(sizeof...(Slices) <= std::numeric_limits<std::size_t>::max(), "Too many slice arguments");
+    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slices...});
+            this->check_subview_bounds(shape, start);
         }
-        return create_subview(slices...);
-    }
-
-    // overload subview with vector of slices
-    auto subview(const std::vector<slice> &slices) const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds(slices);
-        }
-        std::vector<std::size_t> new_shape;
-        std::vector<std::size_t> new_strides;
-        T *new_data = data_;
-
-        std::size_t i = 0;
-        for (const auto &slice : slices) {
-            process_slice(slice, new_shape, new_strides, new_data, i);
-        }
-
-        return const_dynamic_tensor_view<T, ErrorChecking>(new_data, std::move(new_shape), std::move(new_strides),
-                                                           layout_);
+        return create_subview(shape, start);
     }
 
     constexpr auto view() const { return *this; }
@@ -358,33 +345,29 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
         return offset;
     }
 
-    template <typename Slice>
-    void process_slice(const Slice &slice, std::vector<std::size_t> &new_shape, std::vector<std::size_t> &new_strides,
+    void process_slice(std::size_t size, std::size_t start, std::vector<std::size_t> &new_shape, std::vector<std::size_t> &new_strides,
                        T *&new_data, std::size_t &i) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (i >= rank()) {
                 throw std::out_of_range("Too many slice arguments");
             }
         }
-
-        if constexpr (std::is_integral_v<Slice>) {
-            new_data += slice * strides_[i];
-        } else {
-            new_shape.push_back(slice.size);
+            new_shape.push_back(size);
             new_strides.push_back(strides_[i]);
-            new_data += slice.start * strides_[i];
-        }
+            new_data += start * strides_[i];
         ++i;
     }
 
   private:
-    template <typename... Slices> auto create_subview(Slices... slices) const {
+    auto create_subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
         std::vector<std::size_t> new_shape;
         std::vector<std::size_t> new_strides;
         T *new_data = data_;
 
         std::size_t i = 0;
-        (process_slice(slices, new_shape, new_strides, new_data, i), ...);
+        for (std::size_t j = 0; j < shape.size(); ++j) {
+            this->process_slice(shape[j],start[j], new_shape, new_strides, new_data, i);
+        }
 
         return const_dynamic_tensor_view<T, ErrorChecking>(new_data, std::move(new_shape), std::move(new_strides),
                                                            layout_);
@@ -417,29 +400,11 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     T &at_impl(const std::vector<std::size_t> &indices) { return const_cast<T &>(base_type::at_impl(indices)); }
 
     // Non-const version of subview
-    template <typename... Slices> auto subview(Slices... slices) {
+    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds({slices...});
+            this->check_subview_bounds(shape, start);
         }
-        return create_subview(slices...);
-    }
-
-    // overload subview with vector of slices
-    auto subview(const std::vector<slice> &slices) {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            this->check_subview_bounds(slices);
-        }
-        std::vector<std::size_t> new_shape;
-        std::vector<std::size_t> new_strides;
-        T *new_data = base_type::data_;
-
-        std::size_t i = 0;
-        for (const auto &slice : slices) {
-            base_type::process_slice(slice, new_shape, new_strides, new_data, i);
-        }
-
-        return dynamic_tensor_view<T, ErrorChecking>(new_data, std::move(new_shape), std::move(new_strides),
-                                                     base_type::layout_);
+        return create_subview(shape, start);
     }
 
     constexpr auto view() { return *this; }
@@ -459,13 +424,15 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     }
 
   private:
-    template <typename... Slices> auto create_subview(Slices... slices) {
+    auto create_subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
         std::vector<std::size_t> new_shape;
         std::vector<std::size_t> new_strides;
         T *new_data = base_type::data_;
 
         std::size_t i = 0;
-        (base_type::process_slice(slices, new_shape, new_strides, new_data, i), ...);
+        for (std::size_t j = 0; j < shape.size(); ++j) {
+            this->process_slice(shape[j], start[j], new_shape, new_strides, new_data, i);
+        }
 
         return dynamic_tensor_view<T, ErrorChecking>(new_data, std::move(new_shape), std::move(new_strides),
                                                      base_type::layout_);
