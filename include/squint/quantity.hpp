@@ -944,11 +944,11 @@ using wave_number = wave_number_t<float>;
 
 } // namespace units
 
-namespace constants {
-
 // Concept to ensure the type is a floating-point type
 template <typename T>
 concept FloatingPoint = std::is_floating_point_v<T>;
+
+namespace constants {
 
 // Template alias for constant_quantity
 template <FloatingPoint T, typename Dimension> using constant_quantity_t = constant_quantity<T, Dimension>;
