@@ -1,5 +1,4 @@
 import os
-import tiktoken
 
 include_line_numbers = False  # Set to True to include line numbers
 
@@ -48,10 +47,4 @@ combined_content = read_files(folder_path, file_extensions, excluded_subdirs)
 # Write the combined content to the output file
 write_combined_file(output_file, combined_content)
 
-# Count tokens in the output file
-with open(output_file, 'r', encoding='utf-8') as f:
-    output_content = f.read()
-    token_count = count_tokens(output_content)
-
 print(f"Combined file created: {output_file}")
-print(f"Number of tokens in the output file: {token_count}")

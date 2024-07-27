@@ -3,3 +3,4 @@ build/
 .cache/
 .env
 .aider*
+combined_files.txt

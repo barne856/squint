@@ -4,10 +4,23 @@
 #ifdef BLAS_BACKEND_MKL
 #include <mkl.h>
 #define BLAS_INT MKL_INT
-#else
+#elif defined(BLAS_BACKEND_OPENBLAS)
 #include <cblas.h>
 #include <lapacke.h>
 #define BLAS_INT int
+#elif defined(BLAS_BACKEND_NONE)
+#include "linear_algebra_fallback.hpp"
+#define BLAS_INT int
+#define cblas_sgemm gemm<float>
+#define cblas_dgemm gemm<double>
+#define LAPACKE_sgetrf getrf<float>
+#define LAPACKE_dgetrf getrf<double>
+#define LAPACKE_sgetri getri<float>
+#define LAPACKE_dgetri getri<double>
+#define LAPACKE_sgesv gesv<float>
+#define LAPACKE_dgesv gesv<double>
+#define LAPACKE_sgels gels<float>
+#define LAPACKE_dgels gels<double>
 #endif
 
 #include "squint/dimension.hpp"
@@ -433,15 +446,12 @@ class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra
 
             solve_lls(a_copy, x);
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows> result;
-            result.template subview<result_rows>(0) =
-                x.template subview<result_rows>(0);
+            result.template subview<result_rows>(0) = x.template subview<result_rows>(0);
             return result;
         } else {
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), max_rows, Derived::constexpr_shape()[1]> x;
-            auto x_view = x.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                0, 0);
-            auto b_view = b_copy.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                0, 0);
+            auto x_view = x.template subview<result_rows, Derived::constexpr_shape()[1]>(0, 0);
+            auto b_view = b_copy.template subview<result_rows, Derived::constexpr_shape()[1]>(0, 0);
 
             auto x_it = x_view.begin();
             for (const auto &elem : b_view) {
@@ -451,10 +461,8 @@ class __declspec(empty_bases) fixed_linear_algebra_mixin : public linear_algebra
             solve_lls(a_copy, x);
             fixed_tensor<x_type, A::get_layout(), A::get_error_checking(), result_rows, Derived::constexpr_shape()[1]>
                 result;
-            result.template subview<result_rows, Derived::constexpr_shape()[1]>(
-                0, 0) =
-                x.template subview<result_rows, Derived::constexpr_shape()[1]>(0,
-                                                                               0);
+            result.template subview<result_rows, Derived::constexpr_shape()[1]>(0, 0) =
+                x.template subview<result_rows, Derived::constexpr_shape()[1]>(0, 0);
             return result;
         }
     }
@@ -857,8 +865,7 @@ class dynamic_linear_algebra_mixin : public linear_algebra_mixin<Derived, ErrorC
 
         solve_lls(a_copy, x);
         dynamic_tensor<x_type, Derived::get_error_checking()> result({result_rows, b_shape[1]});
-        result.subview({result_rows, b_shape[1]}, {0, 0}) =
-            x.subview({result_rows, b_shape[1]}, {0, 0});
+        result.subview({result_rows, b_shape[1]}, {0, 0}) = x.subview({result_rows, b_shape[1]}, {0, 0});
         return result;
     }
     template <tensor Other> bool operator==(const Other &other) const {

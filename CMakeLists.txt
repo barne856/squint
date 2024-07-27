@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 
 # BLAS/LAPACKE backend options
-set(BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL)")
-set_property(CACHE BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL)
+set(BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
+set_property(CACHE BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
 
 set(PROJECT_LANGUAGES CXX)
 
@@ -23,6 +23,8 @@ function(setup_blas_backend)
         setup_openblas()
     elseif(BLAS_BACKEND STREQUAL "MKL")
         setup_mkl()
+    elseif(BLAS_BACKEND STREQUAL "NONE")
+        setup_none()
     else()
         message(FATAL_ERROR "Unsupported BLAS backend: ${BLAS_BACKEND}")
     endif()
@@ -99,6 +101,11 @@ function(setup_mkl)
     
     # Set MKLROOT in the parent scope
     set(MKLROOT ${MKLROOT} PARENT_SCOPE)
+endfunction()
+
+# Function to setup NONE (fallback implementations)
+function(setup_none)
+    target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_NONE)
 endfunction()
 
 # Option to control building tests
