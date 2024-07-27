@@ -87,6 +87,14 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
         CHECK(t2[1, 2] == 6);
     }
 
+    SUBCASE("Assignment from const") {
+        const fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2;
+        t2 = t1;
+        CHECK(t2[0, 0] == 1);
+        CHECK(t2[1, 2] == 6);
+    }
+
     SUBCASE("Move assignment operator") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2;
@@ -165,6 +173,23 @@ TEST_CASE("Fixed Tensor Views") {
         auto subview = t.subview<2, 2>(slice{0, 2}, slice{1, 2});
         subview[0, 1] = 100;
         CHECK(t[0, 2] == 100);
+    }
+
+    SUBCASE("Assign from const tensor") {
+        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
+        t.view() = const_tens;
+        CHECK(t[0, 0] == 1);
+        CHECK(t[2, 3] == 12);
+    }
+
+    SUBCASE("Assign from const view") {
+        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+        const auto const_view = const_tens.view();
+        fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
+        t.view() = const_view;
+        CHECK(t[0, 0] == 1);
+        CHECK(t[2, 3] == 12);
     }
 }
 
@@ -401,6 +426,22 @@ TEST_CASE("Dynamic Tensor Views") {
         auto subview = t.subview(slices);
         CHECK(subview[0, 0] == 2);
         CHECK(subview[1, 1] == 7);
+    }
+
+    SUBCASE("Assign from const tensor") {
+        const dynamic_tensor<int, error_checking::disabled> const_tens = t;
+        dynamic_tensor<int, error_checking::disabled> other_tens({3, 4});
+        other_tens.view() = const_tens;
+        CHECK(t[0, 0] == 1);
+        CHECK(t[2, 3] == 12);
+    }
+
+    SUBCASE("Assign from const view") {
+        const dynamic_tensor<int, error_checking::disabled> const_tens = t;
+        dynamic_tensor<int, error_checking::disabled> other_tens({3, 4});
+        other_tens.view() = const_tens.view();
+        CHECK(t[0, 0] == 1);
+        CHECK(t[2, 3] == 12);
     }
 }
 
