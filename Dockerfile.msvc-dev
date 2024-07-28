@@ -19,7 +19,7 @@ RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/down
     Remove-Item git-installer.exe
 
 # Download and install VS Build Tools
-RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe && \
+RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe; \
     Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
     "--quiet", "--wait", "--norestart", "--nocache", \
     "--installPath", "C:\BuildTools", \
