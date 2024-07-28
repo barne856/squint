@@ -90,11 +90,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Cache Docker image
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}\docker-image.tar
+        key: ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}\{1}', github.workspace, matrix.dockerfile)) }}
+
+    - name: Load cached Docker image
+      if: steps.cache-docker-image.outputs.cache-hit == 'true'
+      run: |
+        docker load -i ${{ github.workspace }}\docker-image.tar
+      shell: pwsh
+
     - name: Build Docker image
+      if: steps.cache-docker-image.outputs.cache-hit != 'true'
       run: |
         docker build -t ${{ matrix.compiler }}-${{ matrix.version }}:latest `
           --build-arg COMPILER_VERSION=${{ matrix.version }} `
-          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
+          -f ${{ github.workspace }}\${{ matrix.dockerfile }} .
+        docker save -o ${{ github.workspace }}\docker-image.tar ${{ matrix.compiler }}-${{ matrix.version }}:latest
       shell: pwsh
 
     - name: Build and Test in Docker
