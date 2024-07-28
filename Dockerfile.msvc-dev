@@ -4,8 +4,6 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2022
 # Arguments for versions
 ARG COMPILER_VERSION="2022"
 ARG CMAKE_VERSION="3.29.5"
-ARG INTEL_MKL_VERSION="2024.0.0"
-ARG INTEL_FORTRAN_VERSION="2024.0.0"
 
 # Set shell to PowerShell
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
@@ -34,14 +32,14 @@ RUN Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
 RUN Remove-Item .\vs_buildtools.exe -Force
 
 # Download and install Intel oneAPI Base Toolkit (includes MKL)
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe" -OutFile "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe"; \
-    Start-Process -FilePath "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
-    Remove-Item "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe"
+RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe" -OutFile "w_BaseKit_p_2024.2.0.635_offline.exe"; \
+    Start-Process -FilePath "w_BaseKit_p_2024.2.0.635_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
+    Remove-Item "w_BaseKit_p_2024.2.0.635_offline.exe"
 
 # Download and install Intel Fortran Compiler
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_HPCKit_p_$env:INTEL_FORTRAN_VERSION`_offline.exe" -OutFile "w_HPCKit_p_$env:INTEL_FORTRAN_VERSION`_offline.exe"; \
-    Start-Process -FilePath "w_HPCKit_p_$env:INTEL_FORTRAN_VERSION`_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.ifort-compiler" -Wait; \
-    Remove-Item "w_HPCKit_p_$env:INTEL_FORTRAN_VERSION`_offline.exe"
+RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe" -OutFile "w_HPCKit_p_2024.2.0.633_offline.exe"; \
+    Start-Process -FilePath "w_HPCKit_p_2024.2.0.633_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.ifort-compiler" -Wait; \
+    Remove-Item "w_HPCKit_p_2024.2.0.633_offline.exe"
 
 # Set up environment variables
 RUN $vsPath = "$env:ProgramFiles(x86)\Microsoft Visual Studio\2022\BuildTools"; \
