@@ -18,33 +18,24 @@ RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/down
     Start-Process -FilePath .\git-installer.exe -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -NoNewWindow -Wait; \
     Remove-Item git-installer.exe
 
-# Download VS Build Tools
-RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe
-
-# Install VS Build Tools with only the essential component for C++23 header-only library
-RUN Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
+# Download and install VS Build Tools
+RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe && \
+    Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
     "--quiet", "--wait", "--norestart", "--nocache", \
     "--installPath", "C:\BuildTools", \
     "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" \
-    -NoNewWindow -Wait
+    -NoNewWindow -Wait && \
+    Remove-Item .\vs_buildtools.exe -Force
 
-# Cleanup
-RUN Remove-Item .\vs_buildtools.exe -Force
-
-# Download and install Intel oneAPI Base Toolkit (includes MKL)
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe" -OutFile "w_BaseKit_p_2024.2.0.635_offline.exe"; \
-    Start-Process -FilePath "w_BaseKit_p_2024.2.0.635_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
-    Remove-Item "w_BaseKit_p_2024.2.0.635_offline.exe"
-
-# Download and install Intel Fortran Compiler
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe" -OutFile "w_HPCKit_p_2024.2.0.633_offline.exe"; \
-    Start-Process -FilePath "w_HPCKit_p_2024.2.0.633_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.ifort-compiler" -Wait; \
-    Remove-Item "w_HPCKit_p_2024.2.0.633_offline.exe"
-
-# Set up environment variables
-RUN $vsPath = "$env:ProgramFiles(x86)\Microsoft Visual Studio\2022\BuildTools"; \
-    $intellPath = "$env:ProgramFiles(x86)\Intel\oneAPI"; \
-    setx PATH "$env:PATH;$vsPath\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$vsPath\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;$intellPath\mkl\latest\bin\intel64;$intellPath\compiler\latest\windows\bin\intel64;$env:ProgramFiles\Git\cmd" /M
+# # Download and install Intel oneAPI Base Toolkit (includes MKL)
+# RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe" -OutFile "w_BaseKit_p_2024.2.0.635_offline.exe"; \
+#     Start-Process -FilePath "w_BaseKit_p_2024.2.0.635_offline.exe" -ArgumentList "-s -a --silent --eula accept --components intel.oneapi.win.mkl.devel" -Wait; \
+#     Remove-Item "w_BaseKit_p_2024.2.0.635_offline.exe"
+# 
+# # Download and install Intel Fortran Compiler
+# RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe" -OutFile "w_HPCKit_p_2024.2.0.633_offline.exe"; \
+#     Start-Process -FilePath "w_HPCKit_p_2024.2.0.633_offline.exe" -ArgumentList "-s -a --silent --eula accept --components intel.oneapi.win.ifort-compiler" -Wait; \
+#     Remove-Item "w_HPCKit_p_2024.2.0.633_offline.exe"
 
 # Set the entry point to PowerShell
 ENTRYPOINT ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
