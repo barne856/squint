@@ -21,6 +21,9 @@ RUN choco install visualstudio2022buildtools -y --package-parameters "--add Micr
 # Install specific CMake version
 RUN choco install cmake --version=${CMAKE_VERSION} -y
 
+# Install Git
+RUN choco install git -y
+
 # Download and install Intel oneAPI Base Toolkit (includes MKL)
 RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe" -OutFile "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe"; \
     Start-Process -FilePath "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
@@ -32,7 +35,7 @@ RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/
     Remove-Item "w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe"
 
 # Set up environment variables
-RUN setx PATH "%PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64;C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64"
+RUN setx PATH "%PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64;C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64;C:\Program Files\Git\cmd"
 
 # Set the entry point to PowerShell
 ENTRYPOINT ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]

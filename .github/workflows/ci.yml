@@ -89,7 +89,7 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t llvm-dev --build-arg COMPILER_VERSION=16 -f ${{ github.workspace }}/Dockerfile.llvm-dev .
+        docker build -t llvm-dev --build-arg COMPILER_VERSION=17 -f ${{ github.workspace }}/Dockerfile.llvm-dev .
 
     - name: Run Clang-Tidy in Docker
       run: |

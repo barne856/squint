@@ -24,6 +24,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     g++-$COMPILER_VERSION \
     gfortran-$COMPILER_VERSION \
     ninja-build \
+    git \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/gcc-$COMPILER_VERSION /usr/bin/gcc \
     && ln -s /usr/bin/g++-$COMPILER_VERSION /usr/bin/g++ \

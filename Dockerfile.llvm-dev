@@ -32,6 +32,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     lld-$COMPILER_VERSION \
     ninja-build \
     gfortran \
+    git \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$COMPILER_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$COMPILER_VERSION /usr/bin/clang++ \
