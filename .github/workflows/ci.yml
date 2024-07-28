@@ -90,17 +90,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Docker
-      uses: docker/setup-docker@v2
-
-    - name: Cache Docker images
-      uses: actions/cache@v3
-      with:
-        path: ~\AppData\Local\Docker\windowsfilter
-        key: ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}/{1}', github.workspace, matrix.dockerfile)) }}
-        restore-keys: |
-          ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-
-
     - name: Build Docker image
       run: |
         docker build -t ${{ matrix.compiler }}-${{ matrix.version }}:latest `
@@ -110,7 +99,7 @@ jobs:
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
+        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
           cd C:\src;
           mkdir build;
           cd build;
@@ -163,12 +152,11 @@ jobs:
           cd /src &&
           mkdir build &&
           cd build &&
-          cmake .. -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBLAS_BACKEND=NONE &&
-          cmake --build . &&
+          cmake -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBLAS_BACKEND=NONE .. &&
           cd .. &&
+          cmake --build ./build &&
           find ./include -name '*.cpp' -or -name '*.hpp' | 
-          xargs -P $(nproc) clang-tidy -p . 
-          --config-file=./.clang-tidy
+          xargs -P $(nproc) clang-tidy -p build
         "
 
     - name: Check Clang-Tidy result
