@@ -87,11 +87,13 @@ These tensor types support multi-dimensional indexing, slicing, views, and vario
 
 The SQUINT tensor system relies on efficient implementations of Basic Linear Algebra Subprograms (BLAS) and Linear Algebra Package (LAPACK) for high-performance linear algebra operations. These libraries provide optimized routines for operations such as matrix multiplication, solving linear systems, eigenvalue computations, and more.
 
-SQUINT allows users to choose between different BLAS and LAPACK implementations through the `BLAS_BACKEND` CMake option. Currently, SQUINT supports two backends:
+SQUINT allows users to choose between different BLAS and LAPACK implementations through the `BLAS_BACKEND` CMake option. Currently, SQUINT supports three backends:
 
 1. **Intel Math Kernel Library (MKL)**: A highly optimized mathematical library developed by Intel, which includes implementations of BLAS and LAPACK. MKL is particularly well-suited for Intel processors and can provide significant performance benefits on compatible hardware.
 
 2. **OpenBLAS**: An open-source optimized BLAS library that also includes a subset of LAPACK routines. OpenBLAS is portable across different architectures and provides good performance on a wide range of systems.
+
+3. **NONE**: An extreamly limited and inefficeint fallback implementation of the BLAS and LAPACK routines required for SQUINT to compile. It is focused on portability and should only be used for platforms where a better BLAS and LAPACK implementation is difficult or impossible to use.
 
 #### Configuring the BLAS Backend
 
@@ -107,6 +109,11 @@ To configure the BLAS backend, use the `BLAS_BACKEND` CMake option when building
    cmake -DBLAS_BACKEND=OpenBLAS ..
    ```
 
+2. For NONE:
+   ```
+   cmake -DBLAS_BACKEND=NONE ..
+   ```
+
 The choice of backend can significantly impact performance depending on your hardware and specific use case. Users are encouraged to experiment with both options to determine which provides the best performance for their particular setup.
 
 #### Impact on Tensor Operations
@@ -117,7 +124,7 @@ The choice of BLAS backend affects the performance of various tensor operations,
 - Matrix-vector multiplication
 - Solving linear systems
 
-For smaller tensors or simpler operations, the impact of the BLAS backend choice may be less noticeable, as SQUINT can optimize these cases directly.
+For smaller tensors or simpler operations, the impact of the BLAS backend choice may be less noticeable, as SQUINT might optimize these cases directly.
 
 #### Extensibility
 
