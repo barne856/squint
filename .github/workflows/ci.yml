@@ -113,7 +113,7 @@ jobs:
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command " `
+        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest cmd /c "`
           cd C:\src; `
           mkdir build; `
           cd build; `
@@ -122,7 +122,7 @@ jobs:
             -DBLAS_BACKEND=${{ matrix.blas }}; `
           cmake --build .; `
           ctest -C Debug --output-on-failure `
-        "
+          "
       shell: pwsh
 
   clang-tidy:

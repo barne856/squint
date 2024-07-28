@@ -991,14 +991,14 @@ Users should ensure proper error handling when using these functions, as they ca
 
 ### Compiler Support
 
-SQUINT requires a C++ compiler with support for C++23 features, particularly multidimensional subscript operators. Currently, the library supports the following compilers:
+SQUINT requires a C++ compiler with support for C++23 features, particularly multidimensional subscript operators. Currently, the library fully supports using the following compilers:
 
 - GCC (g++) version 12 or later
 - Clang version 15 or later
 
 #### Unsupported Compilers
 
-Microsoft Visual C++ (MSVC) is currently **not supported** by SQUINT. This is due to MSVC's lack of support for multidimensional subscript operators, which are a key feature used in SQUINT for tensor indexing and manipulation.
+Microsoft Visual C++ (MSVC) is currently not fully supported by SQUINT. This is due to MSVC's lack of support for multidimensional subscript operators, which are a key feature used in SQUINT for tensor indexing and manipulation. You can still compile SQUINT using MSVC, but the multidimensional subscript operators will not work.
 
 #### Compiler-Specific Notes
 
@@ -1011,18 +1011,14 @@ Microsoft Visual C++ (MSVC) is currently **not supported** by SQUINT. This is du
 - Fully supports all SQUINT features
 
 ##### MSVC
-- Not currently supported
-- SQUINT relies heavily on multidimensional subscript operators, which are not yet implemented in MSVC
+- Minimum verison: 2022
+- Multidimensional subscript operators are not yet implemented in MSVC so this feature is disabled
 - Support may be added in the future if MSVC implements this standard C++23 feature
 
 ### On Windows
 
 1. Install MSVC, CMake >= 3.28, Clang >= 15, and optionally MKL and Intel Fortran compiler.
-2. Set up environment variables:
-   ```
-   "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
-   ```
-3. Build the project with OpenBLAS:
+2. Build the project with OpenBLAS:
    ```
    mkdir build
    cd build
@@ -1030,18 +1026,26 @@ Microsoft Visual C++ (MSVC) is currently **not supported** by SQUINT. This is du
    cd ..
    cmake --build ./build
    ```
-4. OR - Build the project with MKL (no Fortran compiler needed)
+3. OR - Build the project with MKL (no Fortran compiler needed)
    ```
    mkdir build
    cd build
-   cmake -DBLAS_BACKEND=MKL -T ClangCL ..
+   cmake -DBLAS_BACKEND=MKL ..
+   cd ..
+   cmake --build ./build
+   ```
+4. OR - Build the project with no BLAS backend (no Fortran compiler needed; MKL not needed)
+   ```
+   mkdir build
+   cd build
+   cmake -DBLAS_BACKEND=NONE ..
    cd ..
    cmake --build ./build
    ```
 
 ### On Linux
 
-1. Install CMake >= 3.28, Clang >= 15, and optionally MKL and gfortran.
+1. Install CMake >= 3.28, Clang >= 15 or GCC >= 12, and optionally MKL and gfortran.
 2. Build the project with OpenBLAS:
    ```
    mkdir build
@@ -1055,6 +1059,14 @@ Microsoft Visual C++ (MSVC) is currently **not supported** by SQUINT. This is du
    mkdir build
    cd build
    cmake -DBLAS_BACKEND=MKL ..
+   cd ..
+   cmake --build ./build
+   ```
+4. OR - Build the project with no BLAS backend (no Fortran compiler needed; MKL not needed)
+   ```
+   mkdir build
+   cd build
+   cmake -DBLAS_BACKEND=NONE ..
    cd ..
    cmake --build ./build
    ```
