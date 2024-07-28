@@ -20,15 +20,25 @@ RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/down
     Start-Process -FilePath .\git-installer.exe -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -NoNewWindow -Wait; \
     Remove-Item git-installer.exe
 
-# Download and install Visual Studio Build Tools
-RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe; \
-    Start-Process -FilePath .\vs_buildtools.exe -ArgumentList "--quiet", "--wait", "--norestart", "--nocache", \
+# Download VS Build Tools
+RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe
+
+# Install VS Build Tools with only the essential component for C++23 header-only library
+RUN Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
+    "--quiet", "--wait", "--norestart", "--nocache", \
     "--installPath", "C:\BuildTools", \
-    "--add", "Microsoft.VisualStudio.Workload.VCTools", \
-    "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", \
-    "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041", \
-    "--add", "Microsoft.VisualStudio.Component.VC.CMake.Project" -NoNewWindow -Wait; \
-    Remove-Item .\vs_buildtools.exe
+    "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" \
+    -NoNewWindow -Wait
+
+# Cleanup
+RUN Remove-Item .\vs_buildtools.exe -Force
+
+# Disable telemetry
+RUN New-Item -Path HKLM:\Software\Microsoft\VisualStudio\Telemetry -Force; \
+    Set-ItemProperty -Path HKLM:\Software\Microsoft\VisualStudio\Telemetry -Name TurnOffSwitch -Value 1
+
+# Clear package cache to reduce image size
+RUN Remove-Item -Force -Recurse "${Env:ProgramData}\Package Cache" -ErrorAction SilentlyContinue
 
 # Download and install Intel oneAPI Base Toolkit (includes MKL)
 RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe" -OutFile "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe"; \
