@@ -13,12 +13,12 @@ RUN Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v
     Start-Process -FilePath msiexec.exe -ArgumentList "/i", "cmake.msi", "/quiet", "/qn", "/norestart" -NoNewWindow -Wait; \
     Remove-Item cmake.msi
 
-# Verify that ctest is available
-RUN ctest --version
-
 # Add CMake to the system PATH
 RUN $env:PATH = 'C:\Program Files\CMake\bin;' + $env:PATH; \
     [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+
+# Verify that ctest is available
+RUN ctest --version
 
 # Download and install Git
 RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.38.1.windows.1/Git-2.38.1-64-bit.exe" -OutFile git-installer.exe; \
