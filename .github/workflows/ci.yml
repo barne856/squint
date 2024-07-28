@@ -81,7 +81,7 @@ jobs:
       matrix:
         compiler: [msvc]
         version: [2022]
-        blas: [NONE]
+        blas: [MKL, OpenBLAS, NONE]
         include:
           - compiler: msvc
             version: 2022
@@ -109,6 +109,20 @@ jobs:
           --build-arg COMPILER_VERSION=${{ matrix.version }} `
           -f ${{ github.workspace }}\${{ matrix.dockerfile }} .
         docker save -o ${{ github.workspace }}\docker-image.tar ${{ matrix.compiler }}-${{ matrix.version }}:latest
+      shell: pwsh
+
+    - name: Build and Test in Docker
+      run: |
+        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command " `
+          cd C:\src; `
+          mkdir build; `
+          cd build; `
+          cmake .. -G Ninja `
+            -DSQUINT_BUILD_TESTS=ON `
+            -DBLAS_BACKEND=${{ matrix.blas }}; `
+          cmake --build .; `
+          ctest -C Debug --output-on-failure `
+        "
       shell: pwsh
 
   clang-tidy:
