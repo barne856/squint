@@ -90,39 +90,28 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Set up Docker
+      uses: docker/setup-docker@v2
 
-    - name: Cache Docker layers
+    - name: Cache Docker images
       uses: actions/cache@v3
       with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}/{1}', github.workspace, matrix.dockerfile)) }}
+        path: ~\AppData\Local\Docker\windowsfilter
+        key: ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}/{1}', github.workspace, matrix.dockerfile)) }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-
+          ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-
 
     - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ${{ github.workspace }}/${{ matrix.dockerfile }}
-        build-args: |
-          COMPILER_VERSION=${{ matrix.version }}
-        tags: ${{ matrix.compiler }}-${{ matrix.version }}:latest
-        load: true
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-    - name: Move cache
       run: |
-        Remove-Item -Recurse -Force /tmp/.buildx-cache
-        Move-Item -Path /tmp/.buildx-cache-new -Destination /tmp/.buildx-cache
+        docker build -t ${{ matrix.compiler }}-${{ matrix.version }}:latest `
+          --build-arg COMPILER_VERSION=${{ matrix.version }} `
+          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
       shell: pwsh
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
-          cd /src;
+        docker run --rm -v ${{ github.workspace }}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
+          cd C:\src;
           mkdir build;
           cd build;
           cmake .. -G Ninja `
@@ -176,9 +165,10 @@ jobs:
           cd build &&
           cmake .. -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBLAS_BACKEND=NONE &&
           cmake --build . &&
-          find ../include -name '*.cpp' -or -name '*.hpp' | 
+          cd .. &&
+          find ./include -name '*.cpp' -or -name '*.hpp' | 
           xargs -P $(nproc) clang-tidy -p . 
-          --config-file=../.clang-tidy
+          --config-file=./.clang-tidy
         "
 
     - name: Check Clang-Tidy result
