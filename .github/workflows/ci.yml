@@ -7,44 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
-    name: Build and Test
-    runs-on: ${{ matrix.os }}
+  build-and-test-linux:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           # GCC versions
-          - os: ubuntu-latest
-            compiler: gcc
+          - compiler: gcc
             version: 12
             dockerfile: Dockerfile.gcc-dev
           # Clang versions
-          - os: ubuntu-latest
-            compiler: clang
+          - compiler: clang
             version: 17
             dockerfile: Dockerfile.llvm-dev
-          # Windows MSVC
-          - os: windows-latest
-            compiler: msvc
-            version: 2022
-            dockerfile: Dockerfile.msvc-dev
         blas: [MKL, OpenBLAS, NONE]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build Docker image (Linux)
+    - name: Build Docker image
       run: |
         docker build -t ${{ matrix.compiler }}-${{ matrix.version }} \
           --build-arg COMPILER_VERSION=${{ matrix.version }} \
-          -f dockerfiles/${{ matrix.dockerfile }} .
-      if: matrix.os == 'ubuntu-latest'
-
-    - name: Build Docker image (Windows)
-      run: |
-        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} `
-          --build-arg COMPILER_VERSION=${{ matrix.version }} `
-          -f dockerfiles/${{ matrix.dockerfile }} .
+          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
 
     - name: Build and Test in Docker
       run: |
@@ -59,12 +45,30 @@ jobs:
           cmake --build . &&
           ctest -L SQUINT --output-on-failure
         "
-      shell: bash
-      if: matrix.os == 'ubuntu-latest'
 
-    - name: Build and Test in Windows Docker
+  build-and-test-windows:
+    name: Build and Test (Windows)
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - compiler: msvc
+            version: 2022
+            dockerfile: Dockerfile.msvc-dev
+        blas: [MKL, OpenBLAS, NONE]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Docker image
       run: |
-        docker run --rm -v ${PWD}:/src ${{ matrix.compiler }}-${{ matrix.version }} powershell -Command "
+        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} `
+          --build-arg COMPILER_VERSION=${{ matrix.version }} `
+          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
+
+    - name: Build and Test in Docker
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }} powershell -Command "
           cd /src;
           mkdir build;
           cd build;
@@ -75,7 +79,6 @@ jobs:
           ctest -L SQUINT --output-on-failure
         "
       shell: pwsh
-      if: matrix.os == 'windows-latest'
 
   clang-tidy:
     name: Clang-Tidy
