@@ -1,5 +1,5 @@
 # Use a Windows Server Core base image
-FROM mcr.microsoft.com/windows/servercore:ltsc2019
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
 # Arguments for versions
 ARG COMPILER_VERSION="2022"

@@ -48,7 +48,7 @@ jobs:
 
   build-and-test-windows:
     name: Build and Test (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       matrix:
         include:
@@ -89,7 +89,7 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t llvm-dev --build-arg COMPILER_VERSION=16 -f dockerfiles/Dockerfile.llvm-dev .
+        docker build -t llvm-dev --build-arg COMPILER_VERSION=16 -f ${{ github.workspace }}/Dockerfile.llvm-dev .
 
     - name: Run Clang-Tidy in Docker
       run: |
