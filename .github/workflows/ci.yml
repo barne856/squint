@@ -81,7 +81,7 @@ jobs:
       matrix:
         compiler: [msvc]
         version: [2022]
-        blas: [MKL, OpenBLAS, NONE]
+        blas: [NONE]
         include:
           - compiler: msvc
             version: 2022

@@ -27,16 +27,6 @@ RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -Out
     -NoNewWindow -Wait; \
     Remove-Item .\vs_buildtools.exe -Force
 
-# Download and install Intel oneAPI Base Toolkit (includes MKL)
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe" -OutFile "w_BaseKit_p_2024.2.0.635_offline.exe"; \
-    Start-Process -FilePath "w_BaseKit_p_2024.2.0.635_offline.exe" -ArgumentList "-s -a --silent --eula accept --components intel.oneapi.win.mkl.devel" -Wait; \
-    Remove-Item "w_BaseKit_p_2024.2.0.635_offline.exe"
-
-# Download and install Intel Fortran Compiler
-RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe" -OutFile "w_HPCKit_p_2024.2.0.633_offline.exe"; \
-    Start-Process -FilePath "w_HPCKit_p_2024.2.0.633_offline.exe" -ArgumentList "-s -a --silent --eula accept --components intel.oneapi.win.ifort-compiler" -Wait; \
-    Remove-Item "w_HPCKit_p_2024.2.0.633_offline.exe"
-
 # Add CMake to the system PATH
 RUN $env:PATH = 'C:\Program Files\CMake\bin;' + $env:PATH; \
     [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
