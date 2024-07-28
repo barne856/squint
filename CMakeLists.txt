@@ -56,51 +56,14 @@ endfunction()
 
 # Function to setup MKL
 function(setup_mkl)
-    # First, try to find MKL using CMake's built-in FindMKL module
-    find_package(MKL QUIET)
+    # Try to find MKL using CMake's built-in FindMKL module
+    find_package(MKL REQUIRED)
     
-    if(NOT MKL_FOUND)
-        # Check for MKL in common locations
-        set(MKL_LOCATIONS
-            "/usr/include/mkl"
-            "/opt/intel/oneapi/mkl/latest"
-            "$ENV{MKLROOT}"
-        )
-        
-        foreach(location ${MKL_LOCATIONS})
-            if(EXISTS "${location}")
-                set(MKLROOT "${location}" CACHE PATH "Root directory of MKL installation" FORCE)
-                break()
-            endif()
-        endforeach()
-        
-        if(NOT MKLROOT)
-            message(FATAL_ERROR "MKL not found. Please specify the correct MKLROOT.")
-        endif()
-        
-        # Set include directories
-        target_include_directories(SQUINT INTERFACE ${MKLROOT}/include)
-        
-        # Set library directories
-        if(EXISTS "${MKLROOT}/lib/intel64")
-            target_link_directories(SQUINT INTERFACE ${MKLROOT}/lib/intel64)
-        else()
-            target_link_directories(SQUINT INTERFACE /usr/lib/x86_64-linux-gnu)
-        endif()
-        
-        # Link against MKL libraries
-        target_link_libraries(SQUINT INTERFACE 
-            -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl)
-    else()
-        # If found by FindMKL, use the provided targets
-        target_link_libraries(SQUINT INTERFACE MKL::MKL)
-    endif()
-    
+    # If found by FindMKL, use the provided targets
+    target_link_libraries(SQUINT INTERFACE MKL::MKL)
+
     # Add compile definition for MKL
     target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_MKL)
-    
-    # Set MKLROOT in the parent scope
-    set(MKLROOT ${MKLROOT} PARENT_SCOPE)
 endfunction()
 
 # Function to setup NONE (fallback implementations)

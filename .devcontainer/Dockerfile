@@ -3,6 +3,7 @@ FROM mcr.microsoft.com/devcontainers/base:noble
 
 # Argument for LLVM version
 ARG LLVM_VERSION=17
+ARG CMAKE_VERSION=3.29.5
 
 # C++ development environment, uses clang, libc++, and ninja
 ENV CC=clang-$LLVM_VERSION
@@ -31,7 +32,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     lld-$LLVM_VERSION \
     ninja-build \
     gfortran \
-    intel-mkl \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \
@@ -41,6 +41,25 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && ln -s /usr/bin/lldb-$LLVM_VERSION /usr/bin/lldb \
     && ln -s /usr/bin/lld-$LLVM_VERSION /usr/bin/lld \
     && ln -f -s /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld 
+
+# download the key to system keyring and add signed entry to apt sources and configure the APT client to use Intel repository:
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+    | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
+    echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+
+# install Intel OneAPI for MKL
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    intel-oneapi-mkl-devel
+
+# Install specific version of CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    -q -O /tmp/cmake-install.sh \
+    && chmod u+x /tmp/cmake-install.sh \
+    && mkdir /opt/cmake-${CMAKE_VERSION} \
+    && /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-${CMAKE_VERSION} \
+    && ln -s /opt/cmake-${CMAKE_VERSION}/bin/* /usr/local/bin \
+    && rm /tmp/cmake-install.sh
 
 # Clean up
 RUN apt-get -y remove wget gnupg software-properties-common

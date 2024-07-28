@@ -4,10 +4,7 @@
 		"dockerfile": "Dockerfile"
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/git:1": {},
-		"ghcr.io/adamlm/devcontainer-features/cmake": {
-			"version": "3.29.5"
-		}
+		"ghcr.io/devcontainers/features/git:1": {}
 	},
 	"customizations": {
 		"vscode": {
