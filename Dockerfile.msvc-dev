@@ -33,13 +33,6 @@ RUN Start-Process -FilePath .\vs_buildtools.exe -ArgumentList \
 # Cleanup
 RUN Remove-Item .\vs_buildtools.exe -Force
 
-# Disable telemetry
-RUN New-Item -Path HKLM:\Software\Microsoft\VisualStudio\Telemetry -Force; \
-    Set-ItemProperty -Path HKLM:\Software\Microsoft\VisualStudio\Telemetry -Name TurnOffSwitch -Value 1
-
-# Clear package cache to reduce image size
-RUN Remove-Item -Force -Recurse "${Env:ProgramData}\Package Cache" -ErrorAction SilentlyContinue
-
 # Download and install Intel oneAPI Base Toolkit (includes MKL)
 RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe" -OutFile "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe"; \
     Start-Process -FilePath "w_BaseKit_p_$env:INTEL_MKL_VERSION`_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
