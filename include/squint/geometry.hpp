@@ -18,9 +18,7 @@ concept transformation_matrix = fixed_shape_tensor<T> && dimensionless_tensor<T>
 // Translation
 template <transformation_matrix T, arithmetic U>
 auto translate(T &matrix, const vec3_t<units::length_t<U>> &x, units::length_t<U> unit_length = units::length_t<U>{1}) {
-    matrix[0, 3] += x[0] / unit_length;
-    matrix[1, 3] += x[1] / unit_length;
-    matrix[2, 3] += x[2] / unit_length;
+    matrix.subview<3, 1>(0, 3) += x / unit_length;
 }
 
 // Rotation (around arbitrary axis)
@@ -32,7 +30,7 @@ template <transformation_matrix T, dimensionless_scalar U> auto rotate(T &matrix
     auto rotation = mat4_t<U>::eye();
     auto A = mat3_t<U>::eye() * c;
     auto B = mat3_t<U>{
-        {U{0}, norm_axis[2], -norm_axis[1], -norm_axis[2], U{0}, norm_axis[0], norm_axis[1], -norm_axis[0], U{0}}};
+        {U{0}, norm_axis(2), -norm_axis(1), -norm_axis(2), U{0}, norm_axis(0), norm_axis(1), -norm_axis(0), U{0}}};
     auto C = t * (norm_axis * norm_axis.transpose());
     auto R = A + s * B + C;
     rotation.template subview<3, 3>(0,0) = R;
@@ -41,9 +39,9 @@ template <transformation_matrix T, dimensionless_scalar U> auto rotate(T &matrix
 
 // Scale
 template <transformation_matrix T, dimensionless_scalar U> auto scale(T &matrix, const vec3_t<U> &s) {
-    matrix[0, 0] *= s[0];
-    matrix[1, 1] *= s[1];
-    matrix[2, 2] *= s[2];
+    matrix(0, 0) *= s(0);
+    matrix(1, 1) *= s(1);
+    matrix(2, 2) *= s(2);
 }
 
 // Orthographic Projection
@@ -56,13 +54,13 @@ auto ortho(units::length_t<T> left, units::length_t<T> right, units::length_t<T>
     auto height = (top - bottom);
     auto depth = (far_plane - near_plane);
 
-    result[0, 0] = unit_length * T{2} / width;
-    result[1, 1] = unit_length * T{2} / height;
-    result[2, 2] = unit_length * T{1} / depth;
-    result[0, 3] = -(right + left) / width;
-    result[1, 3] = -(top + bottom) / height;
-    result[2, 3] = -near_plane / depth;
-    result[3, 3] = T{1};
+    result(0, 0) = unit_length * T{2} / width;
+    result(1, 1) = unit_length * T{2} / height;
+    result(2, 2) = unit_length * T{1} / depth;
+    result(0, 3) = -(right + left) / width;
+    result(1, 3) = -(top + bottom) / height;
+    result(2, 3) = -near_plane / depth;
+    result(3, 3) = T{1};
 
     return result;
 }
@@ -75,11 +73,11 @@ auto perspective(T fovy, T aspect, units::length_t<U> near_plane, units::length_
     U tanHalfFovy = std::tan(fovy / T{2});
     auto depth = far_plane - near_plane;
 
-    result[0, 0] = U{1} / (aspect * tanHalfFovy);
-    result[1, 1] = U{1} / tanHalfFovy;
-    result[2, 2] = -(far_plane) / depth;
-    result[2, 3] = (-far_plane * near_plane) / (depth * unit_length);
-    result[3, 2] = -U{1};
+    result(0, 0) = U{1} / (aspect * tanHalfFovy);
+    result(1, 1) = U{1} / tanHalfFovy;
+    result(2, 2) = -(far_plane) / depth;
+    result(2, 3) = (-far_plane * near_plane) / (depth * unit_length);
+    result(3, 2) = -U{1};
 
     return result;
 }

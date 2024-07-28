@@ -1,0 +1,38 @@
+# Use a Windows Server Core base image
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+# Arguments for versions
+ARG COMPILER_VERSION="2022"
+ARG CMAKE_VERSION="3.29.5"
+ARG INTEL_MKL_VERSION="2024.0.0"
+ARG INTEL_FORTRAN_VERSION="2024.0.0"
+
+# Set shell to PowerShell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Install Chocolatey
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# Install Visual Studio Build Tools
+RUN choco install visualstudio2022buildtools -y --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive --locale en-US"
+
+# Install specific CMake version
+RUN choco install cmake --version=${CMAKE_VERSION} -y
+
+# Download and install Intel oneAPI Base Toolkit (includes MKL)
+RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe" -OutFile "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe"; \
+    Start-Process -FilePath "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.mkl.devel" -Wait; \
+    Remove-Item "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe"
+
+# Download and install Intel Fortran Compiler
+RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe" -OutFile "w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe"; \
+    Start-Process -FilePath "w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe" -ArgumentList "-s --components=intel.oneapi.win.ifort-compiler" -Wait; \
+    Remove-Item "w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe"
+
+# Set up environment variables
+RUN setx PATH "%PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64;C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64"
+
+# Set the entry point to PowerShell
+ENTRYPOINT ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]

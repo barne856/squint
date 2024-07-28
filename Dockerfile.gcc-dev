@@ -1,0 +1,52 @@
+# Use the base image
+FROM ubuntu:noble
+
+# Argument for GCC version
+ARG COMPILER_VERSION=12
+ARG CMAKE_VERSION=3.29.5
+
+# C++ development environment, uses gcc and ninja
+ENV CC=gcc-$COMPILER_VERSION
+ENV CXX=g++-$COMPILER_VERSION
+ENV FC=gfortran-$COMPILER_VERSION
+ENV CMAKE_GENERATOR=Ninja
+
+# Install GCC and development tools
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    wget \
+    gnupg \
+    software-properties-common \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends \
+    gcc-$COMPILER_VERSION \
+    g++-$COMPILER_VERSION \
+    gfortran-$COMPILER_VERSION \
+    ninja-build \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/gcc-$COMPILER_VERSION /usr/bin/gcc \
+    && ln -s /usr/bin/g++-$COMPILER_VERSION /usr/bin/g++ \
+    && ln -s /usr/bin/gfortran-$COMPILER_VERSION /usr/bin/gfortran
+
+# download the key to system keyring and add signed entry to apt sources and configure the APT client to use Intel repository:
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+    | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
+    echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+
+# install Intel OneAPI for MKL
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    intel-oneapi-mkl-devel
+
+# Install specific version of CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    -q -O /tmp/cmake-install.sh \
+    && chmod u+x /tmp/cmake-install.sh \
+    && mkdir /opt/cmake-${CMAKE_VERSION} \
+    && /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-${CMAKE_VERSION} \
+    && ln -s /opt/cmake-${CMAKE_VERSION}/bin/* /usr/local/bin \
+    && rm /tmp/cmake-install.sh
+
+# Clean up
+RUN apt-get -y remove wget gnupg software-properties-common

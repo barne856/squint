@@ -85,7 +85,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         }
         // specialization for 1D tensors
         if constexpr (sizeof...(Dims) == 1) {
-            return data_[indices...];
+            return data_(indices...);
         }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
     }

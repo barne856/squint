@@ -59,15 +59,27 @@ template <typename Derived, typename T, error_checking ErrorChecking> class __de
     constexpr std::vector<std::size_t> strides() const { return static_cast<const Derived *>(this)->strides(); }
     constexpr layout get_layout() const { return static_cast<const Derived *>(this)->get_layout(); }
 
-    // Multidimensional subscript operator (C++23)
+    template <typename... Indices> constexpr T &operator()(Indices... indices) {
+        return static_cast<Derived *>(this)->at(indices...);
+    }
+    template <typename... Indices> constexpr const T &operator()(Indices... indices) const {
+        return static_cast<const Derived *>(this)->at(indices...);
+    }
+    constexpr T &operator[](std::size_t index) {
+        return static_cast<Derived *>(this)->at(index);
+    }
+    constexpr const T &operator[](std::size_t index) const {
+        return static_cast<const Derived *>(this)->at(index);
+    }
+    #ifndef _MSC_VER
+    // Multidimensional subscript operator (C++23) MSVC does not support this yet
     template <typename... Indices> constexpr T &operator[](Indices... indices) {
         return static_cast<Derived *>(this)->at(indices...);
     }
-
     template <typename... Indices> constexpr const T &operator[](Indices... indices) const {
         return static_cast<const Derived *>(this)->at(indices...);
     }
-
+    #endif
     template <typename... Indices> constexpr T &at(Indices... indices) {
         if constexpr (ErrorChecking == error_checking::enabled) {
             check_bounds(std::vector<size_t>{static_cast<size_t>(indices)...});

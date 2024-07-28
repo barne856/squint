@@ -138,10 +138,10 @@ TEST_CASE("fixed_linear_algebra_mixin tests") {
         mat2 m{{4, 7, 2, 6}};
         auto m_inv = m.inv();
         auto identity = m * m_inv;
-        CHECK(identity[0, 0] == doctest::Approx(1.0));
-        CHECK(identity[0, 1] == doctest::Approx(0.0));
-        CHECK(identity[1, 0] == doctest::Approx(0.0));
-        CHECK(identity[1, 1] == doctest::Approx(1.0));
+        CHECK(identity(0, 0) == doctest::Approx(1.0));
+        CHECK(identity(0, 1) == doctest::Approx(0.0));
+        CHECK(identity(1, 0) == doctest::Approx(0.0));
+        CHECK(identity(1, 1) == doctest::Approx(1.0));
     }
 
     SUBCASE("pinv") {
@@ -150,7 +150,7 @@ TEST_CASE("fixed_linear_algebra_mixin tests") {
         auto pseudo_identity = m * m_pinv * m;
         for (size_t i = 0; i < 2; ++i) {
             for (size_t j = 0; j < 3; ++j) {
-                CHECK(pseudo_identity[i, j] == doctest::Approx(m[i, j]));
+                CHECK(pseudo_identity(i, j) == doctest::Approx(m(i, j)));
             }
         }
     }
@@ -191,10 +191,10 @@ TEST_CASE("dynamic_linear_algebra_mixin tests") {
         auto m = tens{{2, 2}, {4, 7, 2, 6}};
         auto m_inv = m.inv();
         auto identity = m * m_inv;
-        CHECK(identity[0, 0] == doctest::Approx(1.0));
-        CHECK(identity[0, 1] == doctest::Approx(0.0));
-        CHECK(identity[1, 0] == doctest::Approx(0.0));
-        CHECK(identity[1, 1] == doctest::Approx(1.0));
+        CHECK(identity(0, 0) == doctest::Approx(1.0));
+        CHECK(identity(0, 1) == doctest::Approx(0.0));
+        CHECK(identity(1, 0) == doctest::Approx(0.0));
+        CHECK(identity(1, 1) == doctest::Approx(1.0));
     }
 
     SUBCASE("pinv") {
@@ -203,7 +203,7 @@ TEST_CASE("dynamic_linear_algebra_mixin tests") {
         auto pseudo_identity = m * m_pinv * m;
         for (size_t i = 0; i < 2; ++i) {
             for (size_t j = 0; j < 3; ++j) {
-                CHECK(pseudo_identity[i, j] == doctest::Approx(m[i, j]));
+                CHECK(pseudo_identity(i, j) == doctest::Approx(m(i, j)));
             }
         }
     }
@@ -385,10 +385,10 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
         auto At = A.transpose();
         auto At_inv = At.inv();
         auto I = At * At_inv;
-        CHECK(I[0, 0] == doctest::Approx(1.0));
-        CHECK(I[0, 1] == doctest::Approx(0.0));
-        CHECK(I[1, 0] == doctest::Approx(0.0));
-        CHECK(I[1, 1] == doctest::Approx(1.0));
+        CHECK(I(0, 0) == doctest::Approx(1.0));
+        CHECK(I(0, 1) == doctest::Approx(0.0));
+        CHECK(I(1, 0) == doctest::Approx(0.0));
+        CHECK(I(1, 1) == doctest::Approx(1.0));
     }
 
     SUBCASE("Invert transposed dynamic tensor") {
@@ -396,10 +396,10 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
         auto At = A.transpose();
         auto At_inv = At.inv();
         auto I = At * At_inv;
-        CHECK(I[0, 0] == doctest::Approx(1.0));
-        CHECK(I[0, 1] == doctest::Approx(0.0));
-        CHECK(I[1, 0] == doctest::Approx(0.0));
-        CHECK(I[1, 1] == doctest::Approx(1.0));
+        CHECK(I(0, 0) == doctest::Approx(1.0));
+        CHECK(I(0, 1) == doctest::Approx(0.0));
+        CHECK(I(1, 0) == doctest::Approx(0.0));
+        CHECK(I(1, 1) == doctest::Approx(1.0));
     }
 
     SUBCASE("Invert fixed tensor view") {
@@ -407,10 +407,10 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
         auto A_view = A.subview<2, 2>(0,0);
         auto A_view_inv = A_view.inv();
         auto I = A_view * A_view_inv;
-        CHECK(I[0, 0] == doctest::Approx(1.0));
-        CHECK(I[0, 1] == doctest::Approx(0.0));
-        CHECK(I[1, 0] == doctest::Approx(0.0));
-        CHECK(I[1, 1] == doctest::Approx(1.0));
+        CHECK(I(0, 0) == doctest::Approx(1.0));
+        CHECK(I(0, 1) == doctest::Approx(0.0));
+        CHECK(I(1, 0) == doctest::Approx(0.0));
+        CHECK(I(1, 1) == doctest::Approx(1.0));
     }
 
     SUBCASE("Invert dynamic tensor view") {
@@ -418,10 +418,10 @@ TEST_CASE("Matrix inversion with transposed tensors and views") {
         auto A_view = A.subview({2,2}, {0,0} );
         auto A_view_inv = A_view.inv();
         auto I = A_view * A_view_inv;
-        CHECK(I[0, 0] == doctest::Approx(1.0));
-        CHECK(I[0, 1] == doctest::Approx(0.0));
-        CHECK(I[1, 0] == doctest::Approx(0.0));
-        CHECK(I[1, 1] == doctest::Approx(1.0));
+        CHECK(I(0, 0) == doctest::Approx(1.0));
+        CHECK(I(0, 1) == doctest::Approx(0.0));
+        CHECK(I(1, 0) == doctest::Approx(0.0));
+        CHECK(I(1, 1) == doctest::Approx(1.0));
     }
 }
 
@@ -497,10 +497,10 @@ TEST_CASE("Matrix operations with quantity types") {
             std::is_same_v<decltype(C), mat2_t<quantity<float, mult_t<dimensions::length, dimensions::time>>>>,
             "Result should be a matrix of length * time");
 
-        CHECK(C[0, 0].value() == doctest::Approx(5));
-        CHECK(C[0, 1].value() == doctest::Approx(13));
-        CHECK(C[1, 0].value() == doctest::Approx(8));
-        CHECK(C[1, 1].value() == doctest::Approx(20));
+        CHECK(C(0, 0).value() == doctest::Approx(5));
+        CHECK(C(0, 1).value() == doctest::Approx(13));
+        CHECK(C(1, 0).value() == doctest::Approx(8));
+        CHECK(C(1, 1).value() == doctest::Approx(20));
     }
 
     SUBCASE("Matrix-vector multiplication with velocity and mass") {
@@ -526,10 +526,10 @@ TEST_CASE("Matrix operations with quantity types") {
 
         static_assert(std::is_same_v<decltype(C), mat2_t<force>>, "Result should be a matrix of force");
 
-        CHECK(C[0, 0].value() == doctest::Approx(6));
-        CHECK(C[0, 1].value() == doctest::Approx(10));
-        CHECK(C[1, 0].value() == doctest::Approx(8));
-        CHECK(C[1, 1].value() == doctest::Approx(12));
+        CHECK(C(0, 0).value() == doctest::Approx(6));
+        CHECK(C(0, 1).value() == doctest::Approx(10));
+        CHECK(C(1, 0).value() == doctest::Approx(8));
+        CHECK(C(1, 1).value() == doctest::Approx(12));
     }
 
     SUBCASE("Matrix-scalar multiplication with energy") {
@@ -540,10 +540,10 @@ TEST_CASE("Matrix operations with quantity types") {
 
         static_assert(std::convertible_to<decltype(B)::value_type, energy>, "Result should be a matrix of energy");
 
-        CHECK(B[0, 0].value() == doctest::Approx(2));
-        CHECK(B[0, 1].value() == doctest::Approx(6));
-        CHECK(B[1, 0].value() == doctest::Approx(4));
-        CHECK(B[1, 1].value() == doctest::Approx(8));
+        CHECK(B(0, 0).value() == doctest::Approx(2));
+        CHECK(B(0, 1).value() == doctest::Approx(6));
+        CHECK(B(1, 0).value() == doctest::Approx(4));
+        CHECK(B(1, 1).value() == doctest::Approx(8));
     }
 
     SUBCASE("Matrix inverse with dimensionless quantities") {
@@ -554,10 +554,10 @@ TEST_CASE("Matrix operations with quantity types") {
         static_assert(std::convertible_to<decltype(A_inv)::value_type, dimensionless>,
                       "Result should be a matrix of dimensionless quantities");
 
-        CHECK(A_inv[0, 0].value() == doctest::Approx(-2));
-        CHECK(A_inv[0, 1].value() == doctest::Approx(1.5));
-        CHECK(A_inv[1, 0].value() == doctest::Approx(1));
-        CHECK(A_inv[1, 1].value() == doctest::Approx(-0.5));
+        CHECK(A_inv(0, 0).value() == doctest::Approx(-2));
+        CHECK(A_inv(0, 1).value() == doctest::Approx(1.5));
+        CHECK(A_inv(1, 0).value() == doctest::Approx(1));
+        CHECK(A_inv(1, 1).value() == doctest::Approx(-0.5));
     }
 
     SUBCASE("Solving linear system with pressure and volume") {

@@ -22,33 +22,33 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
 
     SUBCASE("Constructor with initializer list") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
-        CHECK(t[0, 0] == 1);
-        CHECK(t[0, 1] == 2);
-        CHECK(t[0, 2] == 3);
-        CHECK(t[1, 0] == 4);
-        CHECK(t[1, 1] == 5);
-        CHECK(t[1, 2] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 2);
+        CHECK(t(0, 2) == 3);
+        CHECK(t(1, 0) == 4);
+        CHECK(t(1, 1) == 5);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("Constructor with value") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t(3);
-        CHECK(t[0, 0] == 3);
-        CHECK(t[0, 1] == 3);
-        CHECK(t[0, 2] == 3);
-        CHECK(t[1, 0] == 3);
-        CHECK(t[1, 1] == 3);
-        CHECK(t[1, 2] == 3);
+        CHECK(t(0, 0) == 3);
+        CHECK(t(0, 1) == 3);
+        CHECK(t(0, 2) == 3);
+        CHECK(t(1, 0) == 3);
+        CHECK(t(1, 1) == 3);
+        CHECK(t(1, 2) == 3);
     }
 
     SUBCASE("Constructor with tensor block") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block{{1, 2}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{t_block};
-        CHECK(t[0, 0] == 1);
-        CHECK(t[0, 1] == 1);
-        CHECK(t[0, 2] == 1);
-        CHECK(t[1, 0] == 2);
-        CHECK(t[1, 1] == 2);
-        CHECK(t[1, 2] == 2);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 1);
+        CHECK(t(0, 2) == 1);
+        CHECK(t(1, 0) == 2);
+        CHECK(t(1, 1) == 2);
+        CHECK(t(1, 2) == 2);
     }
 
     SUBCASE("Constructor with array of blocks") {
@@ -57,63 +57,73 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 1> t_block3{{5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{
             std::array{t_block1, t_block2, t_block3}};
-        CHECK(t[0, 0] == 1);
-        CHECK(t[0, 1] == 3);
-        CHECK(t[0, 2] == 5);
-        CHECK(t[1, 0] == 2);
-        CHECK(t[1, 1] == 4);
-        CHECK(t[1, 2] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 3);
+        CHECK(t(0, 2) == 5);
+        CHECK(t(1, 0) == 2);
+        CHECK(t(1, 1) == 4);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("Copy constructor") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2(t1);
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Move constructor") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2(std::move(t1));
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Assignment operator") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2;
         t2 = t1;
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Assignment from const") {
         const fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2;
         t2 = t1;
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Move assignment operator") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t1{{1, 2, 3, 4, 5, 6}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t2;
         t2 = std::move(t1);
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 }
 
 TEST_CASE("Fixed Tensor Element Access") {
     fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
 
-    SUBCASE("Multidimensional subscript operator") {
+    #ifndef _MSC_VER
+    SUBCASE("Multidimensional subscript operator[]") {
         CHECK(t[0, 0] == 1);
         CHECK(t[0, 1] == 2);
         CHECK(t[0, 2] == 3);
         CHECK(t[1, 0] == 4);
         CHECK(t[1, 1] == 5);
         CHECK(t[1, 2] == 6);
+    }
+    #endif
+    SUBCASE("Multidimensional subscript operator()") {
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 2);
+        CHECK(t(0, 2) == 3);
+        CHECK(t(1, 0) == 4);
+        CHECK(t(1, 1) == 5);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("at() method") {
@@ -146,41 +156,41 @@ TEST_CASE("Fixed Tensor Views") {
 
     SUBCASE("Create view") {
         auto view = t.view();
-        CHECK(view[0, 0] == 1);
-        CHECK(view[2, 3] == 12);
+        CHECK(view(0, 0) == 1);
+        CHECK(view(2, 3) == 12);
     }
 
     SUBCASE("Create const view") {
         const auto &const_t = t;
         auto const_view = const_t.view();
-        CHECK(const_view[0, 0] == 1);
-        CHECK(const_view[2, 3] == 12);
+        CHECK(const_view(0, 0) == 1);
+        CHECK(const_view(2, 3) == 12);
     }
 
     SUBCASE("Modify through view") {
         auto view = t.view();
-        view[1, 1] = 100;
-        CHECK(t[1, 1] == 100);
+        view(1, 1) = 100;
+        CHECK(t(1, 1) == 100);
     }
 
     SUBCASE("Create subview") {
         auto subview = t.subview<2, 2>(0,1);
-        CHECK(subview[0, 0] == 2);
-        CHECK(subview[1, 1] == 7);
+        CHECK(subview(0, 0) == 2);
+        CHECK(subview(1, 1) == 7);
     }
 
     SUBCASE("Modify through subview") {
         auto subview = t.subview<2, 2>(0,1);
-        subview[0, 1] = 100;
-        CHECK(t[0, 2] == 100);
+        subview(0, 1) = 100;
+        CHECK(t(0, 2) == 100);
     }
 
     SUBCASE("Assign from const tensor") {
         const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         t.view() = const_tens;
-        CHECK(t[0, 0] == 1);
-        CHECK(t[2, 3] == 12);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(2, 3) == 12);
     }
 
     SUBCASE("Assign from const view") {
@@ -188,8 +198,8 @@ TEST_CASE("Fixed Tensor Views") {
         const auto const_view = const_tens.view();
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         t.view() = const_view;
-        CHECK(t[0, 0] == 1);
-        CHECK(t[2, 3] == 12);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(2, 3) == 12);
     }
 }
 
@@ -264,109 +274,119 @@ TEST_CASE("Dynamic Tensor Creation and Basic Operations") {
 
     SUBCASE("Constructor with vector of elements") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3}, std::vector{1, 2, 3, 4, 5, 6});
-        CHECK(t[0, 0] == 1);
-        CHECK(t[1, 0] == 2);
-        CHECK(t[0, 1] == 3);
-        CHECK(t[1, 1] == 4);
-        CHECK(t[0, 2] == 5);
-        CHECK(t[1, 2] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(1, 0) == 2);
+        CHECK(t(0, 1) == 3);
+        CHECK(t(1, 1) == 4);
+        CHECK(t(0, 2) == 5);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("Constructor with value") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3}, 3);
-        CHECK(t[0, 0] == 3);
-        CHECK(t[0, 1] == 3);
-        CHECK(t[0, 2] == 3);
-        CHECK(t[1, 0] == 3);
-        CHECK(t[1, 1] == 3);
-        CHECK(t[1, 2] == 3);
+        CHECK(t(0, 0) == 3);
+        CHECK(t(0, 1) == 3);
+        CHECK(t(0, 2) == 3);
+        CHECK(t(1, 0) == 3);
+        CHECK(t(1, 1) == 3);
+        CHECK(t(1, 2) == 3);
     }
 
     SUBCASE("Constructor with tensor block") {
         dynamic_tensor<int, error_checking::disabled> t_block({2, 1});
-        t_block[0, 0] = 1;
-        t_block[1, 0] = 2;
+        t_block(0, 0) = 1;
+        t_block(1, 0) = 2;
         dynamic_tensor<int, error_checking::disabled> t({2, 2}, t_block);
-        CHECK(t[0, 0] == 1);
-        CHECK(t[0, 1] == 1);
-        CHECK(t[1, 0] == 2);
-        CHECK(t[1, 1] == 2);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 1);
+        CHECK(t(1, 0) == 2);
+        CHECK(t(1, 1) == 2);
     }
 
     SUBCASE("Constructor with array of blocks") {
         dynamic_tensor<int, error_checking::disabled> t_block1({2, 1});
-        t_block1[0, 0] = 1;
-        t_block1[1, 0] = 2;
+        t_block1(0, 0) = 1;
+        t_block1(1, 0) = 2;
         dynamic_tensor<int, error_checking::disabled> t_block2({2, 1});
-        t_block2[0, 0] = 3;
-        t_block2[1, 0] = 4;
+        t_block2(0, 0) = 3;
+        t_block2(1, 0) = 4;
         dynamic_tensor<int, error_checking::disabled> t_block3({2, 1});
-        t_block3[0, 0] = 5;
-        t_block3[1, 0] = 6;
+        t_block3(0, 0) = 5;
+        t_block3(1, 0) = 6;
         dynamic_tensor<int, error_checking::disabled> t({2, 3}, std::vector{t_block1, t_block2, t_block3});
-        CHECK(t[0, 0] == 1);
-        CHECK(t[1, 0] == 2);
-        CHECK(t[0, 1] == 3);
-        CHECK(t[1, 1] == 4);
-        CHECK(t[0, 2] == 5);
-        CHECK(t[1, 2] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(1, 0) == 2);
+        CHECK(t(0, 1) == 3);
+        CHECK(t(1, 1) == 4);
+        CHECK(t(0, 2) == 5);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("Copy constructor") {
         dynamic_tensor<int, error_checking::disabled> t1({2, 3});
-        t1[0, 0] = 1;
-        t1[1, 2] = 6;
+        t1(0, 0) = 1;
+        t1(1, 2) = 6;
         dynamic_tensor<int, error_checking::disabled> t2(t1);
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Move constructor") {
         dynamic_tensor<int, error_checking::disabled> t1({2, 3});
-        t1[0, 0] = 1;
-        t1[1, 2] = 6;
+        t1(0, 0) = 1;
+        t1(1, 2) = 6;
         dynamic_tensor<int, error_checking::disabled> t2(std::move(t1));
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Assignment operator") {
         dynamic_tensor<int, error_checking::disabled> t1({2, 3});
-        t1[0, 0] = 1;
-        t1[1, 2] = 6;
+        t1(0, 0) = 1;
+        t1(1, 2) = 6;
         dynamic_tensor<int, error_checking::disabled> t2({2, 3});
         t2 = t1;
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 
     SUBCASE("Move assignment operator") {
         dynamic_tensor<int, error_checking::disabled> t1({2, 3});
-        t1[0, 0] = 1;
-        t1[1, 2] = 6;
+        t1(0, 0) = 1;
+        t1(1, 2) = 6;
         dynamic_tensor<int, error_checking::disabled> t2({2, 3});
         t2 = std::move(t1);
-        CHECK(t2[0, 0] == 1);
-        CHECK(t2[1, 2] == 6);
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 2) == 6);
     }
 }
 
 TEST_CASE("Dynamic Tensor Element Access") {
     dynamic_tensor<int, error_checking::disabled> t({2, 3});
-    t[0, 0] = 1;
-    t[0, 1] = 2;
-    t[0, 2] = 3;
-    t[1, 0] = 4;
-    t[1, 1] = 5;
-    t[1, 2] = 6;
+    t(0, 0) = 1;
+    t(0, 1) = 2;
+    t(0, 2) = 3;
+    t(1, 0) = 4;
+    t(1, 1) = 5;
+    t(1, 2) = 6;
 
-    SUBCASE("Multidimensional subscript operator") {
+    #ifndef _MSC_VER
+    SUBCASE("Multidimensional subscript operator[]") {
         CHECK(t[0, 0] == 1);
         CHECK(t[0, 1] == 2);
         CHECK(t[0, 2] == 3);
         CHECK(t[1, 0] == 4);
         CHECK(t[1, 1] == 5);
         CHECK(t[1, 2] == 6);
+    }
+    #endif
+    SUBCASE("Multidimensional subscript operator()") {
+        CHECK(t(0, 0) == 1);
+        CHECK(t(0, 1) == 2);
+        CHECK(t(0, 2) == 3);
+        CHECK(t(1, 0) == 4);
+        CHECK(t(1, 1) == 5);
+        CHECK(t(1, 2) == 6);
     }
 
     SUBCASE("at() method") {
@@ -397,65 +417,65 @@ TEST_CASE("Dynamic Tensor Layout and Strides") {
 TEST_CASE("Dynamic Tensor Views") {
     dynamic_tensor<int, error_checking::disabled> t({3, 4});
     for (int i = 0; i < 12; ++i) {
-        t[i / 4, i % 4] = i + 1;
+        t(i / 4, i % 4) = i + 1;
     }
 
     SUBCASE("Create view") {
         auto view = t.view();
-        CHECK(view[0, 0] == 1);
-        CHECK(view[2, 3] == 12);
+        CHECK(view(0, 0) == 1);
+        CHECK(view(2, 3) == 12);
     }
 
     SUBCASE("Create const view") {
         const auto &const_t = t;
         auto const_view = const_t.view();
-        CHECK(const_view[0, 0] == 1);
-        CHECK(const_view[2, 3] == 12);
+        CHECK(const_view(0, 0) == 1);
+        CHECK(const_view(2, 3) == 12);
     }
 
     SUBCASE("Modify through view") {
         auto view = t.view();
-        view[1, 1] = 100;
-        CHECK(t[1, 1] == 100);
+        view(1, 1) = 100;
+        CHECK(t(1, 1) == 100);
     }
 
     SUBCASE("Create subview") {
         auto subview = t.subview({2,2}, {0,1});
-        CHECK(subview[0, 0] == 2);
-        CHECK(subview[1, 1] == 7);
+        CHECK(subview(0, 0) == 2);
+        CHECK(subview(1, 1) == 7);
     }
 
     SUBCASE("Modify through subview") {
         auto subview = t.subview({2,2}, {0,1});
-        subview[0, 1] = 100;
-        CHECK(t[0, 2] == 100);
+        subview(0, 1) = 100;
+        CHECK(t(0, 2) == 100);
     }
 
     SUBCASE("Assign from const tensor") {
         const dynamic_tensor<int, error_checking::disabled> const_tens = t;
         dynamic_tensor<int, error_checking::disabled> other_tens({3, 4});
         other_tens.view() = const_tens;
-        CHECK(t[0, 0] == 1);
-        CHECK(t[2, 3] == 12);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(2, 3) == 12);
     }
 
     SUBCASE("Assign from const view") {
         const dynamic_tensor<int, error_checking::disabled> const_tens = t;
         dynamic_tensor<int, error_checking::disabled> other_tens({3, 4});
         other_tens.view() = const_tens.view();
-        CHECK(t[0, 0] == 1);
-        CHECK(t[2, 3] == 12);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(2, 3) == 12);
     }
 }
 
 TEST_CASE("Dynamic Tensor Iteration") {
     dynamic_tensor<int, error_checking::disabled> t({2, 3});
-    t[0, 0] = 1;
-    t[1, 0] = 2;
-    t[0, 1] = 3;
-    t[1, 1] = 4;
-    t[0, 2] = 5;
-    t[1, 2] = 6;
+    t(0, 0) = 1;
+    t(1, 0) = 2;
+    t(0, 1) = 3;
+    t(1, 1) = 4;
+    t(0, 2) = 5;
+    t(1, 2) = 6;
 
     SUBCASE("Range-based for loop") {
         std::vector<int> values;
@@ -486,7 +506,7 @@ TEST_CASE("Dynamic Tensor Iteration") {
 TEST_CASE("Dynamic Tensor Subview Iteration") {
     dynamic_tensor<int, error_checking::disabled> t({3, 4});
     for (int i = 0; i < 12; ++i) {
-        t[i / 4, i % 4] = i + 1;
+        t(i / 4, i % 4) = i + 1;
     }
 
     SUBCASE("Iterate over 1x4 subviews") {
@@ -506,14 +526,14 @@ TEST_CASE("Tensor Reshape") {
     SUBCASE("Dynamic tensor reshape (column major)") {
         dynamic_tensor<int, error_checking::enabled> t({2, 3});
         for (int i = 0; i < 6; ++i) {
-            t[i / 3, i % 3] = i + 1;
+            t(i / 3, i % 3) = i + 1;
         }
 
         t.reshape({3, 2});
         CHECK(t.shape() == std::vector<std::size_t>{3, 2});
-        CHECK(t[0, 0] == 1);
-        CHECK(t[1, 1] == 3);
-        CHECK(t[2, 1] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(1, 1) == 3);
+        CHECK(t(2, 1) == 6);
 
         CHECK_THROWS_AS(t.reshape({2, 2}), std::invalid_argument);
     }
@@ -521,14 +541,14 @@ TEST_CASE("Tensor Reshape") {
     SUBCASE("Dynamic tensor reshape (row major)") {
         dynamic_tensor<int, error_checking::enabled> t({2, 3}, layout::row_major);
         for (int i = 0; i < 6; ++i) {
-            t[i / 3, i % 3] = i + 1;
+            t(i / 3, i % 3) = i + 1;
         }
 
         t.reshape({3, 2});
         CHECK(t.shape() == std::vector<std::size_t>{3, 2});
-        CHECK(t[0, 0] == 1);
-        CHECK(t[1, 1] == 4);
-        CHECK(t[2, 1] == 6);
+        CHECK(t(0, 0) == 1);
+        CHECK(t(1, 1) == 4);
+        CHECK(t(2, 1) == 6);
 
         CHECK_THROWS_AS(t.reshape({2, 2}), std::invalid_argument);
     }
@@ -536,14 +556,14 @@ TEST_CASE("Tensor Reshape") {
     SUBCASE("Fixed tensor reshape (column major)") {
         fixed_tensor<int, layout::column_major, error_checking::disabled, 2, 3> t;
         for (int i = 0; i < 6; ++i) {
-            t[i / 3, i % 3] = i + 1;
+            t(i / 3, i % 3) = i + 1;
         }
 
         auto reshaped_t = t.reshape<3, 2>();
         CHECK(reshaped_t.shape() == std::vector<std::size_t>{3, 2});
-        CHECK(reshaped_t[0, 0] == 1);
-        CHECK(reshaped_t[1, 1] == 3);
-        CHECK(reshaped_t[2, 1] == 6);
+        CHECK(reshaped_t(0, 0) == 1);
+        CHECK(reshaped_t(1, 1) == 3);
+        CHECK(reshaped_t(2, 1) == 6);
 
         // t.reshape<2,2>(); // this line should not compile
     }
@@ -551,14 +571,14 @@ TEST_CASE("Tensor Reshape") {
     SUBCASE("Fixed tensor reshape (row major)") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t;
         for (int i = 0; i < 6; ++i) {
-            t[i / 3, i % 3] = i + 1;
+            t(i / 3, i % 3) = i + 1;
         }
 
         auto reshaped_t = t.reshape<3, 2>();
         CHECK(reshaped_t.shape() == std::vector<std::size_t>{3, 2});
-        CHECK(reshaped_t[0, 0] == 1);
-        CHECK(reshaped_t[1, 1] == 4);
-        CHECK(reshaped_t[2, 1] == 6);
+        CHECK(reshaped_t(0, 0) == 1);
+        CHECK(reshaped_t(1, 1) == 4);
+        CHECK(reshaped_t(2, 1) == 6);
 
         // t.reshape<2,2>(); // this line should not compile
     }
@@ -586,12 +606,12 @@ TEST_CASE("Tensor Stream Output") {
 
     SUBCASE("Dynamic tensor output") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3});
-        t[0, 0] = 1;
-        t[0, 1] = 2;
-        t[0, 2] = 3;
-        t[1, 0] = 4;
-        t[1, 1] = 5;
-        t[1, 2] = 6;
+        t(0, 0) = 1;
+        t(0, 1) = 2;
+        t(0, 2) = 3;
+        t(1, 0) = 4;
+        t(1, 1) = 5;
+        t(1, 2) = 6;
         std::ostringstream oss;
         oss << t;
         CHECK(oss.str() == "Tensor(shape=[2, 3], data=[[1, 2, 3], [4, 5, 6]])");
@@ -617,15 +637,15 @@ TEST_CASE("Tensor View Edge Cases") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 1, 1> t{42};
         auto view = t.view();
         CHECK(view.size() == 1);
-        CHECK(view[0, 0] == 42);
+        CHECK(view(0, 0) == 42);
     }
 
     SUBCASE("Dynamic tensor view with single element") {
         dynamic_tensor<int, error_checking::disabled> t({1, 1});
-        t[0, 0] = 42;
+        t(0, 0) = 42;
         auto view = t.view();
         CHECK(view.size() == 1);
-        CHECK(view[0, 0] == 42);
+        CHECK(view(0, 0) == 42);
     }
 }
 
@@ -633,7 +653,7 @@ TEST_CASE("Tensor View Const Correctness") {
     SUBCASE("Fixed tensor const view") {
         const fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
         auto view = t.view();
-        CHECK(view[0, 0] == 1);
+        CHECK(view(0, 0) == 1);
         // The following line should not compile:
         // view[0, 0] = 10;
     }
@@ -641,7 +661,7 @@ TEST_CASE("Tensor View Const Correctness") {
     SUBCASE("Dynamic tensor const view") {
         const dynamic_tensor<int, error_checking::disabled> t({2, 3});
         auto view = t.view();
-        CHECK(view[0, 0] == 0);
+        CHECK(view(0, 0) == 0);
         // The following line should not compile:
         // view[0, 0] = 10;
     }
@@ -651,27 +671,27 @@ TEST_CASE("Tensor View Slicing") {
     SUBCASE("Fixed tensor slicing") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         for (int i = 0; i < 12; ++i) {
-            t[i / 4, i % 4] = i + 1;
+            t(i / 4, i % 4) = i + 1;
         }
 
         auto view = t.view();
         auto subview = view.subview<2, 3>(0,1);
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
-        CHECK(subview[0, 0] == 2);
-        CHECK(subview[1, 2] == 8);
+        CHECK(subview(0, 0) == 2);
+        CHECK(subview(1, 2) == 8);
     }
 
     SUBCASE("Dynamic tensor slicing") {
         dynamic_tensor<int, error_checking::disabled> t({3, 4});
         for (int i = 0; i < 12; ++i) {
-            t[i / 4, i % 4] = i + 1;
+            t(i / 4, i % 4) = i + 1;
         }
 
         auto view = t.view();
         auto subview = view.subview({2,3}, {0,1}); 
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
-        CHECK(subview[0, 0] == 2);
-        CHECK(subview[1, 2] == 8);
+        CHECK(subview(0, 0) == 2);
+        CHECK(subview(1, 2) == 8);
     }
 }
 
@@ -688,12 +708,12 @@ TEST_CASE("Tensor View Iterator") {
 
     SUBCASE("Dynamic tensor view iterator") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3});
-        t[0, 0] = 1;
-        t[0, 1] = 2;
-        t[0, 2] = 3;
-        t[1, 0] = 4;
-        t[1, 1] = 5;
-        t[1, 2] = 6;
+        t(0, 0) = 1;
+        t(0, 1) = 2;
+        t(0, 2) = 3;
+        t(1, 0) = 4;
+        t(1, 1) = 5;
+        t(1, 2) = 6;
         auto view = t.view();
         std::vector<int> values;
         for (auto it = view.begin(); it != view.end(); ++it) {
@@ -707,7 +727,7 @@ TEST_CASE("Tensor View Subview Iterator") {
     SUBCASE("Fixed tensor view subview iterator") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         for (int i = 0; i < 12; ++i) {
-            t[i / 4, i % 4] = i + 1;
+            t(i / 4, i % 4) = i + 1;
         }
         auto view = t.view();
         std::vector<std::vector<int>> subview_values;
@@ -724,7 +744,7 @@ TEST_CASE("Tensor View Subview Iterator") {
     SUBCASE("Dynamic tensor view subview iterator") {
         dynamic_tensor<int, error_checking::disabled> t({3, 4});
         for (int i = 0; i < 12; ++i) {
-            t[i / 4, i % 4] = i + 1;
+            t(i / 4, i % 4) = i + 1;
         }
         auto view = t.view();
         std::vector<std::vector<int>> subview_values;

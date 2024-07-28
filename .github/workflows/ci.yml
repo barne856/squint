@@ -7,93 +7,68 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test-linux:
-    name: Build and Test (Linux)
-    runs-on: ubuntu-latest
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        compiler: [g++-12, clang++-17]
+        include:
+          # GCC versions
+          - os: ubuntu-latest
+            compiler: gcc
+            version: 12
+            dockerfile: Dockerfile.gcc-dev
+          # Clang versions
+          - os: ubuntu-latest
+            compiler: clang
+            version: 17
+            dockerfile: Dockerfile.llvm-dev
+          # Windows MSVC
+          - os: windows-latest
+            compiler: msvc
+            version: 2022
+            dockerfile: Dockerfile.msvc-dev
+        blas: [MKL, OpenBLAS, NONE]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install compiler and libraries
+    - name: Build Docker image
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build
-        if [[ "${{ matrix.compiler }}" == clang++* ]]; then
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
-          sudo ./llvm.sh $CLANG_VERSION
-          sudo apt-get install -y clang-$CLANG_VERSION libc++-$CLANG_VERSION-dev libc++abi-$CLANG_VERSION-dev lld-$CLANG_VERSION gfortran gcc
-        else
-          sudo apt-get install -y ${{ matrix.compiler }} gfortran gcc
-        fi
+        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} \
+          --build-arg COMPILER_VERSION=${{ matrix.version }} \
+          -f dockerfiles/${{ matrix.dockerfile }} .
 
-    - name: Configure CMake
-      env:
-        CXX: ${{ matrix.compiler }}
+    - name: Build and Test in Docker
       run: |
-        if [[ "${{ matrix.compiler }}" == clang++* ]]; then
-          CLANG_VERSION=$(echo "${{ matrix.compiler }}" | sed 's/clang++-//')
-          export CXXFLAGS="-stdlib=libc++"
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS"
-        else
-          cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON
-        fi
+        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }} bash -c "
+          cd /src &&
+          mkdir build &&
+          cd build &&
+          cmake .. -G Ninja \
+            -DSQUINT_BUILD_TESTS=ON \
+            -DBLAS_BACKEND=${{ matrix.blas }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}-${{ matrix.version }} &&
+          cmake --build . &&
+          ctest -L SQUINT --output-on-failure
+        "
+      shell: bash
+      if: matrix.os == 'ubuntu-latest'
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -L SQUINT --output-on-failure
-
-  build-and-test-windows:
-    name: Build and Test (Windows)
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Ninja
-      run: choco install ninja
-
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v2
-      with:
-        version: "17.0"
-
-    - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: "3.11"
-        channels: conda-forge
-
-    - name: Install MKL
+    - name: Build and Test in Windows Docker
       run: |
-        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge mkl mkl-devel
-
-    - name: Configure CMake
-      run: |
-        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DBLAS_BACKEND=MKL -DCMAKE_CXX_COMPILER=clang++
-
-    - name: Build
-      run: |
-        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
-        cmake --build ${{github.workspace}}/build
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: |
-        $env:PATH = "$env:CONDA\Scripts;$env:PATH"
-        ctest -L SQUINT --output-on-failure
+        docker run --rm -v ${PWD}:/src ${{ matrix.compiler }}-${{ matrix.version }} powershell -Command "
+          cd /src;
+          mkdir build;
+          cd build;
+          cmake .. -G Ninja `
+            -DSQUINT_BUILD_TESTS=ON `
+            -DBLAS_BACKEND=${{ matrix.blas }};
+          cmake --build .;
+          ctest -L SQUINT --output-on-failure
+        "
+      shell: pwsh
+      if: matrix.os == 'windows-latest'
 
   clang-tidy:
     name: Clang-Tidy
@@ -102,28 +77,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Clang 17 and Clang-Tidy
+    - name: Build Docker image
       run: |
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 17
-        sudo apt-get install -y clang-17 libc++-17-dev libc++abi-17-dev lld-17 clang-tidy-17 ninja-build
+        docker build -t llvm-dev --build-arg COMPILER_VERSION=16 -f dockerfiles/Dockerfile.llvm-dev .
 
-    - name: Configure CMake
-      env:
-        CXX: clang++-17
+    - name: Run Clang-Tidy in Docker
       run: |
-        export CXXFLAGS="-stdlib=libc++"
-        cmake -B ${{github.workspace}}/build -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
-
-    - name: Run Clang-Tidy
-      run: |
-        find include -name '*.cpp' -or -name '*.hpp' | \
-        xargs -P $(nproc) clang-tidy-17 -p build \
-        --config-file=.clang-tidy
+        docker run --rm -v ${{ github.workspace }}:/src llvm-dev bash -c "
+          cd /src &&
+          mkdir build &&
+          cd build &&
+          cmake .. -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
+          cmake --build . &&
+          find ../include -name '*.cpp' -or -name '*.hpp' | 
+          xargs -P $(nproc) clang-tidy -p . 
+          --config-file=../.clang-tidy
+        "
 
     - name: Check Clang-Tidy result
       run: |

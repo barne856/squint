@@ -389,7 +389,7 @@ template <typename Derived, error_checking ErrorChecking> class __declspec(empty
         }
         typename Derived::value_type result{};
         for (std::size_t i = 0; i < derived->shape()[0]; ++i) {
-            result += derived->operator[](i, i);
+            result += derived->operator()(i, i);
         }
         return result;
     }
