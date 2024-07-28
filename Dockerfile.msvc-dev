@@ -10,19 +10,25 @@ ARG INTEL_FORTRAN_VERSION="2024.0.0"
 # Set shell to PowerShell
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Install Chocolatey
-RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
-    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+# Download and install Visual Studio Build Tools
+RUN Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile vs_buildtools.exe; \
+    Start-Process -FilePath .\vs_buildtools.exe -ArgumentList "--quiet", "--wait", "--norestart", "--nocache", \
+    "--installPath", "C:\BuildTools", \
+    "--add", "Microsoft.VisualStudio.Workload.VCTools", \
+    "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", \
+    "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041", \
+    "--add", "Microsoft.VisualStudio.Component.VC.CMake.Project" -NoNewWindow -Wait; \
+    Remove-Item .\vs_buildtools.exe
 
-# Install Visual Studio Build Tools
-RUN choco install visualstudio2022buildtools -y --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive --locale en-US"
+# Download and install CMake
+RUN Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-windows-x86_64.msi" -OutFile cmake.msi; \
+    Start-Process -FilePath msiexec.exe -ArgumentList "/i", "cmake.msi", "/quiet", "/qn", "/norestart" -NoNewWindow -Wait; \
+    Remove-Item cmake.msi
 
-# Install specific CMake version
-RUN choco install cmake --version=${CMAKE_VERSION} -y
-
-# Install Git
-RUN choco install git -y
+# Download and install Git
+RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.38.1.windows.1/Git-2.38.1-64-bit.exe" -OutFile git-installer.exe; \
+    Start-Process -FilePath .\git-installer.exe -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -NoNewWindow -Wait; \
+    Remove-Item git-installer.exe
 
 # Download and install Intel oneAPI Base Toolkit (includes MKL)
 RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b13e474d-2303-44ad-b52e-657c8960de1e/w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe" -OutFile "w_BaseKit_p_${INTEL_MKL_VERSION}_offline.exe"; \
@@ -35,7 +41,9 @@ RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/
     Remove-Item "w_HPCKit_p_${INTEL_FORTRAN_VERSION}_offline.exe"
 
 # Set up environment variables
-RUN setx PATH "%PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64;C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64;C:\Program Files\Git\cmd"
+RUN $vsPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools"; \
+    $intellPath = "${env:ProgramFiles(x86)}\Intel\oneAPI"; \
+    setx PATH "$env:PATH;$vsPath\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;$vsPath\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64;$intellPath\mkl\latest\bin\intel64;$intellPath\compiler\latest\windows\bin\intel64;${env:ProgramFiles}\Git\cmd" /M
 
 # Set the entry point to PowerShell
 ENTRYPOINT ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]

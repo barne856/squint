@@ -43,6 +43,7 @@ jobs:
           cd /src &&
           mkdir build &&
           cd build &&
+          source /opt/intel/oneapi/setvars.sh &&
           cmake .. -G Ninja \
             -DSQUINT_BUILD_TESTS=ON \
             -DBLAS_BACKEND=${{ matrix.blas }} \
