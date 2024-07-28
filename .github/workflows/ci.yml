@@ -96,14 +96,19 @@ jobs:
         path: ${{ github.workspace }}\docker-image.tar
         key: ${{ runner.os }}-docker-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}\{1}', github.workspace, matrix.dockerfile)) }}
 
+    - name: Check cache
+      id: cache
+      run: |
+        "notfound=$(((!(Test-Path ${{ github.workspace }}\docker-image.tar)).ToString().ToLower()))" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
     - name: Load cached Docker image
-      if: steps.cache-docker-image.outputs.cache-hit == 'true'
+      if: fromJSON(steps.cache.outputs.notfound) == false
       run: |
         docker load -i ${{ github.workspace }}\docker-image.tar
       shell: pwsh
 
     - name: Build Docker image
-      if: steps.cache-docker-image.outputs.cache-hit != 'true'
+      if: fromJSON(steps.cache.outputs.notfound)
       run: |
         docker build -t ${{ matrix.compiler }}-${{ matrix.version }}:latest `
           --build-arg COMPILER_VERSION=${{ matrix.version }} `
