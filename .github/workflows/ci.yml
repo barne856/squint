@@ -12,16 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        compiler: [gcc, clang]
+        version: [12, 17]
+        blas: [MKL, OpenBLAS, NONE]
         include:
-          # GCC versions
           - compiler: gcc
             version: 12
             dockerfile: Dockerfile.gcc-dev
-          # Clang versions
           - compiler: clang
             version: 17
             dockerfile: Dockerfile.llvm-dev
-        blas: [MKL, OpenBLAS, NONE]
+        exclude:
+          - compiler: gcc
+            version: 17
+          - compiler: clang
+            version: 12
 
     steps:
     - uses: actions/checkout@v4
@@ -51,11 +56,13 @@ jobs:
     runs-on: windows-2022
     strategy:
       matrix:
+        compiler: [msvc]
+        version: [2022]
+        blas: [MKL, OpenBLAS, NONE]
         include:
           - compiler: msvc
             version: 2022
             dockerfile: Dockerfile.msvc-dev
-        blas: [MKL, OpenBLAS, NONE]
 
     steps:
     - uses: actions/checkout@v4
@@ -97,7 +104,7 @@ jobs:
           cd /src &&
           mkdir build &&
           cd build &&
-          cmake .. -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&
+          cmake .. -G Ninja -DSQUINT_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBLAS_BACKEND=NONE &&
           cmake --build . &&
           find ../include -name '*.cpp' -or -name '*.hpp' | 
           xargs -P $(nproc) clang-tidy -p . 
