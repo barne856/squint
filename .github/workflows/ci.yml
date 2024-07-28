@@ -33,10 +33,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build Docker image
+    - name: Build Docker image (Linux)
       run: |
         docker build -t ${{ matrix.compiler }}-${{ matrix.version }} \
           --build-arg COMPILER_VERSION=${{ matrix.version }} \
+          -f dockerfiles/${{ matrix.dockerfile }} .
+      if: matrix.os == 'ubuntu-latest'
+
+    - name: Build Docker image (Windows)
+      run: |
+        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} `
+          --build-arg COMPILER_VERSION=${{ matrix.version }} `
           -f dockerfiles/${{ matrix.dockerfile }} .
 
     - name: Build and Test in Docker
