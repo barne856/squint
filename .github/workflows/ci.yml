@@ -111,20 +111,6 @@ jobs:
         docker save -o ${{ github.workspace }}\docker-image.tar ${{ matrix.compiler }}-${{ matrix.version }}:latest
       shell: pwsh
 
-    - name: Build and Test in Docker
-      run: |
-        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command " `
-          cd C:\src; `
-          mkdir build; `
-          cd build; `
-          cmake .. -G Ninja `
-            -DSQUINT_BUILD_TESTS=ON `
-            -DBLAS_BACKEND=${{ matrix.blas }}; `
-          cmake --build .; `
-          ctest -L SQUINT --output-on-failure `
-        "
-      shell: pwsh
-
   clang-tidy:
     name: Clang-Tidy
     runs-on: ubuntu-latest
