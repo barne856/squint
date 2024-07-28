@@ -31,15 +31,37 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}/{1}', github.workspace, matrix.dockerfile)) }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-
+
     - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ github.workspace }}/${{ matrix.dockerfile }}
+        build-args: |
+          COMPILER_VERSION=${{ matrix.version }}
+        tags: ${{ matrix.compiler }}-${{ matrix.version }}:latest
+        load: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    - name: Move cache
       run: |
-        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} \
-          --build-arg COMPILER_VERSION=${{ matrix.version }} \
-          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }} bash -c "
+        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }}:latest bash -c "
           cd /src &&
           mkdir build &&
           cd build &&
@@ -68,15 +90,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-${{ hashFiles(format('{0}/{1}', github.workspace, matrix.dockerfile)) }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-${{ matrix.compiler }}-${{ matrix.version }}-
+
     - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ github.workspace }}/${{ matrix.dockerfile }}
+        build-args: |
+          COMPILER_VERSION=${{ matrix.version }}
+        tags: ${{ matrix.compiler }}-${{ matrix.version }}:latest
+        load: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    - name: Move cache
       run: |
-        docker build -t ${{ matrix.compiler }}-${{ matrix.version }} `
-          --build-arg COMPILER_VERSION=${{ matrix.version }} `
-          -f ${{ github.workspace }}/${{ matrix.dockerfile }} .
+        Remove-Item -Recurse -Force /tmp/.buildx-cache
+        Move-Item -Path /tmp/.buildx-cache-new -Destination /tmp/.buildx-cache
+      shell: pwsh
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }} powershell -Command "
+        docker run --rm -v ${{ github.workspace }}:/src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
           cd /src;
           mkdir build;
           cd build;
@@ -95,13 +140,37 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-llvm-dev-${{ hashFiles('**/Dockerfile.llvm-dev') }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-llvm-dev-
+
     - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ github.workspace }}/Dockerfile.llvm-dev
+        build-args: |
+          COMPILER_VERSION=17
+        tags: llvm-dev:latest
+        load: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    - name: Move cache
       run: |
-        docker build -t llvm-dev --build-arg COMPILER_VERSION=17 -f ${{ github.workspace }}/Dockerfile.llvm-dev .
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Run Clang-Tidy in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/src llvm-dev bash -c "
+        docker run --rm -v ${{ github.workspace }}:/src llvm-dev:latest bash -c "
           cd /src &&
           mkdir build &&
           cd build &&

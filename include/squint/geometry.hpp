@@ -18,7 +18,7 @@ concept transformation_matrix = fixed_shape_tensor<T> && dimensionless_tensor<T>
 // Translation
 template <transformation_matrix T, arithmetic U>
 auto translate(T &matrix, const vec3_t<units::length_t<U>> &x, units::length_t<U> unit_length = units::length_t<U>{1}) {
-    matrix.subview<3, 1>(0, 3) += x / unit_length;
+    matrix.template subview<3, 1>(0, 3) += x / unit_length;
 }
 
 // Rotation (around arbitrary axis)

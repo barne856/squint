@@ -85,7 +85,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         }
         // specialization for 1D tensors
         if constexpr (sizeof...(Dims) == 1) {
-            return data_(indices...);
+            return data_[std::get<0>(std::forward_as_tuple(indices...))];
         }
         return data_[calculate_index(std::index_sequence_for<Indices...>{}, indices...)];
     }
@@ -404,7 +404,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         if constexpr (sizeof...(Dims) > 1) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<std::get<Is>(dims)..., 1>(0 *Is..., index);
+                return this->template subview<std::get<Is>(dims)..., 1>(0 * Is..., index);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         } else {
             // For 1D tensors
@@ -421,7 +421,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         if constexpr (sizeof...(Dims) > 1) {
             return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
                 constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
-                return this->template subview<std::get<Is>(dims)..., 1>(0 *Is..., index);
+                return this->template subview<std::get<Is>(dims)..., 1>(0 * Is..., index);
             }(std::make_index_sequence<sizeof...(Dims) - 1>{});
         } else {
             // For 1D tensors
