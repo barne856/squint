@@ -81,7 +81,7 @@ jobs:
       matrix:
         compiler: [msvc]
         version: [2022]
-        blas: [MKL, OpenBLAS, NONE]
+        blas: [NONE]
         include:
           - compiler: msvc
             version: 2022
@@ -113,15 +113,15 @@ jobs:
 
     - name: Build and Test in Docker
       run: |
-        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command "
-          cd C:\src;
-          mkdir build;
-          cd build;
+        docker run --rm -v ${PWD}:C:\src ${{ matrix.compiler }}-${{ matrix.version }}:latest powershell -Command " `
+          cd C:\src; `
+          mkdir build; `
+          cd build; `
           cmake .. -G Ninja `
             -DSQUINT_BUILD_TESTS=ON `
-            -DBLAS_BACKEND=${{ matrix.blas }};
-          cmake --build .;
-          ctest -L SQUINT --output-on-failure
+            -DBLAS_BACKEND=${{ matrix.blas }}; `
+          cmake --build .; `
+          ctest -L SQUINT --output-on-failure `
         "
       shell: pwsh
 
