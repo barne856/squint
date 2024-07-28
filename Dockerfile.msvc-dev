@@ -13,13 +13,6 @@ RUN Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v
     Start-Process -FilePath msiexec.exe -ArgumentList "/i", "cmake.msi", "/quiet", "/qn", "/norestart" -NoNewWindow -Wait; \
     Remove-Item cmake.msi
 
-# Add CMake to the system PATH
-RUN $env:PATH = 'C:\Program Files\CMake\bin;' + $env:PATH; \
-    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
-
-# Verify that ctest is available
-RUN ctest --version
-
 # Download and install Git
 RUN Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.38.1.windows.1/Git-2.38.1-64-bit.exe" -OutFile git-installer.exe; \
     Start-Process -FilePath .\git-installer.exe -ArgumentList "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS", "/COMPONENTS=icons,ext\reg\shellhere,assoc,assoc_sh" -NoNewWindow -Wait; \
@@ -43,6 +36,10 @@ RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/
 RUN Invoke-WebRequest -Uri "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe" -OutFile "w_HPCKit_p_2024.2.0.633_offline.exe"; \
     Start-Process -FilePath "w_HPCKit_p_2024.2.0.633_offline.exe" -ArgumentList "-s -a --silent --eula accept --components intel.oneapi.win.ifort-compiler" -Wait; \
     Remove-Item "w_HPCKit_p_2024.2.0.633_offline.exe"
+
+# Add CMake to the system PATH
+RUN $env:PATH = 'C:\Program Files\CMake\bin;' + $env:PATH; \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
 # Set the entry point to PowerShell
 ENTRYPOINT ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
