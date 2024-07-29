@@ -809,6 +809,16 @@ template <fixed_shape_tensor A, scalar Scalar> auto operator*(const A &a, const 
 }
 template <fixed_shape_tensor A, scalar Scalar> auto operator*(const Scalar &s, const A &a) { return a * s; }
 
+// Unary minus
+template <fixed_shape_tensor A> auto operator-(const A &a) {
+    auto result = a;
+    auto it = result.begin();
+    for (const auto &elem : a) {
+        *it++ = -elem;
+    }
+    return result;
+}
+
 // Scalar division
 template <fixed_shape_tensor A, scalar Scalar> auto operator/(const A &a, const Scalar &s) {
     using result_value_type = decltype(typename A::value_type{} / s);
@@ -1248,6 +1258,16 @@ template <dynamic_shape_tensor A, scalar Scalar> auto operator*(const A &a, cons
 }
 
 template <dynamic_shape_tensor A, scalar Scalar> auto operator*(const Scalar &s, const A &a) { return a * s; }
+
+// Unary minus
+template <dynamic_shape_tensor A> auto operator-(const A &a) {
+    auto result = a;
+    auto it = result.begin();
+    for (const auto &elem : a) {
+        *it++ = -elem;
+    }
+    return result;
+}
 
 // Scalar division
 template <dynamic_shape_tensor A, scalar Scalar> auto operator/(const A &a, const Scalar &s) {

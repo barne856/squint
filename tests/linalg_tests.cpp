@@ -574,3 +574,16 @@ TEST_CASE("Matrix operations with quantity types") {
         CHECK(x[1].value() == doctest::Approx(-5));
     }
 }
+
+TEST_CASE("Unary Minus") {
+    SUBCASE("Unary Minus Fixed") {
+        mat2 a{{1, 2, 3, 4}};
+        auto b = -a;
+        CHECK(b == mat2{{-1, -2, -3, -4}});
+    }
+    SUBCASE("Unary Minus Dynamic") {
+        auto a = tens{{2, 2}, {1, 2, 3, 4}};
+        auto b = -a;
+        CHECK(b == tens{{2, 2}, {-1, -2, -3, -4}});
+    }
+}
