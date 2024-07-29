@@ -74,6 +74,36 @@ jobs:
           ctest -L SQUINT --output-on-failure
         "
 
+  build-and-test-windows:
+    name: Build and Test (Windows)
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: 3.29.5
+
+    - name: Create Build Directory
+      run: mkdir build
+
+    - name: Configure CMake
+      shell: cmd
+      working-directory: ${{github.workspace}}/build
+      run: cmake .. -G "Visual Studio 17 2022" -A x64 -DBLAS_BACKEND=NONE
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: cmd
+      run: cmake --build . --config Debug
+
+    - name: Run tests
+      working-directory: ${{github.workspace}}/build
+      shell: cmd
+      run: ctest -C Debug -VV
+
   clang-tidy:
     name: Clang-Tidy
     runs-on: ubuntu-latest
