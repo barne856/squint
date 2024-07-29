@@ -34,6 +34,18 @@ template <layout L, std::size_t... Dims> struct compile_time_strides {
     }();
 };
 
+template <std::size_t... Dims> struct compile_time_diag_strides {
+    static constexpr auto value = []() {
+        std::array<std::size_t, 1> strides{};
+        std::size_t stride = 1;
+        for (std::size_t i = 0; i < sizeof...(Dims) - 1; ++i) {
+            stride *= std::array<std::size_t, sizeof...(Dims)>{Dims...}[i];
+        }
+        strides[0] = stride + 1;
+        return strides;
+    }();
+};
+
 template <layout L, typename Strides, std::size_t... Dims> struct compile_time_view_strides {
     static constexpr auto value = []() {
         constexpr std::size_t new_rank = sizeof...(Dims);
@@ -134,11 +146,69 @@ class fixed_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecking
         static_assert(sizeof...(NewDims) == sizeof...(Offset), "Number of new dimensions must match number of offsets");
         static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many offset arguments");
         if constexpr (ErrorChecking == error_checking::enabled) {
-            std::vector<std::size_t> new_shape = {NewDims...}; 
+            std::vector<std::size_t> new_shape = {NewDims...};
             std::vector<std::size_t> new_indices = {static_cast<std::size_t>(start)...};
             this->check_subview_bounds(new_shape, new_indices);
         }
         return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, start...);
+    }
+
+    auto rows() const {
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subviews<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<1, std::get<Is + 1>(dims)...>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto row(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subview<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<1, std::get<Is + 1>(dims)...>(index, 0 * Is...);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto cols() const {
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<std::get<Is>(dims)..., 1>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subviews<Dims...>();
+        }
+    }
+
+    auto col(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[sizeof...(Dims) - 1]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<std::get<Is>(dims)..., 1>(0 * Is..., index);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subview<Dims...>(0);
+        }
     }
 
     constexpr auto view() const { return *this; }
@@ -215,11 +285,69 @@ class fixed_tensor_view : public fixed_tensor_view_base<fixed_tensor_view<T, L, 
         static_assert(sizeof...(NewDims) == sizeof...(Offset), "Number of new dimensions must match number of offsets");
         static_assert(sizeof...(NewDims) <= sizeof...(Dims), "Too many offset arguments");
         if constexpr (ErrorChecking == error_checking::enabled) {
-            std::vector<std::size_t> new_shape = {NewDims...}; 
+            std::vector<std::size_t> new_shape = {NewDims...};
             std::vector<std::size_t> new_indices = {static_cast<std::size_t>(start)...};
             this->check_subview_bounds(new_shape, new_indices);
         }
         return create_subview<NewDims...>(std::make_index_sequence<sizeof...(NewDims)>{}, start...);
+    }
+
+    auto rows() {
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subviews<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<1, std::get<Is + 1>(dims)...>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto row(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) == 0) {
+            // For 0D tensors
+            return this->template subview<>();
+        } else {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<1, std::get<Is + 1>(dims)...>(index, 0 * Is...);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        }
+    }
+
+    auto cols() {
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subviews<std::get<Is>(dims)..., 1>();
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subviews<Dims...>();
+        }
+    }
+
+    auto col(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= std::array{Dims...}[sizeof...(Dims) - 1]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        if constexpr (sizeof...(Dims) > 1) {
+            return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+                constexpr std::array<std::size_t, sizeof...(Dims)> dims = {Dims...};
+                return this->template subview<std::get<Is>(dims)..., 1>(0 * Is..., index);
+            }(std::make_index_sequence<sizeof...(Dims) - 1>{});
+        } else {
+            // For 1D tensors
+            return this->template subview<Dims...>(0);
+        }
     }
 
     constexpr auto view() const { return *this; }
@@ -318,11 +446,57 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
 
     const T &at_impl(const std::vector<std::size_t> &indices) const { return data_[calculate_offset(indices)]; }
 
-    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
+    auto subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_subview_bounds(shape, start);
         }
         return create_subview(shape, start);
+    }
+
+    auto rows() const {
+        if (shape_.empty()) {
+            // For 0D tensors
+            return this->subviews(std::vector<std::size_t>{});
+        }
+        std::vector<std::size_t> row_shape = shape_;
+        row_shape[0] = 1;
+        return this->subviews(row_shape);
+    }
+
+    auto cols() const {
+        if (shape_.size() < 2) {
+            // For 0D and 1D tensors
+            return this->subviews(shape_);
+        }
+        std::vector<std::size_t> col_shape = shape_;
+        col_shape[shape_.size() - 1] = 1;
+        return this->subviews(col_shape);
+    }
+
+    auto row(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[0] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[0] = 1;
+        return this->subview(shape, start);
+    }
+
+    auto col(std::size_t index) const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[shape_.size() - 1]) {
+                throw std::out_of_range("Column index out of range");
+            }
+        }
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[shape_.size() - 1] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[shape_.size() - 1] = 1;
+        return this->subview(shape, start);
     }
 
     constexpr auto view() const { return *this; }
@@ -345,28 +519,28 @@ class dynamic_tensor_view_base : public tensor_view_base<Derived, T, ErrorChecki
         return offset;
     }
 
-    void process_slice(std::size_t size, std::size_t start, std::vector<std::size_t> &new_shape, std::vector<std::size_t> &new_strides,
-                       T *&new_data, std::size_t &i) const {
+    void process_slice(std::size_t size, std::size_t start, std::vector<std::size_t> &new_shape,
+                       std::vector<std::size_t> &new_strides, T *&new_data, std::size_t &i) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (i >= rank()) {
                 throw std::out_of_range("Too many slice arguments");
             }
         }
-            new_shape.push_back(size);
-            new_strides.push_back(strides_[i]);
-            new_data += start * strides_[i];
+        new_shape.push_back(size);
+        new_strides.push_back(strides_[i]);
+        new_data += start * strides_[i];
         ++i;
     }
 
   private:
-    auto create_subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
+    auto create_subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) const {
         std::vector<std::size_t> new_shape;
         std::vector<std::size_t> new_strides;
         T *new_data = data_;
 
         std::size_t i = 0;
         for (std::size_t j = 0; j < shape.size(); ++j) {
-            this->process_slice(shape[j],start[j], new_shape, new_strides, new_data, i);
+            this->process_slice(shape[j], start[j], new_shape, new_strides, new_data, i);
         }
 
         return const_dynamic_tensor_view<T, ErrorChecking>(new_data, std::move(new_shape), std::move(new_strides),
@@ -385,6 +559,7 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     using base_type::get_layout;
     using base_type::rank;
     using base_type::shape;
+    using base_type::shape_;
     using base_type::size;
     using base_type::strides;
     using base_type::subview;
@@ -400,11 +575,57 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     T &at_impl(const std::vector<std::size_t> &indices) { return const_cast<T &>(base_type::at_impl(indices)); }
 
     // Non-const version of subview
-    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
+    auto subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) {
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_subview_bounds(shape, start);
         }
         return create_subview(shape, start);
+    }
+
+    auto rows() {
+        if (shape_.empty()) {
+            // For 0D tensors
+            return this->subviews(std::vector<std::size_t>{});
+        }
+        std::vector<std::size_t> row_shape = shape_;
+        row_shape[0] = 1;
+        return this->subviews(row_shape);
+    }
+
+    auto cols() {
+        if (shape_.size() < 2) {
+            // For 0D and 1D tensors
+            return this->subviews(shape_);
+        }
+        std::vector<std::size_t> col_shape = shape_;
+        col_shape[shape_.size() - 1] = 1;
+        return this->subviews(col_shape);
+    }
+
+    auto row(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[0]) {
+                throw std::out_of_range("Row index out of range");
+            }
+        }
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[0] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[0] = 1;
+        return this->subview(shape, start);
+    }
+
+    auto col(std::size_t index) {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (index >= shape_[shape_.size() - 1]) {
+                throw std::out_of_range("Column index out of range");
+            }
+        }
+        std::vector<std::size_t> start(shape_.size(), 0);
+        start[shape_.size() - 1] = index;
+        std::vector<std::size_t> shape = shape_;
+        shape[shape_.size() - 1] = 1;
+        return this->subview(shape, start);
     }
 
     constexpr auto view() { return *this; }
@@ -424,7 +645,7 @@ class dynamic_tensor_view : public dynamic_tensor_view_base<dynamic_tensor_view<
     }
 
   private:
-    auto create_subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
+    auto create_subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) {
         std::vector<std::size_t> new_shape;
         std::vector<std::size_t> new_strides;
         T *new_data = base_type::data_;

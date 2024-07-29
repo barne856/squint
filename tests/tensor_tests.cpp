@@ -1,3 +1,4 @@
+#include "squint/core.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/tensor.hpp"
@@ -107,7 +108,7 @@ TEST_CASE("Fixed Tensor Creation and Basic Operations") {
 TEST_CASE("Fixed Tensor Element Access") {
     fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
 
-    #ifndef _MSC_VER
+#ifndef _MSC_VER
     SUBCASE("Multidimensional subscript operator[]") {
         CHECK(t[0, 0] == 1);
         CHECK(t[0, 1] == 2);
@@ -116,7 +117,7 @@ TEST_CASE("Fixed Tensor Element Access") {
         CHECK(t[1, 1] == 5);
         CHECK(t[1, 2] == 6);
     }
-    #endif
+#endif
     SUBCASE("Multidimensional subscript operator()") {
         CHECK(t(0, 0) == 1);
         CHECK(t(0, 1) == 2);
@@ -174,19 +175,20 @@ TEST_CASE("Fixed Tensor Views") {
     }
 
     SUBCASE("Create subview") {
-        auto subview = t.subview<2, 2>(0,1);
+        auto subview = t.subview<2, 2>(0, 1);
         CHECK(subview(0, 0) == 2);
         CHECK(subview(1, 1) == 7);
     }
 
     SUBCASE("Modify through subview") {
-        auto subview = t.subview<2, 2>(0,1);
+        auto subview = t.subview<2, 2>(0, 1);
         subview(0, 1) = 100;
         CHECK(t(0, 2) == 100);
     }
 
     SUBCASE("Assign from const tensor") {
-        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         t.view() = const_tens;
         CHECK(t(0, 0) == 1);
@@ -194,7 +196,8 @@ TEST_CASE("Fixed Tensor Views") {
     }
 
     SUBCASE("Assign from const view") {
-        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+        const fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> const_tens{
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
         const auto const_view = const_tens.view();
         fixed_tensor<int, layout::row_major, error_checking::disabled, 3, 4> t;
         t.view() = const_view;
@@ -370,7 +373,7 @@ TEST_CASE("Dynamic Tensor Element Access") {
     t(1, 1) = 5;
     t(1, 2) = 6;
 
-    #ifndef _MSC_VER
+#ifndef _MSC_VER
     SUBCASE("Multidimensional subscript operator[]") {
         CHECK(t[0, 0] == 1);
         CHECK(t[0, 1] == 2);
@@ -379,7 +382,7 @@ TEST_CASE("Dynamic Tensor Element Access") {
         CHECK(t[1, 1] == 5);
         CHECK(t[1, 2] == 6);
     }
-    #endif
+#endif
     SUBCASE("Multidimensional subscript operator()") {
         CHECK(t(0, 0) == 1);
         CHECK(t(0, 1) == 2);
@@ -440,13 +443,13 @@ TEST_CASE("Dynamic Tensor Views") {
     }
 
     SUBCASE("Create subview") {
-        auto subview = t.subview({2,2}, {0,1});
+        auto subview = t.subview({2, 2}, {0, 1});
         CHECK(subview(0, 0) == 2);
         CHECK(subview(1, 1) == 7);
     }
 
     SUBCASE("Modify through subview") {
-        auto subview = t.subview({2,2}, {0,1});
+        auto subview = t.subview({2, 2}, {0, 1});
         subview(0, 1) = 100;
         CHECK(t(0, 2) == 100);
     }
@@ -675,7 +678,7 @@ TEST_CASE("Tensor View Slicing") {
         }
 
         auto view = t.view();
-        auto subview = view.subview<2, 3>(0,1);
+        auto subview = view.subview<2, 3>(0, 1);
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
         CHECK(subview(0, 0) == 2);
         CHECK(subview(1, 2) == 8);
@@ -688,7 +691,7 @@ TEST_CASE("Tensor View Slicing") {
         }
 
         auto view = t.view();
-        auto subview = view.subview({2,3}, {0,1}); 
+        auto subview = view.subview({2, 3}, {0, 1});
         CHECK(subview.shape() == std::vector<std::size_t>{2, 3});
         CHECK(subview(0, 0) == 2);
         CHECK(subview(1, 2) == 8);
@@ -772,8 +775,8 @@ TEST_CASE("Fixed Tensor with Error Checking") {
     // t.at(0, 0, 0);
 
     SUBCASE("Subview out of bounds") {
-        CHECK_THROWS_AS((t.subview<2, 2>(1,0)), std::out_of_range);
-        CHECK_THROWS_AS((t.subview<2, 2>(0,2)), std::out_of_range);
+        CHECK_THROWS_AS((t.subview<2, 2>(1, 0)), std::out_of_range);
+        CHECK_THROWS_AS((t.subview<2, 2>(0, 2)), std::out_of_range);
     }
 }
 
@@ -791,8 +794,8 @@ TEST_CASE("Dynamic Tensor with Error Checking") {
     }
 
     SUBCASE("Subview out of bounds") {
-        CHECK_THROWS_AS(t.subview({2,3}, {1,3}), std::out_of_range);
-        CHECK_THROWS_AS(t.subview({2,1}, {0,3}), std::out_of_range);
+        CHECK_THROWS_AS(t.subview({2, 3}, {1, 3}), std::out_of_range);
+        CHECK_THROWS_AS(t.subview({2, 1}, {0, 3}), std::out_of_range);
     }
 }
 
@@ -803,7 +806,7 @@ TEST_CASE("Tensor View Error Checking") {
 
         CHECK_THROWS_AS(view.at(2, 0), std::out_of_range);
         CHECK_THROWS_AS(view.at(0, 3), std::out_of_range);
-        CHECK_THROWS_AS((view.subview<2, 2>(1,0)), std::out_of_range);
+        CHECK_THROWS_AS((view.subview<2, 2>(1, 0)), std::out_of_range);
     }
 
     SUBCASE("Dynamic tensor view with error checking") {
@@ -812,7 +815,7 @@ TEST_CASE("Tensor View Error Checking") {
 
         CHECK_THROWS_AS(view.at(2, 0), std::out_of_range);
         CHECK_THROWS_AS(view.at(0, 3), std::out_of_range);
-        CHECK_THROWS_AS(view.subview({1,3}, {2,0}), std::out_of_range);
+        CHECK_THROWS_AS(view.subview({1, 3}, {2, 0}), std::out_of_range);
     }
 }
 
@@ -821,14 +824,14 @@ TEST_CASE("Error Checking Disabled") {
         fixed_tensor<int, layout::row_major, error_checking::disabled, 2, 3> t{{1, 2, 3, 4, 5, 6}};
         // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
         // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
-        CHECK_NOTHROW(t.subview<2, 2>(1,0)); // This would be invalid, but no check is performed
+        CHECK_NOTHROW(t.subview<2, 2>(1, 0)); // This would be invalid, but no check is performed
     }
 
     SUBCASE("Dynamic tensor without error checking") {
         dynamic_tensor<int, error_checking::disabled> t({2, 3});
         // CHECK_NOTHROW(t.at(2, 0)); // This would be out of bounds, but no check is performed (can cause a crash)
         // CHECK_NOTHROW(t.at(0, 3)); // This would be out of bounds, but no check is performed (can cause a crash)
-        CHECK_NOTHROW(t.subview({1,0}, {2,3})); // This would be invalid, but no check is performed
+        CHECK_NOTHROW(t.subview({1, 0}, {2, 3})); // This would be invalid, but no check is performed
     }
 }
 
@@ -1140,7 +1143,7 @@ TEST_CASE("fixed_tensor rows() and cols() tests") {
     SUBCASE("2D tensor") {
         squint::fixed_tensor<int, squint::layout::row_major, squint::error_checking::disabled, 3, 4> tensor(
             {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
-    
+
         SUBCASE("rows()") {
             std::vector<std::vector<int>> expected_rows = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}};
             int row_index = 0;
@@ -1155,7 +1158,7 @@ TEST_CASE("fixed_tensor rows() and cols() tests") {
             }
             CHECK(row_index == 3);
         }
-    
+
         SUBCASE("cols()") {
             std::vector<std::vector<int>> expected_cols = {{1, 5, 9}, {2, 6, 10}, {3, 7, 11}, {4, 8, 12}};
             int col_index = 0;
@@ -1177,7 +1180,7 @@ TEST_CASE("fixed_tensor rows() and cols() tests") {
         for (std::size_t i = 0; i < 24; ++i) {
             tensor.at_impl({i / 12, (i % 12) / 4, i % 4}) = i + 1;
         }
-    
+
         SUBCASE("rows()") {
             int row_index = 0;
             for (const auto &row : tensor.rows()) {
@@ -1190,7 +1193,7 @@ TEST_CASE("fixed_tensor rows() and cols() tests") {
             }
             CHECK(row_index == 2);
         }
-    
+
         SUBCASE("cols()") {
             int col_index = 0;
             for (const auto &col : tensor.cols()) {
@@ -1335,5 +1338,24 @@ TEST_CASE("dynamic_tensor rows() and cols() tests") {
             }
             CHECK(col_count == 1);
         }
+    }
+}
+
+TEST_CASE("Diagonal Views") {
+    SUBCASE("Fixed tensor 2D") {
+        auto A = mat4::eye();
+        auto diag = A.diag_view();
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+        CHECK(diag[2] == 1);
+        CHECK(diag[3] == 1);
+    }
+    SUBCASE("Dynamic tensor 2D") {
+        auto A = tens::eye({4, 4});
+        auto diag = A.diag_view();
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+        CHECK(diag[2] == 1);
+        CHECK(diag[3] == 1);
     }
 }

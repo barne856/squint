@@ -1,13 +1,16 @@
 #ifndef SQUINT_DYNAMIC_TENSOR_HPP
 #define SQUINT_DYNAMIC_TENSOR_HPP
 
+#include "squint/core.hpp"
 #include "squint/iterable_tensor.hpp"
 #include "squint/linear_algebra.hpp"
 // #include "squint/quantity.hpp"
 #include "squint/tensor_base.hpp"
 #include "squint/tensor_view.hpp"
+#include <algorithm>
 #include <numeric>
 #include <random>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -159,14 +162,14 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
 
     auto view() const { return make_dynamic_tensor_view(*this); }
 
-    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) {
+    auto subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) {
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_subview_bounds(shape, start);
         }
         return view().subview(shape, start);
     }
 
-    auto subview(const std::vector<std::size_t>& shape, const std::vector<std::size_t>& start) const {
+    auto subview(const std::vector<std::size_t> &shape, const std::vector<std::size_t> &start) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
             this->check_subview_bounds(shape, start);
         }
@@ -374,6 +377,38 @@ class dynamic_tensor : public iterable_tensor<dynamic_tensor<T, ErrorChecking>, 
         std::vector<std::size_t> shape = shape_;
         shape[shape_.size() - 1] = 1;
         return this->subview(shape, start);
+    }
+
+    auto diag_view() {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (shape().size() != 2) {
+                throw std::runtime_error("Matrix must be square");
+            }
+            for (int i = 1; i < shape().size(); i++) {
+                if (shape()[i - 1] != shape()[i]) {
+                    throw std::runtime_error("Shapes must be equal for diag view");
+                }
+            }
+        }
+        std::size_t stride = strides()[strides().size() - 1] + 1;
+        std::vector<std::size_t> strides{stride};
+        return dynamic_tensor_view<T, ErrorChecking>(data(), {shape()[0]}, strides, get_layout());
+    }
+
+    auto diag_view() const {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            if (shape().size() != 2) {
+                throw std::runtime_error("Matrix must be square");
+            }
+            for (int i = 1; i < shape().size(); i++) {
+                if (shape()[i - 1] != shape()[i]) {
+                    throw std::runtime_error("Shapes must be equal for diag view");
+                }
+            }
+        }
+        std::size_t stride = strides()[strides().size() - 1] + 1;
+        std::vector<std::size_t> strides{stride};
+        return const_dynamic_tensor_view<T, ErrorChecking>(data(), {shape()[0]}, strides, get_layout());
     }
 
   private:

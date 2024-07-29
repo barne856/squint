@@ -429,6 +429,22 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         }
     }
 
+    auto diag_view() {
+        static_assert(((Dims == Dims) && ...), "All dimensions must be equal for diag view");
+        static_assert(sizeof...(Dims) == 2, "Matrix must be square");
+        constexpr auto N = std::get<0>(std::forward_as_tuple(Dims...));
+        using initial_strides = compile_time_diag_strides<Dims...>;
+        return fixed_tensor_view<T, L, initial_strides, ErrorChecking, N>(data());
+    }
+
+    auto diag_view() const {
+        static_assert(((Dims == Dims) && ...), "All dimensions must be equal for diag view");
+        static_assert(sizeof...(Dims) == 2, "Matrix must be square");
+        constexpr auto N = std::get<0>(std::forward_as_tuple(Dims...));
+        using initial_strides = compile_time_diag_strides<Dims...>;
+        return fixed_tensor_view<T, L, initial_strides, ErrorChecking, N>(data());
+    }
+
   private:
     template <std::size_t... Is, typename... Indices>
     static constexpr size_t calculate_index(std::index_sequence<Is...> /*unused*/, Indices... indices) {
