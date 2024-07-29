@@ -122,9 +122,7 @@ jobs:
           cd C:\src; `
           mkdir build; `
           cd build; `
-          cmake .. `
-            -DSQUINT_BUILD_TESTS=ON `
-            -DBLAS_BACKEND=${{ matrix.blas }}; `
+          cmake .. -DSQUINT_BUILD_TESTS=ON -DBLAS_BACKEND=${{ matrix.blas }}; `
           cmake --build .; `
           ctest -C Debug --output-on-failure `
           "
