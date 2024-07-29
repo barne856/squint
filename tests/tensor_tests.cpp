@@ -1350,6 +1350,26 @@ TEST_CASE("Diagonal Views") {
         CHECK(diag[2] == 1);
         CHECK(diag[3] == 1);
     }
+    SUBCASE("Fixed tensor 2D const") {
+        const auto A = mat4::eye();
+        const auto diag = A.diag_view();
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+        CHECK(diag[2] == 1);
+        CHECK(diag[3] == 1);
+    }
+    SUBCASE("Fixed tensor 2D subview") {
+        auto A = mat4::eye();
+        auto diag = A.diag_view().subview<2>(0);
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+    }
+    SUBCASE("Fixed tensor 2D subview const") {
+        const auto A = mat4::eye();
+        const auto diag = A.diag_view().subview<2>(0);
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+    }
     SUBCASE("Dynamic tensor 2D") {
         auto A = tens::eye({4, 4});
         auto diag = A.diag_view();
@@ -1357,5 +1377,25 @@ TEST_CASE("Diagonal Views") {
         CHECK(diag[1] == 1);
         CHECK(diag[2] == 1);
         CHECK(diag[3] == 1);
+    }
+    SUBCASE("Dynamic tensor 2D const") {
+        const auto A = tens::eye({4, 4});
+        const auto diag = A.diag_view();
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+        CHECK(diag[2] == 1);
+        CHECK(diag[3] == 1);
+    }
+    SUBCASE("Dynamic tensor 2D subview") {
+        auto A = tens::eye({4, 4});
+        auto diag = A.diag_view().subview({2}, {0});
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
+    }
+    SUBCASE("Dynamic tensor 2D subview const") {
+        const auto A = tens::eye({4, 4});
+        const auto diag = A.diag_view().subview({2}, {0});
+        CHECK(diag[0] == 1);
+        CHECK(diag[1] == 1);
     }
 }

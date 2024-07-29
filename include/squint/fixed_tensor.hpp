@@ -442,7 +442,7 @@ class fixed_tensor : public iterable_tensor<fixed_tensor<T, L, ErrorChecking, Di
         static_assert(sizeof...(Dims) == 2, "Matrix must be square");
         constexpr auto N = std::get<0>(std::forward_as_tuple(Dims...));
         using initial_strides = compile_time_diag_strides<Dims...>;
-        return fixed_tensor_view<T, L, initial_strides, ErrorChecking, N>(data());
+        return const_fixed_tensor_view<T, L, initial_strides, ErrorChecking, N>(data());
     }
 
   private:
