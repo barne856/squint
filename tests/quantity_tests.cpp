@@ -5,8 +5,6 @@
 
 using namespace squint;
 using namespace squint::dimensions;
-using namespace squint::constants;
-using namespace squint::math;
 
 TEST_CASE("Quantity Construction and Basic Operations") {
     SUBCASE("Default constructor") {
@@ -331,27 +329,27 @@ TEST_CASE("Unit Conversion") {
 
 TEST_CASE("Physical Constants") {
     SUBCASE("Speed of light") {
-        CHECK(constants::si_constants<float>::c.value() == doctest::Approx(299792458.0F));
-        CHECK(constants::si_constants<double>::c.value() == doctest::Approx(299792458.0));
-        CHECK(std::is_same_v<decltype(constants::si_constants<float>::c)::dimension_type, dimensions::velocity>);
-        CHECK(std::is_same_v<decltype(constants::si_constants<double>::c)::dimension_type, dimensions::velocity>);
+        CHECK(si_constants<float>::c.value() == doctest::Approx(299792458.0F));
+        CHECK(si_constants<double>::c.value() == doctest::Approx(299792458.0));
+        CHECK(std::is_same_v<decltype(si_constants<float>::c)::dimension_type, dimensions::velocity>);
+        CHECK(std::is_same_v<decltype(si_constants<double>::c)::dimension_type, dimensions::velocity>);
     }
 
     SUBCASE("Planck constant") {
-        CHECK(constants::si_constants<float>::h.value() == doctest::Approx(6.62607015e-34F));
-        CHECK(constants::si_constants<double>::h.value() == doctest::Approx(6.62607015e-34));
-        CHECK(std::is_same_v<decltype(constants::si_constants<float>::h)::dimension_type,
+        CHECK(si_constants<float>::h.value() == doctest::Approx(6.62607015e-34F));
+        CHECK(si_constants<double>::h.value() == doctest::Approx(6.62607015e-34));
+        CHECK(std::is_same_v<decltype(si_constants<float>::h)::dimension_type,
                              mult_t<dimensions::energy, dimensions::time>>);
-        CHECK(std::is_same_v<decltype(constants::si_constants<double>::h)::dimension_type,
+        CHECK(std::is_same_v<decltype(si_constants<double>::h)::dimension_type,
                              mult_t<dimensions::energy, dimensions::time>>);
     }
 
     SUBCASE("Gravitational constant") {
-        CHECK(constants::si_constants<float>::G.value() == doctest::Approx(6.67430e-11F));
-        CHECK(constants::si_constants<double>::G.value() == doctest::Approx(6.67430e-11));
-        CHECK(std::is_same_v<decltype(constants::si_constants<float>::G)::dimension_type,
+        CHECK(si_constants<float>::G.value() == doctest::Approx(6.67430e-11F));
+        CHECK(si_constants<double>::G.value() == doctest::Approx(6.67430e-11));
+        CHECK(std::is_same_v<decltype(si_constants<float>::G)::dimension_type,
                              squint::div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>);
-        CHECK(std::is_same_v<decltype(constants::si_constants<double>::G)::dimension_type,
+        CHECK(std::is_same_v<decltype(si_constants<double>::G)::dimension_type,
                              squint::div_t<mult_t<dimensions::force, dimensions::area>, pow_t<dimensions::mass, 2>>>);
     }
 }
@@ -402,12 +400,12 @@ TEST_CASE("Quantity Operations with Constants") {
 
     SUBCASE("Multiplication with pi") {
         {
-            auto circle_circumference = length_t<float>::meters(2.0F) * constants::math_constants<float>::pi;
+            auto circle_circumference = length_t<float>::meters(2.0F) * math_constants<float>::pi;
             CHECK(circle_circumference.value() == doctest::Approx(2.0F * std::numbers::pi_v<float>));
             CHECK(std::is_same_v<decltype(circle_circumference)::dimension_type, dimensions::length>);
         }
         {
-            auto circle_circumference = length_t<double>::meters(2.0) * constants::math_constants<double>::pi;
+            auto circle_circumference = length_t<double>::meters(2.0) * math_constants<double>::pi;
             CHECK(circle_circumference.value() == doctest::Approx(2.0 * std::numbers::pi));
             CHECK(std::is_same_v<decltype(circle_circumference)::dimension_type, dimensions::length>);
         }
@@ -415,13 +413,13 @@ TEST_CASE("Quantity Operations with Constants") {
 
     SUBCASE("Division by speed of light") {
         {
-            auto time_dilation = squint::units::time_t<float>::seconds(1.0F) / constants::si_constants<float>::c;
+            auto time_dilation = squint::units::time_t<float>::seconds(1.0F) / si_constants<float>::c;
             CHECK(time_dilation.value() == doctest::Approx(1.0F / 299792458.0F));
             CHECK(std::is_same_v<decltype(time_dilation)::dimension_type,
                                  squint::div_t<dimensions::time, dimensions::velocity>>);
         }
         {
-            auto time_dilation = squint::units::time_t<double>::seconds(1.0) / constants::si_constants<double>::c;
+            auto time_dilation = squint::units::time_t<double>::seconds(1.0) / si_constants<double>::c;
             CHECK(time_dilation.value() == doctest::Approx(1.0 / 299792458.0));
             CHECK(std::is_same_v<decltype(time_dilation)::dimension_type,
                                  squint::div_t<dimensions::time, dimensions::velocity>>);

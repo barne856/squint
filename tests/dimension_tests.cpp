@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "squint/dimension.hpp"
+#include "squint/quantity/dimension.hpp"
 
 using namespace squint;
 

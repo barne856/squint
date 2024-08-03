@@ -34,7 +34,6 @@ template <typename T>
 concept quantitative = requires(T t) {
     typename T::value_type;
     typename T::dimension_type;
-    typename T::error_checking_type;
     requires arithmetic<typename T::value_type>;
 };
 template <typename T>
