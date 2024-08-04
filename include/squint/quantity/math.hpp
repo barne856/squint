@@ -1,38 +1,81 @@
+/**
+ * @file math.hpp
+ * @brief Mathematical functions for quantities and arithmetic types.
+ *
+ * This file provides a set of mathematical functions that work with both
+ * quantitative types (from the squint library) and standard arithmetic types.
+ * It includes functions for comparison, basic arithmetic, trigonometry, and more.
+ */
+
 #ifndef SQUINT_QUANTITY_MATH_HPP
 #define SQUINT_QUANTITY_MATH_HPP
 
 #include "squint/core/concepts.hpp"
-#include "squint/quantity/dimension.hpp"
+#include "squint/quantity/dimension_types.hpp"
+#include "squint/util/math_utils.hpp"
 
 #include <cmath>
 
 namespace squint {
 
-// approx equal for quantities
+/**
+ * @brief Approximately equal comparison for quantities
+ * @tparam T First quantitative type
+ * @tparam U Second quantitative type
+ * @tparam Epsilon Arithmetic type for epsilon
+ * @param a First quantity
+ * @param b Second quantity
+ * @param epsilon Tolerance for comparison
+ * @return true if quantities are approximately equal, false otherwise
+ */
 template <quantitative T, quantitative U, arithmetic Epsilon>
-bool approx_equal(const T &a, const U &b, const Epsilon &epsilon = Epsilon{128 * 1.192092896e-04}) {
+auto approx_equal(const T &a, const U &b, const Epsilon &epsilon = Epsilon{DEFAULT_EPSILON}) -> bool {
     static_assert(std::is_same_v<typename T::dimension_type, typename U::dimension_type>,
                   "Quantities must have the same dimension");
     return approx_equal(a.value(), b.value(), epsilon);
 }
 
-// approx equal for mixed types
+/**
+ * @brief Approximately equal comparison for mixed types (quantitative and arithmetic)
+ * @tparam T Quantitative type
+ * @tparam U Arithmetic type
+ * @tparam V Arithmetic type for epsilon
+ * @param a Quantity
+ * @param b Arithmetic value
+ * @param epsilon Tolerance for comparison
+ * @return true if values are approximately equal, false otherwise
+ */
 template <quantitative T, arithmetic U, arithmetic V>
-bool approx_equal(const T &a, const U &b, const V &epsilon = V{128 * 1.192092896e-04})
+auto approx_equal(const T &a, const U &b, const V &epsilon = V{DEFAULT_EPSILON}) -> bool
     requires std::is_same_v<typename T::dimension_type, dimensions::dimensionless>
 {
     return approx_equal(a.value(), b, epsilon);
 }
 
+/**
+ * @brief Approximately equal comparison for mixed types (arithmetic and quantitative)
+ * @tparam T Arithmetic type
+ * @tparam U Quantitative type
+ * @tparam V Arithmetic type for epsilon
+ * @param a Arithmetic value
+ * @param b Quantity
+ * @param epsilon Tolerance for comparison
+ * @return true if values are approximately equal, false otherwise
+ */
 template <arithmetic T, quantitative U, arithmetic V>
-bool approx_equal(const T &a, const U &b, const V &epsilon = V{128 * 1.192092896e-04})
+auto approx_equal(const T &a, const U &b, const V &epsilon = V{DEFAULT_EPSILON}) -> bool
     requires std::is_same_v<typename U::dimension_type, dimensions::dimensionless>
 {
     return approx_equal(a, b.value(), epsilon);
 }
 
-// Absolute value
-template <typename T> auto abs(const T &x) {
+/**
+ * @brief Absolute value function
+ * @tparam T Quantitative or arithmetic type
+ * @param x Input value
+ * @return Absolute value of x
+ */
+template <typename T> auto abs(const T &x) -> T {
     if constexpr (quantitative<T>) {
         return T(std::abs(static_cast<typename T::value_type>(x)));
     } else {
@@ -40,7 +83,12 @@ template <typename T> auto abs(const T &x) {
     }
 }
 
-// Square root
+/**
+ * @brief Square root function
+ * @tparam T Quantitative or arithmetic type
+ * @param x Input value
+ * @return Square root of x
+ */
 template <typename T> auto sqrt(const T &x) {
     if constexpr (quantitative<T>) {
         using result_dimension = root_t<typename T::dimension_type, 2>;
@@ -51,7 +99,28 @@ template <typename T> auto sqrt(const T &x) {
     }
 }
 
-// Exponential function (only for dimensionless quantities)
+/**
+ * @brief Nth root function
+ * @tparam T Quantitative or arithmetic type
+ * @param x Input value
+ * @return Nth root of x
+ */
+template <int N, typename T> auto root(const T &x) {
+    if constexpr (quantitative<T>) {
+        using result_dimension = root_t<typename T::dimension_type, N>;
+        return quantity<decltype(std::pow(static_cast<typename T::value_type>(x), 1.0 / N)), result_dimension>(
+            std::pow(static_cast<typename T::value_type>(x), 1.0 / N));
+    } else {
+        return std::pow(x, 1.0 / N);
+    }
+}
+
+/**
+ * @brief Exponential function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return e raised to the power of x
+ */
 template <typename T> auto exp(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -63,7 +132,12 @@ template <typename T> auto exp(const T &x) {
     }
 }
 
-// Natural logarithm (only for dimensionless quantities)
+/**
+ * @brief Natural logarithm function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Natural logarithm of x
+ */
 template <typename T> auto log(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -75,14 +149,28 @@ template <typename T> auto log(const T &x) {
     }
 }
 
-// Power function
-template <int N> auto pow(quantitative auto x) {
-    using result_dimension = pow_t<typename decltype(x)::dimension_type, N>;
-    return quantity<decltype(std::pow(static_cast<typename decltype(x)::value_type>(x), N)), result_dimension>(
-        std::pow(static_cast<typename decltype(x)::value_type>(x), N));
+/**
+ * @brief Power function for quantitative types
+ * @tparam N Integer power
+ * @tparam T Quantitative type
+ * @param x Base value
+ * @return x raised to the power of N
+ */
+template <int N, quantitative T> auto pow(const T &x) {
+    using result_dimension = pow_t<typename T::dimension_type, N>;
+    return quantity<decltype(std::pow(static_cast<typename T::value_type>(x), N)), result_dimension>(
+        std::pow(static_cast<typename T::value_type>(x), N));
 }
 
-// Trigonometric functions (only for dimensionless quantities)
+/// @name Trigonometric functions
+/// @{
+
+/**
+ * @brief Sine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Sine of x
+ */
 template <typename T> auto sin(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -94,6 +182,12 @@ template <typename T> auto sin(const T &x) {
     }
 }
 
+/**
+ * @brief Cosine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Cosine of x
+ */
 template <typename T> auto cos(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -105,6 +199,12 @@ template <typename T> auto cos(const T &x) {
     }
 }
 
+/**
+ * @brief Tangent function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Tangent of x
+ */
 template <typename T> auto tan(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -116,7 +216,17 @@ template <typename T> auto tan(const T &x) {
     }
 }
 
-// Inverse trigonometric functions (return dimensionless quantities)
+/// @}
+
+/// @name Inverse trigonometric functions
+/// @{
+
+/**
+ * @brief Inverse sine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Arcsine of x
+ */
 template <typename T> auto asin(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -128,6 +238,12 @@ template <typename T> auto asin(const T &x) {
     }
 }
 
+/**
+ * @brief Inverse cosine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Arccosine of x
+ */
 template <typename T> auto acos(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -139,6 +255,12 @@ template <typename T> auto acos(const T &x) {
     }
 }
 
+/**
+ * @brief Inverse tangent function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Arctangent of x
+ */
 template <typename T> auto atan(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -150,7 +272,14 @@ template <typename T> auto atan(const T &x) {
     }
 }
 
-// Two-argument arctangent
+/**
+ * @brief Two-argument inverse tangent function
+ * @tparam T Quantitative or arithmetic type for y
+ * @tparam U Quantitative or arithmetic type for x
+ * @param y Y-coordinate
+ * @param x X-coordinate
+ * @return Arctangent of y/x, using the signs of both arguments to determine the quadrant of the return value
+ */
 template <typename T, typename U> auto atan2(const T &y, const U &x) {
     if constexpr (quantitative<T> && quantitative<U>) {
         static_assert(std::is_same_v<typename T::dimension_type, typename U::dimension_type>,
@@ -165,7 +294,17 @@ template <typename T, typename U> auto atan2(const T &y, const U &x) {
     }
 }
 
-// Hyperbolic functions (only for dimensionless quantities)
+/// @}
+
+/// @name Hyperbolic functions
+/// @{
+
+/**
+ * @brief Hyperbolic sine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Hyperbolic sine of x
+ */
 template <typename T> auto sinh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -177,6 +316,12 @@ template <typename T> auto sinh(const T &x) {
     }
 }
 
+/**
+ * @brief Hyperbolic cosine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Hyperbolic cosine of x
+ */
 template <typename T> auto cosh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -188,6 +333,12 @@ template <typename T> auto cosh(const T &x) {
     }
 }
 
+/**
+ * @brief Hyperbolic tangent function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Hyperbolic tangent of x
+ */
 template <typename T> auto tanh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -199,7 +350,17 @@ template <typename T> auto tanh(const T &x) {
     }
 }
 
-// Inverse hyperbolic functions (return dimensionless quantities)
+/// @}
+
+/// @name Inverse hyperbolic functions
+/// @{
+
+/**
+ * @brief Inverse hyperbolic sine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Inverse hyperbolic sine of x
+ */
 template <typename T> auto asinh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -211,6 +372,12 @@ template <typename T> auto asinh(const T &x) {
     }
 }
 
+/**
+ * @brief Inverse hyperbolic cosine function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Inverse hyperbolic cosine of x
+ */
 template <typename T> auto acosh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -222,6 +389,12 @@ template <typename T> auto acosh(const T &x) {
     }
 }
 
+/**
+ * @brief Inverse hyperbolic tangent function (only for dimensionless quantities or arithmetic types)
+ * @tparam T Quantitative (dimensionless) or arithmetic type
+ * @param x Input value
+ * @return Inverse hyperbolic tangent of x
+ */
 template <typename T> auto atanh(const T &x) {
     if constexpr (quantitative<T>) {
         static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
@@ -232,6 +405,8 @@ template <typename T> auto atanh(const T &x) {
         return std::atanh(x);
     }
 }
+
+/// @}
 
 } // namespace squint
 

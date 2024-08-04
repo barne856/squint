@@ -1,68 +1,102 @@
+/**
+ * @file quantity.hpp
+ * @brief Defines the quantity class for representing physical quantities with dimensions.
+ */
+
 #ifndef SQUINT_QUANTITY_QUANTITY_HPP
 #define SQUINT_QUANTITY_QUANTITY_HPP
 
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
-#include "squint/quantity/dimension.hpp"
-#include "squint/util/math_utils.hpp"
+#include "squint/quantity/dimension_types.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <compare>
-#include <concepts>
-#include <iostream>
+#include <functional>
 #include <limits>
-#include <numbers>
 #include <type_traits>
 
 namespace squint {
 
+/**
+ * @brief Represents a physical quantity with a value and dimension.
+ *
+ * @tparam T The arithmetic type used to represent the value.
+ * @tparam D The dimension type representing the physical dimension.
+ * @tparam E The error checking policy.
+ */
 template <arithmetic T, dimensional D, error_checking E = error_checking::disabled> class quantity {
   public:
     using value_type = T;
     using dimension_type = D;
 
-    // Constructors
+    /// @name Constructors and Assignment
+    /// @{
+
+    /// @brief Default constructor
     constexpr quantity() noexcept : value_(T{}) {}
+
+    /// @brief Destructor
+    ~quantity() = default;
+
+    /// @brief Explicit constructor from value
     constexpr explicit quantity(const T &value) noexcept : value_(value) {}
-    explicit quantity(const quantity &) noexcept = default;
-    explicit quantity(quantity &&) noexcept = default;
 
-    // Assignment operators
-    constexpr quantity &operator=(const quantity &) noexcept = default;
-    constexpr quantity &operator=(quantity &&) noexcept = default;
+    /// @brief Copy constructor
+    constexpr quantity(const quantity &) noexcept = default;
 
-    // Conditional implicit conversion constructor (for dimensionless quantities from arithmetic types)
+    /// @brief Move constructor
+    constexpr quantity(quantity &&) noexcept = default;
+
+    /// @brief Copy assignment operator
+    constexpr auto operator=(const quantity &) noexcept -> quantity & = default;
+
+    /// @brief Move assignment operator
+    constexpr auto operator=(quantity &&) noexcept -> quantity & = default;
+
+    /// @}
+
+    /// @name Conversion Constructors and Operators
+    /// @{
+
+    /**
+     * @brief Implicit conversion constructor for dimensionless quantities from arithmetic types
+     * @tparam U Arithmetic type to convert from
+     */
     template <arithmetic U>
     constexpr quantity(const U &value) noexcept
         requires std::is_same_v<D, dimensions::dimensionless>
         : value_(static_cast<T>(value)) {}
 
-    // Explicit conversion constructor for all other cases (you can static_cast from arithmetic types if you want to)
-    template <arithmetic U>
-    explicit constexpr quantity(const U &value) noexcept
-        requires(!std::is_same_v<D, dimensions::dimensionless>)
-        : value_(static_cast<T>(value)) {}
-
-    // Allow explicit cast to other types
+    /**
+     * @brief Explicit conversion operator to other types
+     * @tparam U Type to convert to
+     */
     template <typename U> explicit operator U() const noexcept { return U(value_); }
 
-    // Explicit conversion operator for non-dimensionless quantities
+    /**
+     * @brief Explicit conversion operator for non-dimensionless quantities
+     */
     explicit constexpr operator T() const noexcept
         requires(!std::is_same_v<D, dimensions::dimensionless>)
     {
         return value_;
     }
 
-    // Implicit conversion operator for dimensionless quantities
+    /**
+     * @brief Implicit conversion operator for dimensionless quantities
+     */
     constexpr operator T() const noexcept
         requires std::is_same_v<D, dimensions::dimensionless>
     {
         return value_;
     }
 
-    // Conversion constructor for quantities with different error checking
+    /**
+     * @brief Conversion constructor for quantities with different error checking
+     * @tparam U Value type of the other quantity
+     * @tparam OtherErrorChecking Error checking policy of the other quantity
+     */
     template <typename U, error_checking OtherErrorChecking>
     constexpr quantity(const quantity<U, D, OtherErrorChecking> &other) noexcept
         : value_(static_cast<T>(other.value())) {
@@ -71,34 +105,45 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
         }
     }
 
-    // Accessor methods
-    [[nodiscard]] constexpr T &value() noexcept { return value_; }
-    [[nodiscard]] constexpr const T &value() const noexcept { return value_; }
-    [[nodiscard]] constexpr const T *operator->() const noexcept { return &value_; }
-    [[nodiscard]] constexpr T *operator->() noexcept { return &value_; }
-    [[nodiscard]] constexpr const T &operator*() const noexcept { return value_; }
-    [[nodiscard]] constexpr T &operator*() noexcept { return value_; }
+    /// @}
 
-    // Error checking methods
+    /// @name Accessors
+    /// @{
+
+    [[nodiscard]] constexpr auto value() noexcept -> T & { return value_; }
+    [[nodiscard]] constexpr auto value() const noexcept -> const T & { return value_; }
+    [[nodiscard]] constexpr auto operator->() const noexcept -> const T * { return &value_; }
+    [[nodiscard]] constexpr auto operator->() noexcept -> T * { return &value_; }
+    [[nodiscard]] constexpr auto operator*() const noexcept -> const T & { return value_; }
+    [[nodiscard]] constexpr auto operator*() noexcept -> T & { return value_; }
+
+    /// @}
+
+    /// @name Error Checking Methods
+    /// @{
+
+    /**
+     * @brief Check for multiplication overflow
+     * @tparam U Type of the second operand
+     * @param a First operand
+     * @param b Second operand
+     */
     template <typename U> static constexpr void check_overflow_multiply(const T &a, const U &b) {
-        if constexpr (E == error_checking::enabled) {
-            if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
-                if (a > 0 && b > 0 && a > std::numeric_limits<T>::max() / b) {
-                    throw std::overflow_error("Multiplication would cause overflow");
-                }
-                if (a < 0 && b < 0 && a < std::numeric_limits<T>::max() / b) {
-                    throw std::overflow_error("Multiplication would cause overflow");
-                }
-                if (a > 0 && b < 0 && b < std::numeric_limits<T>::min() / a) {
-                    throw std::overflow_error("Multiplication would cause overflow");
-                }
-                if (a < 0 && b > 0 && a < std::numeric_limits<T>::min() / b) {
-                    throw std::overflow_error("Multiplication would cause overflow");
-                }
+        if constexpr (E == error_checking::enabled && std::is_integral_v<T> && std::is_integral_v<U>) {
+            if ((a > 0 && b > 0 && a > std::numeric_limits<T>::max() / b) ||
+                (a < 0 && b < 0 && a < std::numeric_limits<T>::max() / b) ||
+                (a > 0 && b < 0 && b < std::numeric_limits<T>::min() / a) ||
+                (a < 0 && b > 0 && a < std::numeric_limits<T>::min() / b)) {
+                throw std::overflow_error("Multiplication would cause overflow");
             }
         }
     }
 
+    /**
+     * @brief Check for division by zero
+     * @tparam U Type of the divisor
+     * @param b Divisor
+     */
     template <typename U> static constexpr void check_division_by_zero(const U &b) {
         if constexpr (E == error_checking::enabled) {
             if (b == U(0)) {
@@ -107,152 +152,177 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
         }
     }
 
+    /**
+     * @brief Check for division underflow
+     * @tparam U Type of the divisor
+     * @param a Dividend
+     * @param b Divisor
+     */
     template <typename U> static constexpr void check_underflow_divide(const T &a, const U &b) {
-        if constexpr (E == error_checking::enabled) {
-            if constexpr (std::is_floating_point_v<T>) {
-                if (std::abs(a) < std::numeric_limits<T>::min() * std::abs(b)) {
-                    throw std::underflow_error("Division would cause underflow");
-                }
+        if constexpr (E == error_checking::enabled && std::is_floating_point_v<T>) {
+            if (std::abs(a) < std::numeric_limits<T>::min() * std::abs(b)) {
+                throw std::underflow_error("Division would cause underflow");
             }
         }
     }
 
+    /**
+     * @brief Check for addition overflow
+     * @param a First operand
+     * @param b Second operand
+     */
     static constexpr void check_overflow_add(const T &a, const T &b) {
-        if constexpr (E == error_checking::enabled) {
-            if constexpr (std::is_integral_v<T>) {
-                if (b > 0 && a > std::numeric_limits<T>::max() - b) {
-                    throw std::overflow_error("Addition would cause overflow");
-                }
-                if (b < 0 && a < std::numeric_limits<T>::min() - b) {
-                    throw std::overflow_error("Addition would cause overflow");
-                }
+        if constexpr (E == error_checking::enabled && std::is_integral_v<T>) {
+            if ((b > 0 && a > std::numeric_limits<T>::max() - b) || (b < 0 && a < std::numeric_limits<T>::min() - b)) {
+                throw std::overflow_error("Addition would cause overflow");
             }
         }
     }
 
+    /**
+     * @brief Check for subtraction overflow
+     * @param a First operand
+     * @param b Second operand
+     */
     static constexpr void check_overflow_subtract(const T &a, const T &b) {
-        if constexpr (E == error_checking::enabled) {
-            if constexpr (std::is_integral_v<T>) {
-                if (b < 0 && a > std::numeric_limits<T>::max() + b) {
-                    throw std::overflow_error("Subtraction would cause overflow");
-                }
-                if (b > 0 && a < std::numeric_limits<T>::min() + b) {
-                    throw std::overflow_error("Subtraction would cause overflow");
-                }
+        if constexpr (E == error_checking::enabled && std::is_integral_v<T>) {
+            if ((b < 0 && a > std::numeric_limits<T>::max() + b) || (b > 0 && a < std::numeric_limits<T>::min() + b)) {
+                throw std::overflow_error("Subtraction would cause overflow");
             }
         }
     }
 
-    // Arithmetic operators
+    /// @}
+
+    /// @name Arithmetic Operators
+    /// @{
+
+    /**
+     * @brief Multiply-assign operator
+     * @tparam U Type of the scalar
+     * @param scalar Scalar to multiply by
+     * @return Reference to this quantity
+     */
     template <typename U>
-    constexpr quantity &operator*=(const U &scalar)
-        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>)
-    {
+    constexpr auto operator*=(const U &scalar)
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>) {
         check_overflow_multiply(value_, scalar);
         value_ *= scalar;
         return *this;
     }
 
+    /**
+     * @brief Divide-assign operator
+     * @tparam U Type of the scalar
+     * @param scalar Scalar to divide by
+     * @return Reference to this quantity
+     */
     template <typename U>
-    constexpr quantity &operator/=(const U &scalar)
-        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>)
-    {
+    constexpr auto operator/=(const U &scalar)
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>) {
         check_division_by_zero(scalar);
         check_underflow_divide(value_, scalar);
         value_ /= scalar;
         return *this;
     }
 
-    constexpr quantity &operator+=(const quantity &rhs) {
+    /**
+     * @brief Add-assign operator
+     * @param rhs Quantity to add
+     * @return Reference to this quantity
+     */
+    constexpr auto operator+=(const quantity &rhs) -> quantity & {
         check_overflow_add(value_, rhs.value_);
         value_ += rhs.value_;
         return *this;
     }
 
-    constexpr quantity &operator-=(const quantity &rhs) {
+    /**
+     * @brief Subtract-assign operator
+     * @param rhs Quantity to subtract
+     * @return Reference to this quantity
+     */
+    constexpr auto operator-=(const quantity &rhs) -> quantity & {
         check_overflow_subtract(value_, rhs.value_);
         value_ -= rhs.value_;
         return *this;
     }
 
-    // Unary negation operator
-    constexpr quantity operator-() const noexcept { return quantity(-value_); }
+    /**
+     * @brief Unary negation operator
+     * @return Negated quantity
+     */
+    constexpr auto operator-() const noexcept -> quantity { return quantity(-value_); }
 
-    // Increment and decrement operators
-    constexpr quantity &operator++() noexcept {
+    /**
+     * @brief Pre-increment operator
+     * @return Reference to this quantity
+     */
+    constexpr auto operator++() noexcept -> quantity & {
         ++value_;
         return *this;
     }
 
-    constexpr quantity operator++(int) noexcept {
+    /**
+     * @brief Post-increment operator
+     * @return Copy of the quantity before increment
+     */
+    constexpr auto operator++(int) noexcept -> quantity {
         quantity temp(*this);
         ++(*this);
         return temp;
     }
 
-    constexpr quantity &operator--() noexcept {
+    /**
+     * @brief Pre-decrement operator
+     * @return Reference to this quantity
+     */
+    constexpr auto operator--() noexcept -> quantity & {
         --value_;
         return *this;
     }
 
-    constexpr quantity operator--(int) noexcept {
+    /**
+     * @brief Post-decrement operator
+     * @return Copy of the quantity before decrement
+     */
+    constexpr auto operator--(int) noexcept -> quantity {
         quantity temp(*this);
         --(*this);
         return temp;
     }
 
-    // Three-way comparison operator
+    /// @}
+
+    /// @name Comparison Operators
+    /// @{
+
+    /**
+     * @brief Three-way comparison operator
+     * @param rhs Quantity to compare with
+     * @return Comparison result
+     */
     constexpr auto operator<=>(const quantity &rhs) const noexcept { return value_ <=> rhs.value_; }
 
-    // Equality comparison
-    constexpr bool operator==(const quantity &rhs) const noexcept { return value_ == rhs.value_; }
+    /**
+     * @brief Equality comparison operator
+     * @param rhs Quantity to compare with
+     * @return True if quantities are equal, false otherwise
+     */
+    constexpr auto operator==(const quantity &rhs) const noexcept -> bool { return value_ == rhs.value_; }
 
-    // Unit conversion
-    template <template <typename, error_checking> typename TargetUnit, error_checking TargetErrorChecking = E>
-    constexpr auto as() const {
-        if constexpr (std::is_same_v<TargetUnit<T, TargetErrorChecking>, quantity<T, D, E>>) {
-            return value_;
-        } else {
-            return TargetUnit<T, TargetErrorChecking>::convert_to(*this, TargetUnit<T, TargetErrorChecking>{});
-        }
-    }
+    /// @}
 
-    // Power method
-    template <int N> constexpr auto pow() const {
-        using new_dimension = pow_t<D, N>;
-        return quantity<T, new_dimension>(int_pow(value_, N));
-    }
-
-    // Root method
-    template <int N> auto root() const {
-        static_assert(N > 0, "Cannot take 0th root");
-        using new_dimension = root_t<D, N>;
-        // Note: This is not constexpr, as there's no general constexpr nth root
-        return quantity<T, new_dimension>(std::pow(value_, T(1) / N));
-    }
-
-    // Square root method
-    constexpr auto sqrt() const {
-        using new_dimension = root_t<D, 2>;
-        return quantity<T, new_dimension>(sqrt_constexpr(value_));
-    }
+    /**
+     * @brief Convert this quantity to another unit.
+     *
+     * @return The converted quantity.
+     */
+    template <template <typename, error_checking> typename UnitFunc> auto as() const { return UnitFunc<T, E>(value_); }
 
   private:
     T value_;
 };
-
-template <typename T>
-concept dimensionless_quantity =
-    quantitative<T> && std::is_same_v<typename T::dimension_type, dimensions::dimensionless>;
-
-template <typename T>
-concept dimensionless_scalar = arithmetic<T> || dimensionless_quantity<T>;
-
-// Type alias for quantities with error checking enabled
-template <typename T, dimensional D> using checked_quantity = quantity<T, D, error_checking::enabled>;
-
-// Type alias specifically for constants (always uses error_checking_disabled)
-template <typename T, dimensional D> using constant_quantity = quantity<T, D, error_checking::disabled>;
 
 } // namespace squint
 

@@ -1,12 +1,18 @@
 Diagnostics:
-  UnusedIncludes: None
-  MissingIncludes: None
-  Suppress: [
-    module_odr_violation_record,
-    module_odr_violation_mismatch_decl_unknown,
-    module_odr_violation_template_parameter,
-    module_odr_violation_missing_decl,
-    typecheck_invalid_operands
-  ]
-CompileFlags:
-  Add: -ferror-limit=0
+  ClangTidy:
+    Add: [
+      bugprone-*,
+      cppcoreguidelines-*,
+      modernize-*,
+      performance-*,
+      readability-*,
+      clang-analyzer-*,
+      misc-*,
+      clang-analyzer-*
+    ]
+    Remove: [
+      readability-identifier-length
+    ]
+
+Index:
+  Background: Build

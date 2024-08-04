@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/devcontainers/base:noble
 
 # Argument for LLVM version
-ARG LLVM_VERSION=17
+ARG LLVM_VERSION=19
 ARG CMAKE_VERSION=3.29.5
 
 # C++ development environment, uses clang, libc++, and ninja

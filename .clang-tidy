@@ -1,3 +1,3 @@
-Checks: '-*,readability-*,-readability-braces-around-statements,clang-analyzer-*,-readability-identifier-length,-readability-magic-numbers,-readability-function-cognitive-complexity'
+Checks: '-*,bugprone-*,cppcoreguidelines-*,modernize-*,performance-*,readability-*,clang-analyzer-*,misc-*,clang-analyzer-*,-readability-identifier-length'
 HeaderFilterRegex: '.*'
 FormatStyle: file
