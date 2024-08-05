@@ -229,4 +229,54 @@ TEST_CASE("Type aliases") {
         CHECK(std::is_same_v<amperes, amperes_t<float>>);
     }
 }
+
+// Function to calculate kinetic energy
+squint::energy calculate_kinetic_energy(const squint::mass &mass, const squint::velocity &velocity) {
+    // Calculate kinetic energy: KE = (1/2) * m * v^2
+    return 0.5f * mass * velocity * velocity;
+}
+
+// Function to calculate hydrostatic pressure
+squint::pressure
+calculate_hydrostatic_pressure(const squint::density &fluid_density, const squint::length &depth,
+                               const squint::acceleration &gravity = squint::units::meters_per_second_squared(9.81f)) {
+    // Calculate hydrostatic pressure: P = ρgh
+    return fluid_density * gravity * depth;
+}
+
+// Function to calculate volumetric flow rate
+squint::volume calculate_flow_rate(const squint::area &cross_sectional_area,
+                                            const squint::velocity &fluid_velocity) {
+    // Calculate flow rate: Q = Av
+    return cross_sectional_area * fluid_velocity;
+}
+
+// Function to calculate Reynolds number
+squint::pure
+calculate_reynolds_number(const squint::density &fluid_density, const squint::velocity &characteristic_velocity,
+                          const squint::length &characteristic_length,
+                          const squint::quantity<float, squint::dimensions::force_dim> &dynamic_viscosity) {
+    // Calculate Reynolds number: Re = (ρvL) / μ
+    return (fluid_density * characteristic_velocity * characteristic_length) / dynamic_viscosity;
+}
+
+// Function to apply Bernoulli's equation
+squint::pressure
+calculate_bernoulli_pressure(const squint::pressure &p1, const squint::density &fluid_density,
+                             const squint::velocity &v1, const squint::length &h1, const squint::velocity &v2,
+                             const squint::length &h2,
+                             const squint::acceleration &gravity = squint::units::meters_per_second_squared(9.81f)) {
+    // Apply Bernoulli's equation: p1 + (1/2)ρv1² + ρgh1 = p2 + (1/2)ρv2² + ρgh2
+    // We'll solve for p2
+    return p1 + 0.5f * fluid_density * (v1 * v1 - v2 * v2) + fluid_density * gravity * (h1 - h2);
+}
+
+TEST_CASE("Test functions") {
+    SUBCASE("Calculate kinetic energy") {
+        kilograms m(10.0f);
+        meters_per_second v(5.0f);
+        joules ke = calculate_kinetic_energy(m, v);
+        CHECK(ke.unit_value() == doctest::Approx(125.0f));
+    }
+}
 // NOLINTEND
