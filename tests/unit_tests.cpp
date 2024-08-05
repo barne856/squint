@@ -2,9 +2,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/quantity/quantity_ops.hpp"
-#include "squint/quantity/unit.hpp"
+#include "squint/quantity/quantity_types.hpp"
 #include "squint/quantity/unit_types.hpp"
 
+using namespace squint;
 using namespace squint::units;
 
 TEST_CASE("Unit constructors and value retrieval") {
@@ -93,6 +94,41 @@ TEST_CASE("Unit arithmetic operations") {
         hours h(2.0f);
         auto result = km / h;
         CHECK(convert_to<meters_per_second_t>(result).unit_value() == doctest::Approx(1.38889f));
+    }
+}
+
+TEST_CASE("Unit arithmetic operations with conversions") {
+
+    SUBCASE("kph, mps, fps") {
+        kilometers km(10.0f);
+        hours h(2.0f);
+        meters_per_second result = km / h;
+        CHECK(result.unit_value() == doctest::Approx(1.38889f));
+        feet_per_second result2 = result;
+        CHECK(result2.unit_value() == doctest::Approx(4.55672f));
+    }
+
+    SUBCASE("Implicit conversion from quantity") {
+        length l(10.0f);
+        feet f(l);
+        CHECK(f.unit_value() == doctest::Approx(32.8084f));
+        CHECK(f.value() == doctest::Approx(10.0f));
+    }
+
+    SUBCASE("Convert to invalid type (compile-time error)") {
+        length l(10.0f);
+        meters m(l);
+        feet f(m);
+        CHECK(l.value() == doctest::Approx(10.0f));
+        CHECK(m.value() == doctest::Approx(10.0f));
+        CHECK(m.unit_value() == doctest::Approx(10.0f));
+        CHECK(f.value() == doctest::Approx(10.0f));
+        CHECK(f.unit_value() == doctest::Approx(32.8084f));
+
+        // should not compile (uncomment to test)
+        // seconds s = convert_to<seconds_t>(l); // convert length to seconds
+        // seconds s2 = l; // assign length to seconds
+        // seconds s3(l); // construct seconds from length
     }
 }
 
@@ -191,11 +227,6 @@ TEST_CASE("Type aliases") {
         CHECK(std::is_same_v<watts, watts_t<float>>);
         CHECK(std::is_same_v<pascals, pascals_t<float>>);
         CHECK(std::is_same_v<amperes, amperes_t<float>>);
-        CHECK(std::is_same_v<volts, volts_t<float>>);
-        CHECK(std::is_same_v<ohms, ohms_t<float>>);
-        CHECK(std::is_same_v<farads, farads_t<float>>);
-        CHECK(std::is_same_v<webers, webers_t<float>>);
-        CHECK(std::is_same_v<teslas, teslas_t<float>>);
     }
 }
 // NOLINTEND

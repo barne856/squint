@@ -22,20 +22,20 @@ namespace squint {
  */
 
 /// @brief Multiply two dimensions.
-template <dimensional U1, dimensional U2> using mult_t = typename dim_mult<U1, U2>::type;
+template <dimensional U1, dimensional U2> using dim_mult_t = typename dim_mult<U1, U2>::type;
 
 /// @brief Divide two dimensions.
-template <dimensional U1, dimensional U2> using div_t = typename dim_div<U1, U2>::type;
+template <dimensional U1, dimensional U2> using dim_div_t = typename dim_div<U1, U2>::type;
 
 /// @brief Raise a dimension to an integer power.
-template <dimensional U, std::integral auto const N> using pow_t = typename dim_pow<U, N>::type;
+template <dimensional U, std::integral auto const N> using dim_pow_t = typename dim_pow<U, N>::type;
 
 /// @brief Take the Nth root of a dimension.
-template <dimensional U, std::integral auto const N> using root_t = typename dim_root<U, N>::type;
+template <dimensional U, std::integral auto const N> using dim_root_t = typename dim_root<U, N>::type;
 
 /// @brief Invert a dimension (raise to power -1).
 template <dimensional U>
-using inv_t = div_t<
+using dim_inv_t = dim_div_t<
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>,
     U>;
 
@@ -58,195 +58,53 @@ namespace dimensions {
  * @{
  */
 
-using dimensionless =
+using unity =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using length =
+using L =
     dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using time =
+using T =
     dimension<std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using mass =
+using M =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using temperature =
+using K =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
-using current =
+using I =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>>;
-using amount_of_substance =
+using N =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>>;
-using luminous_intensity =
+using J =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>>;
 
 /** @} */  // end of base_dimensions group
 
 /**
- * @defgroup other_dimensionless Other Dimensionless Quantities
- * @brief Quantities that are ratios of quantities with the same dimension.
- *
- * These are quantities that result in a dimensionless value.
- * @{
- */
-
-using angle = dimensionless;
-using solid_angle = dimensionless;
-using strain = dimensionless;
-using refractive_index = dimensionless;
-
-/** @} */  // end of other_dimensionless group
-
-/**
  * @defgroup derived_dimensions Derived Dimensions
- * @brief Dimensions derived from base dimensions through various combinations of multiplication and division operations.
+ * @brief Derived dimensions based on SI base dimensions.
+ *
+ * These dimensions are derived from the seven SI base dimensions.
  * @{
  */
 
-/// @brief Velocity (length/time)
-using velocity = div_t<length, time>;
-
-/// @brief Acceleration (velocity/time)
-using acceleration = div_t<velocity, time>;
-
-/// @brief Area (length^2)
-using area = mult_t<length, length>;
-
-/// @brief Volume (length^3)
-using volume = mult_t<area, length>;
-
-/// @brief Density (mass/volume)
-using density = div_t<mass, volume>;
-
-/// @brief Force (mass * acceleration)
-using force = mult_t<mass, acceleration>;
-
-/// @brief Force density (force/volume)
-using force_density = div_t<force, volume>;
-
-/// @brief Pressure (force/area)
-using pressure = div_t<force, area>;
-
-/// @brief Dynamic viscosity (pressure * time)
-using dynamic_viscosity = mult_t<pressure, time>;
-
-/// @brief Kinematic viscosity (area/time)
-using kinematic_viscosity = div_t<area, time>;
-
-/// @brief Flow (volume/time)
-using flow = div_t<volume, time>;
-
-/// @brief Energy (force * length)
-using energy = mult_t<force, length>;
-
-/// @brief Power (energy/time)
-using power = div_t<energy, time>;
-
-/// @brief Electric charge (current * time)
-using charge = mult_t<current, time>;
-
-/// @brief Voltage (energy/charge)
-using voltage = div_t<energy, charge>;
-
-/// @brief Capacitance (charge/voltage)
-using capacitance = div_t<charge, voltage>;
-
-/// @brief Resistance (voltage/current)
-using resistance = div_t<voltage, current>;
-
-/// @brief Conductance (1/resistance)
-using conductance = inv_t<resistance>;
-
-/// @brief Magnetic flux (voltage * time)
-using magnetic_flux = mult_t<voltage, time>;
-
-/// @brief Magnetic flux density (magnetic_flux/area)
-using magnetic_flux_density = div_t<magnetic_flux, area>;
-
-/// @brief Inductance (magnetic_flux/current)
-using inductance = div_t<magnetic_flux, current>;
-
-/// @brief Frequency (1/time)
-using frequency = inv_t<time>;
-
-/// @brief Angular velocity (angle/time)
-using angular_velocity = div_t<angle, time>;
-
-/// @brief Momentum (mass * velocity)
-using momentum = mult_t<mass, velocity>;
-
-/// @brief Angular momentum (momentum * length)
-using angular_momentum = mult_t<momentum, length>;
-
-/// @brief Torque (force * length)
-using torque = mult_t<force, length>;
-
-/// @brief Surface tension (force/length)
-using surface_tension = div_t<force, length>;
-
-/// @brief Heat capacity (energy/temperature)
-using heat_capacity = div_t<energy, temperature>;
-
-/// @brief Specific heat capacity (heat_capacity/mass)
-using specific_heat_capacity = div_t<heat_capacity, mass>;
-
-/// @brief Thermal conductivity (power / (length * temperature))
-using thermal_conductivity = div_t<power, mult_t<length, temperature>>;
-
-/// @brief Electric field strength (force/charge)
-using electric_field_strength = div_t<force, charge>;
-
-/// @brief Electric displacement (charge/area)
-using electric_displacement = div_t<charge, area>;
-
-/// @brief Permittivity (capacitance/length)
-using permittivity = div_t<capacitance, length>;
-
-/// @brief Permeability (inductance/length)
-using permeability = mult_t<inductance, inv_t<length>>;
-
-/// @brief Molar energy (energy/amount_of_substance)
-using molar_energy = div_t<energy, amount_of_substance>;
-
-/// @brief Molar entropy (molar_energy/temperature)
-using molar_entropy = div_t<molar_energy, temperature>;
-
-/// @brief Exposure (charge/mass)
-using exposure = div_t<charge, mass>;
-
-/// @brief Dose equivalent (energy/mass)
-using dose_equivalent = div_t<energy, mass>;
-
-/// @brief Catalytic activity (amount_of_substance/time)
-using catalytic_activity = div_t<amount_of_substance, time>;
-
-/// @brief Luminance (luminous_intensity/area)
-using luminance = div_t<luminous_intensity, area>;
-
-/// @brief Magnetic field strength (current/length)
-using magnetic_field_strength = div_t<current, length>;
-
-/// @brief Molarity (amount_of_substance/volume)
-using molarity = div_t<amount_of_substance, volume>;
-
-/// @brief Molar mass (mass/amount_of_substance)
-using molar_mass = div_t<mass, amount_of_substance>;
-
-/// @brief Impulse (force * time)
-using impulse = mult_t<force, time>;
-
-/// @brief Wave number (1/length)
-using wave_number = inv_t<length>;
-
-/// @brief Specific volume (volume/mass)
-using specific_volume = div_t<volume, mass>;
-
-/// @brief Radiant intensity (power/solid_angle)
-using radiant_intensity = div_t<power, solid_angle>;
-
-/// @brief Radiance (radiant_intensity/area)
-using radiance = div_t<radiant_intensity, area>;
-
-/// @brief Irradiance (power/area)
-using irradiance = div_t<power, area>;
-
-/// @brief Thermal resistance (temperature/power)
-using thermal_resistance = div_t<temperature, power>;
+using velocity_dim = dim_div_t<L, T>;
+using acceleration_dim = dim_div_t<velocity_dim, T>;
+using force_dim = dim_mult_t<M, acceleration_dim>;
+using energy_dim = dim_mult_t<M, dim_pow_t<velocity_dim, 2>>;
+using power_dim = dim_div_t<energy_dim, T>;
+using pressure_dim = dim_div_t<force_dim, dim_pow_t<L, 2>>;
+using charge_dim = dim_mult_t<I, T>;
+using area_dim = dim_pow_t<L, 2>;
+using volume_dim = dim_pow_t<L, 3>;
+using density_dim = dim_div_t<M, dim_pow_t<L, 3>>;
+using frequency_dim = dim_inv_t<T>;
+using angle_dim = unity;
+using angular_velocity_dim = dim_div_t<angle_dim, T>;
+using angular_acceleration_dim = dim_div_t<angular_velocity_dim, T>;
+using torque_dim = dim_mult_t<force_dim, L>;
+using moment_of_inertia_dim = dim_mult_t<M, area_dim>;
+using momentum_dim = dim_mult_t<M, velocity_dim>;
+using voltage_dim = dim_div_t<power_dim, I>;
+using inductance_dim = dim_div_t<dim_div_t<voltage_dim, I>, T>;
+using capacitance_dim = dim_div_t<charge_dim, voltage_dim>;
 
 /** @} */  // end of derived_dimensions group
 

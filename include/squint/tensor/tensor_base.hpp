@@ -4,12 +4,9 @@
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
-#include "squint/core/types.hpp"
 #include "squint/util/array_utils.hpp"
 
-#include <array>
 #include <stdexcept>
-#include <type_traits>
 #include <vector>
 
 namespace squint {
@@ -19,10 +16,10 @@ template <typename Derived, typename T, typename Shape, layout Layout, error_che
     using value_type = T;
     using shape_type = Shape;
 
-    static constexpr layout layout() { return Layout; }
-    static constexpr error_checking error_checking() { return ErrorChecking; }
+    static constexpr auto layout() -> layout { return Layout; }
+    static constexpr auto error_checking() -> error_checking { return ErrorChecking; }
 
-    constexpr std::size_t rank() const {
+    [[nodiscard]] constexpr auto rank() const -> std::size_t {
         if constexpr (fixed_shape<Derived>) {
             return Shape::size();
         } else {
@@ -30,7 +27,7 @@ template <typename Derived, typename T, typename Shape, layout Layout, error_che
         }
     }
 
-    constexpr std::size_t size() const {
+    [[nodiscard]] constexpr auto size() const -> std::size_t {
         if constexpr (fixed_shape<Derived>) {
             return product(Shape{});
         } else {
@@ -47,8 +44,8 @@ template <typename Derived, typename T, typename Shape, layout Layout, error_che
         }
     }
 
-    const T *data() const { return static_cast<const Derived *>(this)->data(); }
-    T *data() { return static_cast<Derived *>(this)->data(); }
+    auto data() const -> const T * { return static_cast<const Derived *>(this)->data(); }
+    auto data() -> T * { return static_cast<Derived *>(this)->data(); }
 
   protected:
     void check_subscript_bounds(const std::vector<std::size_t> &indices) const {

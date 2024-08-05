@@ -93,7 +93,7 @@ constexpr auto operator-(const T1 &lhs, const T2 &rhs) {
  */
 template <quantitative T1, quantitative T2> constexpr auto operator*(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() * rhs.value());
-    using result_dimension = mult_t<typename T1::dimension_type, typename T2::dimension_type>;
+    using result_dimension = dim_mult_t<typename T1::dimension_type, typename T2::dimension_type>;
     constexpr error_checking result_error_checking =
         resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
@@ -121,7 +121,7 @@ template <quantitative T1, quantitative T2> constexpr auto operator*(const T1 &l
  */
 template <quantitative T1, quantitative T2> constexpr auto operator/(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() / rhs.value());
-    using result_dimension = div_t<typename T1::dimension_type, typename T2::dimension_type>;
+    using result_dimension = dim_div_t<typename T1::dimension_type, typename T2::dimension_type>;
     constexpr error_checking result_error_checking =
         resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
@@ -209,7 +209,7 @@ template <quantitative T, arithmetic U> constexpr auto operator/(const T &q, con
  */
 template <arithmetic T, quantitative U> constexpr auto operator/(const T &scalar, const U &q) {
     using result_type = decltype(scalar / q.value());
-    using result_dimension = inv_t<typename U::dimension_type>;
+    using result_dimension = dim_inv_t<typename U::dimension_type>;
 
     if constexpr (U::error_checking() == error_checking::enabled) {
         quantity<result_type, result_dimension, U::error_checking()>::check_division_by_zero(q.value());

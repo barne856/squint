@@ -47,7 +47,7 @@ auto approx_equal(const T &a, const U &b,
  */
 template <quantitative T, arithmetic U>
 auto approx_equal(const T &a, const U &b, const U &epsilon = U{DEFAULT_EPSILON}) -> bool
-    requires std::is_same_v<typename T::dimension_type, dimensions::dimensionless>
+    requires std::is_same_v<typename T::dimension_type, dimensions::unity>
 {
     return approx_equal(a.value(), b, epsilon);
 }
@@ -63,7 +63,7 @@ auto approx_equal(const T &a, const U &b, const U &epsilon = U{DEFAULT_EPSILON})
  */
 template <arithmetic T, quantitative U>
 auto approx_equal(const T &a, const U &b, const T &epsilon = T{DEFAULT_EPSILON}) -> bool
-    requires std::is_same_v<typename U::dimension_type, dimensions::dimensionless>
+    requires std::is_same_v<typename U::dimension_type, dimensions::unity>
 {
     return approx_equal(a, b.value(), epsilon);
 }
@@ -90,7 +90,7 @@ template <typename T> auto abs(const T &x) -> T {
  */
 template <typename T> auto sqrt(const T &x) {
     if constexpr (quantitative<T>) {
-        using result_dimension = root_t<typename T::dimension_type, 2>;
+        using result_dimension = dim_root_t<typename T::dimension_type, 2>;
         return quantity<decltype(std::sqrt(static_cast<typename T::value_type>(x))), result_dimension>(
             std::sqrt(static_cast<typename T::value_type>(x)));
     } else {
@@ -106,7 +106,7 @@ template <typename T> auto sqrt(const T &x) {
  */
 template <int N, typename T> auto root(const T &x) {
     if constexpr (quantitative<T>) {
-        using result_dimension = root_t<typename T::dimension_type, N>;
+        using result_dimension = dim_root_t<typename T::dimension_type, N>;
         return quantity<decltype(std::pow(static_cast<typename T::value_type>(x), 1.0 / N)), result_dimension>(
             std::pow(static_cast<typename T::value_type>(x), 1.0 / N));
     } else {
@@ -122,9 +122,9 @@ template <int N, typename T> auto root(const T &x) {
  */
 template <typename T> auto exp(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Exponential function only accepts dimensionless quantities");
-        return quantity<decltype(std::exp(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::exp(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::exp(static_cast<typename T::value_type>(x)));
     } else {
         return std::exp(x);
@@ -139,9 +139,9 @@ template <typename T> auto exp(const T &x) {
  */
 template <typename T> auto log(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Logarithm function only accepts dimensionless quantities");
-        return quantity<decltype(std::log(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::log(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::log(static_cast<typename T::value_type>(x)));
     } else {
         return std::log(x);
@@ -156,7 +156,7 @@ template <typename T> auto log(const T &x) {
  * @return x raised to the power of N
  */
 template <int N, quantitative T> auto pow(const T &x) {
-    using result_dimension = pow_t<typename T::dimension_type, N>;
+    using result_dimension = dim_pow_t<typename T::dimension_type, N>;
     return quantity<decltype(std::pow(static_cast<typename T::value_type>(x), N)), result_dimension>(
         std::pow(static_cast<typename T::value_type>(x), N));
 }
@@ -172,9 +172,9 @@ template <int N, quantitative T> auto pow(const T &x) {
  */
 template <typename T> auto sin(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::sin(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::sin(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::sin(static_cast<typename T::value_type>(x)));
     } else {
         return std::sin(x);
@@ -189,9 +189,9 @@ template <typename T> auto sin(const T &x) {
  */
 template <typename T> auto cos(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::cos(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::cos(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::cos(static_cast<typename T::value_type>(x)));
     } else {
         return std::cos(x);
@@ -206,9 +206,9 @@ template <typename T> auto cos(const T &x) {
  */
 template <typename T> auto tan(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::tan(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::tan(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::tan(static_cast<typename T::value_type>(x)));
     } else {
         return std::tan(x);
@@ -228,9 +228,9 @@ template <typename T> auto tan(const T &x) {
  */
 template <typename T> auto asin(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::asin(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::asin(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::asin(static_cast<typename T::value_type>(x)));
     } else {
         return std::asin(x);
@@ -245,9 +245,9 @@ template <typename T> auto asin(const T &x) {
  */
 template <typename T> auto acos(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::acos(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::acos(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::acos(static_cast<typename T::value_type>(x)));
     } else {
         return std::acos(x);
@@ -262,9 +262,9 @@ template <typename T> auto acos(const T &x) {
  */
 template <typename T> auto atan(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse trigonometric functions only accept dimensionless quantities");
-        return quantity<decltype(std::atan(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::atan(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::atan(static_cast<typename T::value_type>(x)));
     } else {
         return std::atan(x);
@@ -285,7 +285,7 @@ template <typename T, typename U> auto atan2(const T &y, const U &x) {
                       "atan2 arguments must have the same dimensions");
         return quantity<decltype(std::atan2(static_cast<typename T::value_type>(y),
                                             static_cast<typename U::value_type>(x))),
-                        dimensions::dimensionless>(
+                        dimensions::unity>(
             std::atan2(static_cast<typename T::value_type>(y), static_cast<typename U::value_type>(x)));
     } else {
         return std::atan2(quantitative<T> ? static_cast<typename T::value_type>(y) : y,
@@ -306,9 +306,9 @@ template <typename T, typename U> auto atan2(const T &y, const U &x) {
  */
 template <typename T> auto sinh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::sinh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::sinh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::sinh(static_cast<typename T::value_type>(x)));
     } else {
         return std::sinh(x);
@@ -323,9 +323,9 @@ template <typename T> auto sinh(const T &x) {
  */
 template <typename T> auto cosh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::cosh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::cosh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::cosh(static_cast<typename T::value_type>(x)));
     } else {
         return std::cosh(x);
@@ -340,9 +340,9 @@ template <typename T> auto cosh(const T &x) {
  */
 template <typename T> auto tanh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::tanh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::tanh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::tanh(static_cast<typename T::value_type>(x)));
     } else {
         return std::tanh(x);
@@ -362,9 +362,9 @@ template <typename T> auto tanh(const T &x) {
  */
 template <typename T> auto asinh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::asinh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::asinh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::asinh(static_cast<typename T::value_type>(x)));
     } else {
         return std::asinh(x);
@@ -379,9 +379,9 @@ template <typename T> auto asinh(const T &x) {
  */
 template <typename T> auto acosh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::acosh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::acosh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::acosh(static_cast<typename T::value_type>(x)));
     } else {
         return std::acosh(x);
@@ -396,9 +396,9 @@ template <typename T> auto acosh(const T &x) {
  */
 template <typename T> auto atanh(const T &x) {
     if constexpr (quantitative<T>) {
-        static_assert(std::is_same_v<typename T::dimension_type, dimensions::dimensionless>,
+        static_assert(std::is_same_v<typename T::dimension_type, dimensions::unity>,
                       "Inverse hyperbolic functions only accept dimensionless quantities");
-        return quantity<decltype(std::atanh(static_cast<typename T::value_type>(x))), dimensions::dimensionless>(
+        return quantity<decltype(std::atanh(static_cast<typename T::value_type>(x))), dimensions::unity>(
             std::atanh(static_cast<typename T::value_type>(x)));
     } else {
         return std::atanh(x);

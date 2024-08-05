@@ -1,26 +1,21 @@
 // NOLINTBEGIN
-#include "squint/core/error_checking.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/quantity/dimension_types.hpp"
-#include "squint/quantity/quantity.hpp"
 #include "squint/quantity/quantity_ops.hpp"
 #include "squint/quantity/quantity_types.hpp"
-#include "squint/util/math_utils.hpp"
+
+using namespace squint;
 
 TEST_CASE("quantity class comprehensive tests") {
-    using dimensionless = squint::quantity<double, squint::dimensions::dimensionless>;
-    using length = squint::quantity<double, squint::dimensions::length>;
-    using time = squint::quantity<double, squint::dimensions::time>;
-    using velocity = squint::quantity<double, squint::dimensions::velocity>;
 
     SUBCASE("Constructors") {
         // Default constructor
-        CHECK_NOTHROW(dimensionless());
+        CHECK_NOTHROW(pure());
         CHECK_NOTHROW(length());
 
         // Value constructor
-        CHECK_NOTHROW(dimensionless(5.0));
+        CHECK_NOTHROW(pure(5.0));
         CHECK_NOTHROW(length(10.0));
 
         // Copy constructor
@@ -33,7 +28,7 @@ TEST_CASE("quantity class comprehensive tests") {
         CHECK(l3.value() == 10.0);
 
         // Implicit conversion for dimensionless quantities
-        dimensionless d1 = 5.0;
+        pure d1 = 5.0;
         double d_val = d1;
         CHECK(d1.value() == 5.0);
         CHECK(d_val == 5.0);
@@ -64,7 +59,7 @@ TEST_CASE("quantity class comprehensive tests") {
         CHECK(l3.value() == 20.0);
 
         // Assignment from arithmetic type for dimensionless
-        dimensionless d;
+        pure d;
         d = 5.0;
         CHECK(d.value() == 5.0);
 
@@ -75,10 +70,10 @@ TEST_CASE("quantity class comprehensive tests") {
 
     SUBCASE("Conversion constructors and operators") {
         // Implicit conversion constructor for dimensionless
-        dimensionless d1 = 5; // int to double
+        pure d1 = 5; // int to double
         CHECK(d1.value() == 5.0);
 
-        dimensionless d2 = 5.0f; // float to double
+        pure d2 = 5.0f; // float to double
         CHECK(d2.value() == 5.0);
 
         // Explicit conversion constructor for non-dimensionless
@@ -107,8 +102,8 @@ TEST_CASE("quantity class comprehensive tests") {
     }
 
     SUBCASE("Conversion between different error checking policies") {
-        using length_checked = squint::quantity<double, squint::dimensions::length, squint::error_checking::enabled>;
-        using length_unchecked = squint::quantity<double, squint::dimensions::length, squint::error_checking::disabled>;
+        using length_checked = squint::quantity<double, squint::dimensions::L, squint::error_checking::enabled>;
+        using length_unchecked = squint::quantity<double, squint::dimensions::L, squint::error_checking::disabled>;
 
         length_unchecked lu(10.0);
         length_checked lc(lu);
@@ -120,46 +115,38 @@ TEST_CASE("quantity class comprehensive tests") {
 
     SUBCASE("Accessors") {
         length l(10.0);
-
         CHECK(l.value() == 10.0);
+
         // should not compile (uncomment to test):
-        // auto l_val = *l; // Error: non dimensionless quantity
-        // auto l_val = l.operator->(); // Error: non dimensionless quantity
+        // l = 20.0; // Error: non dimensionless quantity
 
         const length cl(20.0);
+        CHECK(cl.value() == 20.0);
+
         // should not compile (uncomment to test):
-        // auto cl_val = *cl; // Error: non dimensionless quantity
-        // auto cl_val = cl.operator->(); // Error: non dimensionless quantity
-
-        // These should not compile (uncomment to test):
+        // cl = length(30.0); // Error: constant quantity
         // cl.value() = 50.0;  // Error: assignment to const reference
-        // *cl = 60.0;  // Error: assignment to const reference
 
-        dimensionless d(5.0);
-
+        pure d(5.0);
         CHECK(d.value() == 5.0);
-        CHECK(*d == 5.0);
-        CHECK(d.operator->() == &d.value());
 
-        const dimensionless cd(10.0);
+        const pure cd(10.0);
         CHECK(cd.value() == 10.0);
-        CHECK(*cd == 10.0);
-        CHECK(cd.operator->() == &cd.value());
 
         // mutable accessors
-        CHECK(l.value() == 10.0);
         l.value() = 20.0;
         CHECK(l.value() == 20.0);
 
-        CHECK(d.value() == 5.0);
-        *d = 10.0;
+        d = 10.0;
         CHECK(d.value() == 10.0);
+        d.value() = 20.0;
+        CHECK(d.value() == 20.0);
     }
 
     SUBCASE("Arithmetic operators") {
         length l1(10.0);
         length l2(20.0);
-        time t(5.0);
+        squint::time t(5.0);
 
         // Compound assignment
         l1 += length(5.0);
@@ -232,7 +219,7 @@ TEST_CASE("quantity class comprehensive tests") {
     }
 
     SUBCASE("Error checking") {
-        using checked_length = squint::quantity<int, squint::dimensions::length, squint::error_checking::enabled>;
+        using checked_length = squint::quantity<int, squint::dimensions::L, squint::error_checking::enabled>;
 
         SUBCASE("Addition overflow") {
             checked_length l1(std::numeric_limits<int>::max());
@@ -258,10 +245,8 @@ TEST_CASE("quantity class comprehensive tests") {
     }
 }
 
-using namespace squint;
-using namespace squint::dimensions;
-
-TEST_CASE_TEMPLATE("Quantity Addition", T, checked_quantity_t<int, length>, unchecked_quantity_t<int, length>) {
+TEST_CASE_TEMPLATE("Quantity Addition", T, checked_quantity_t<int, dimensions::L>,
+                   unchecked_quantity_t<int, dimensions::L>) {
     SUBCASE("Basic addition") {
         T q1(5);
         T q2(3);
@@ -271,7 +256,7 @@ TEST_CASE_TEMPLATE("Quantity Addition", T, checked_quantity_t<int, length>, unch
 
     SUBCASE("Addition with different types") {
         T q1(5);
-        auto q2 = unchecked_quantity_t<double, length>(3.5);
+        auto q2 = unchecked_quantity_t<double, dimensions::L>(3.5);
         auto result = q1 + q2;
         CHECK(result.value() == doctest::Approx(8.5));
     }
@@ -279,7 +264,7 @@ TEST_CASE_TEMPLATE("Quantity Addition", T, checked_quantity_t<int, length>, unch
     SUBCASE("Addition overflow") {
         T q1(std::numeric_limits<int>::max());
         T q2(1);
-        if constexpr (std::is_same_v<T, checked_quantity_t<int, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<int, dimensions::L>>) {
             CHECK_THROWS_AS(q1 + q2, std::overflow_error);
         } else {
             auto result = q1 + q2;
@@ -288,7 +273,8 @@ TEST_CASE_TEMPLATE("Quantity Addition", T, checked_quantity_t<int, length>, unch
     }
 }
 
-TEST_CASE_TEMPLATE("Quantity Subtraction", T, checked_quantity_t<int, length>, unchecked_quantity_t<int, length>) {
+TEST_CASE_TEMPLATE("Quantity Subtraction", T, checked_quantity_t<int, dimensions::L>,
+                   unchecked_quantity_t<int, dimensions::L>) {
     SUBCASE("Basic subtraction") {
         T q1(5);
         T q2(3);
@@ -298,7 +284,7 @@ TEST_CASE_TEMPLATE("Quantity Subtraction", T, checked_quantity_t<int, length>, u
 
     SUBCASE("Subtraction with different types") {
         T q1(5);
-        auto q2 = unchecked_quantity_t<double, length>(3.5);
+        auto q2 = unchecked_quantity_t<double, dimensions::L>(3.5);
         auto result = q1 - q2;
         CHECK(result.value() == doctest::Approx(1.5));
     }
@@ -306,7 +292,7 @@ TEST_CASE_TEMPLATE("Quantity Subtraction", T, checked_quantity_t<int, length>, u
     SUBCASE("Subtraction underflow") {
         T q1(std::numeric_limits<int>::min());
         T q2(1);
-        if constexpr (std::is_same_v<T, checked_quantity_t<int, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<int, dimensions::L>>) {
             CHECK_THROWS_AS(q1 - q2, std::underflow_error);
         } else {
             auto result = q1 - q2;
@@ -315,10 +301,11 @@ TEST_CASE_TEMPLATE("Quantity Subtraction", T, checked_quantity_t<int, length>, u
     }
 }
 
-TEST_CASE_TEMPLATE("Quantity Multiplication", T, checked_quantity_t<int, length>, unchecked_quantity_t<int, length>) {
+TEST_CASE_TEMPLATE("Quantity Multiplication", T, checked_quantity_t<int, dimensions::L>,
+                   unchecked_quantity_t<int, dimensions::L>) {
     SUBCASE("Basic multiplication") {
         T q1(5);
-        auto q2 = unchecked_quantity_t<int, squint::dimensions::time>(3);
+        auto q2 = unchecked_quantity_t<int, dimensions::T>(3);
         auto result = q1 * q2;
         CHECK(result.value() == 15);
         CHECK((std::is_same_v<typename decltype(result)::dimension_type,
@@ -328,7 +315,7 @@ TEST_CASE_TEMPLATE("Quantity Multiplication", T, checked_quantity_t<int, length>
 
     SUBCASE("Multiplication with different types") {
         T q1(5);
-        auto q2 = unchecked_quantity_t<double, squint::dimensions::time>(3.5);
+        auto q2 = unchecked_quantity_t<double, dimensions::T>(3.5);
         auto result = q1 * q2;
         CHECK(result.value() == doctest::Approx(17.5));
         CHECK((std::is_same_v<typename decltype(result)::dimension_type,
@@ -338,8 +325,8 @@ TEST_CASE_TEMPLATE("Quantity Multiplication", T, checked_quantity_t<int, length>
 
     SUBCASE("Multiplication overflow") {
         T q1(std::numeric_limits<int>::max());
-        auto q2 = unchecked_quantity_t<int, squint::dimensions::time>(2);
-        if constexpr (std::is_same_v<T, checked_quantity_t<int, length>>) {
+        auto q2 = unchecked_quantity_t<int, dimensions::T>(2);
+        if constexpr (std::is_same_v<T, checked_quantity_t<int, dimensions::L>>) {
             CHECK_THROWS_AS(q1 * q2, std::overflow_error);
         } else {
             auto result = q1 * q2;
@@ -348,50 +335,48 @@ TEST_CASE_TEMPLATE("Quantity Multiplication", T, checked_quantity_t<int, length>
     }
 }
 
-TEST_CASE_TEMPLATE("Quantity Division", T, checked_quantity_t<float, length>, unchecked_quantity_t<float, length>) {
+TEST_CASE_TEMPLATE("Quantity Division", T, checked_quantity_t<float, dimensions::L>,
+                   unchecked_quantity_t<float, dimensions::L>) {
     SUBCASE("Basic division") {
         T q1(15);
-        auto q2 = unchecked_quantity_t<float, squint::dimensions::time>(3);
+        auto q2 = unchecked_quantity_t<float, dimensions::T>(3);
         auto result = q1 / q2;
         CHECK(result.value() == 5);
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type, velocity>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::velocity_dim>));
     }
 
     SUBCASE("Division with different types") {
         T q1(15);
-        auto q2 = unchecked_quantity_t<double, squint::dimensions::time>(3.5);
+        auto q2 = unchecked_quantity_t<double, dimensions::T>(3.5);
         auto result = q1 / q2;
         CHECK(result.value() == doctest::Approx(4.285714));
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type, velocity>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::velocity_dim>));
     }
 
     SUBCASE("Division by zero") {
         T q1(15);
-        if constexpr (std::is_same_v<T, checked_quantity_t<float, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<float, dimensions::L>>) {
             CHECK_THROWS_AS(q1 / 0, std::domain_error);
         }
     }
 
     SUBCASE("Division underflow") {
         T q1(1);
-        auto q2 = unchecked_quantity_t<float, squint::dimensions::time>(std::numeric_limits<float>::max());
-        if constexpr (std::is_same_v<T, checked_quantity_t<float, length>>) {
+        auto q2 = unchecked_quantity_t<float, dimensions::T>(std::numeric_limits<float>::max());
+        if constexpr (std::is_same_v<T, checked_quantity_t<float, dimensions::L>>) {
             CHECK_THROWS_AS(q1 / q2, std::underflow_error);
-        } else {
-            auto result = q1 / q2;
-            CHECK(approx_equal(result.value(), 0.F));
         }
     }
 }
 
-TEST_CASE_TEMPLATE("Scalar and Quantity Multiplication", T, checked_quantity_t<int, length>,
-                   unchecked_quantity_t<int, length>) {
+TEST_CASE_TEMPLATE("Scalar and Quantity Multiplication", T, checked_quantity_t<int, dimensions::L>,
+                   unchecked_quantity_t<int, dimensions::L>) {
     SUBCASE("Scalar * Quantity") {
         int scalar = 2;
         T q(5);
         auto result = scalar * q;
         CHECK(result.value() == 10);
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type, length>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::L>));
     }
 
     SUBCASE("Quantity * Scalar") {
@@ -399,13 +384,13 @@ TEST_CASE_TEMPLATE("Scalar and Quantity Multiplication", T, checked_quantity_t<i
         int scalar = 2;
         auto result = q * scalar;
         CHECK(result.value() == 10);
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type, length>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::L>));
     }
 
     SUBCASE("Scalar * Quantity overflow") {
         int scalar = 2;
         T q(std::numeric_limits<int>::max());
-        if constexpr (std::is_same_v<T, checked_quantity_t<int, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<int, dimensions::L>>) {
             CHECK_THROWS_AS(scalar * q, std::overflow_error);
         } else {
             auto result = scalar * q;
@@ -414,52 +399,50 @@ TEST_CASE_TEMPLATE("Scalar and Quantity Multiplication", T, checked_quantity_t<i
     }
 }
 
-TEST_CASE_TEMPLATE("Scalar and Quantity Division", T, checked_quantity_t<float, length>,
-                   unchecked_quantity_t<float, length>) {
+TEST_CASE_TEMPLATE("Scalar and Quantity Division", T, checked_quantity_t<float, dimensions::L>,
+                   unchecked_quantity_t<float, dimensions::L>) {
     SUBCASE("Quantity / Scalar") {
         T q(15);
         float scalar = 3;
         auto result = q / scalar;
         CHECK(result.value() == 5);
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type, length>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::L>));
     }
 
     SUBCASE("Scalar / Quantity") {
         float scalar = 15;
-        auto q = unchecked_quantity_t<float, squint::dimensions::time>(3);
+        auto q = unchecked_quantity_t<float, dimensions::T>(3);
         auto result = scalar / q;
         CHECK(result.value() == 5);
-        CHECK((std::is_same_v<typename decltype(result)::dimension_type,
-                              dimension<std::ratio<0, 1>, std::ratio<-1, 1>, std::ratio<0, 1>, std::ratio<0, 1>,
-                                        std::ratio<0, 1>, std::ratio<0, 1>, std::ratio<0, 1>>>));
+        CHECK((std::is_same_v<typename decltype(result)::dimension_type, dimensions::frequency_dim>));
     }
 
     SUBCASE("Quantity / Scalar division by zero") {
         T q(15);
         float scalar = 0;
-        if constexpr (std::is_same_v<T, checked_quantity_t<float, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<float, dimensions::L>>) {
             CHECK_THROWS_AS(q / scalar, std::domain_error);
         }
     }
 
     SUBCASE("Scalar / Quantity division by zero") {
         float scalar = 15;
-        auto q = checked_quantity_t<float, squint::dimensions::time>(0);
+        auto q = checked_quantity_t<float, dimensions::T>(0);
         CHECK_THROWS_AS(scalar / q, std::domain_error);
     }
 
     SUBCASE("Quantity / Scalar underflow") {
         T q(1);
         float scalar = std::numeric_limits<float>::max();
-        if constexpr (std::is_same_v<T, checked_quantity_t<float, length>>) {
+        if constexpr (std::is_same_v<T, checked_quantity_t<float, dimensions::L>>) {
             CHECK_THROWS_AS(q / scalar, std::underflow_error);
         }
     }
 
     SUBCASE("Scalar / Quantity underflow") {
         float scalar = 1;
-        auto q = checked_quantity_t<float, squint::dimensions::time>(std::numeric_limits<float>::max());
-        if constexpr (std::is_same_v<T, checked_quantity_t<float, length>>) {
+        auto q = checked_quantity_t<float, dimensions::T>(std::numeric_limits<float>::max());
+        if constexpr (std::is_same_v<T, checked_quantity_t<float, dimensions::L>>) {
             CHECK_THROWS_AS(scalar / q, std::underflow_error);
         }
     }
@@ -467,21 +450,21 @@ TEST_CASE_TEMPLATE("Scalar and Quantity Division", T, checked_quantity_t<float, 
 
 TEST_CASE("Stream Operations") {
     SUBCASE("Output stream") {
-        checked_quantity_t<int, length> q(42);
+        checked_quantity_t<int, dimensions::L> q(42);
         std::ostringstream oss;
         oss << q;
         CHECK(oss.str() == "42");
     }
 
     SUBCASE("Input stream") {
-        checked_quantity_t<int, length> q(0);
+        checked_quantity_t<int, dimensions::L> q(0);
         std::istringstream iss("42");
         iss >> q;
         CHECK(q.value() == 42);
     }
 
     SUBCASE("Input stream with invalid input") {
-        checked_quantity_t<int, length> q(0);
+        checked_quantity_t<int, dimensions::L> q(0);
         std::istringstream iss("not_a_number");
         iss >> q;
         CHECK(iss.fail());

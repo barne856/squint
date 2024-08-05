@@ -64,7 +64,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      */
     template <arithmetic U>
     constexpr quantity(const U &value) noexcept
-        requires std::is_same_v<D, dimensions::dimensionless>
+        requires std::is_same_v<D, dimensions::unity>
         : value_(static_cast<T>(value)) {}
 
     /**
@@ -77,7 +77,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      * @brief Explicit conversion operator for non-dimensionless quantities
      */
     explicit constexpr operator T() const noexcept
-        requires(!std::is_same_v<D, dimensions::dimensionless>)
+        requires(!std::is_same_v<D, dimensions::unity>)
     {
         return value_;
     }
@@ -86,7 +86,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      * @brief Implicit conversion operator for dimensionless quantities
      */
     constexpr operator T() const noexcept
-        requires std::is_same_v<D, dimensions::dimensionless>
+        requires std::is_same_v<D, dimensions::unity>
     {
         return value_;
     }
@@ -111,26 +111,6 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
 
     [[nodiscard]] constexpr auto value() noexcept -> T & { return value_; }
     [[nodiscard]] constexpr auto value() const noexcept -> const T & { return value_; }
-    [[nodiscard]] constexpr auto operator->() const noexcept -> const T *
-        requires std::is_same_v<D, dimensions::dimensionless>
-    {
-        return &value_;
-    }
-    [[nodiscard]] constexpr auto operator->() noexcept -> T *
-        requires std::is_same_v<D, dimensions::dimensionless>
-    {
-        return &value_;
-    }
-    [[nodiscard]] constexpr auto operator*() const noexcept -> const T &
-        requires std::is_same_v<D, dimensions::dimensionless>
-    {
-        return value_;
-    }
-    [[nodiscard]] constexpr auto operator*() noexcept -> T &
-        requires std::is_same_v<D, dimensions::dimensionless>
-    {
-        return value_;
-    }
 
     /// @}
 
@@ -225,7 +205,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      */
     template <typename U>
     constexpr auto operator*=(const U &scalar)
-        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>) {
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>) {
         check_overflow_multiply(value_, scalar);
         value_ *= scalar;
         return *this;
@@ -239,7 +219,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      */
     template <typename U>
     constexpr auto operator/=(const U &scalar)
-        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::dimensionless>) {
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>) {
         check_division_by_zero(scalar);
         check_underflow_divide(value_, scalar);
         value_ /= scalar;
