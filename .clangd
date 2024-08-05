@@ -11,7 +11,8 @@ Diagnostics:
       clang-analyzer-*
     ]
     Remove: [
-      readability-identifier-length
+      readability-identifier-length,
+      bugprone-easily-swappable-parameters
     ]
 
 Index:

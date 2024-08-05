@@ -1,191 +1,149 @@
+// NOLINTBEGIN
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/quantity/dimension.hpp"
 #include "squint/quantity/dimension_types.hpp"
 
-using namespace squint;
-
-TEST_CASE("Rational concept") {
-    CHECK(rational<std::ratio<1, 2>>);
-    CHECK(rational<std::ratio<0>>);
-    CHECK_FALSE(rational<int>);
-    CHECK_FALSE(rational<double>);
-}
-
-TEST_CASE("Dimensional concept") {
-    CHECK(dimensional<dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>,
-                                std::ratio<0>, std::ratio<0>>>);
-    CHECK_FALSE(dimensional<int>);
-    CHECK_FALSE(dimensional<std::ratio<1>>);
-}
-
-TEST_CASE("Dimension struct") {
-    using test_dim = dimension<std::ratio<1>, std::ratio<2>, std::ratio<3>, std::ratio<4>, std::ratio<5>, std::ratio<6>,
-                               std::ratio<7>>;
-
-    CHECK(std::is_same_v<test_dim::L, std::ratio<1>>);
-    CHECK(std::is_same_v<test_dim::T, std::ratio<2>>);
-    CHECK(std::is_same_v<test_dim::M, std::ratio<3>>);
-    CHECK(std::is_same_v<test_dim::K, std::ratio<4>>);
-    CHECK(std::is_same_v<test_dim::I, std::ratio<5>>);
-    CHECK(std::is_same_v<test_dim::N, std::ratio<6>>);
-    CHECK(std::is_same_v<test_dim::J, std::ratio<7>>);
-}
-
-TEST_CASE("Dimension multiplication") {
-    using dim1 = dimension<std::ratio<1>, std::ratio<2>, std::ratio<3>, std::ratio<4>, std::ratio<5>, std::ratio<6>,
-                           std::ratio<7>>;
-    using dim2 = dimension<std::ratio<7>, std::ratio<6>, std::ratio<5>, std::ratio<4>, std::ratio<3>, std::ratio<2>,
-                           std::ratio<1>>;
-    using result = mult_t<dim1, dim2>;
-
-    CHECK(std::is_same_v<result::L, std::ratio<8>>);
-    CHECK(std::is_same_v<result::T, std::ratio<8>>);
-    CHECK(std::is_same_v<result::M, std::ratio<8>>);
-    CHECK(std::is_same_v<result::K, std::ratio<8>>);
-    CHECK(std::is_same_v<result::I, std::ratio<8>>);
-    CHECK(std::is_same_v<result::N, std::ratio<8>>);
-    CHECK(std::is_same_v<result::J, std::ratio<8>>);
-}
-
-TEST_CASE("Dimension division") {
-    using dim1 = dimension<std::ratio<8>, std::ratio<8>, std::ratio<8>, std::ratio<8>, std::ratio<8>, std::ratio<8>,
-                           std::ratio<8>>;
-    using dim2 = dimension<std::ratio<3>, std::ratio<3>, std::ratio<3>, std::ratio<3>, std::ratio<3>, std::ratio<3>,
-                           std::ratio<3>>;
-    using result = squint::div_t<dim1, dim2>;
-
-    CHECK(std::is_same_v<result::L, std::ratio<5>>);
-    CHECK(std::is_same_v<result::T, std::ratio<5>>);
-    CHECK(std::is_same_v<result::M, std::ratio<5>>);
-    CHECK(std::is_same_v<result::K, std::ratio<5>>);
-    CHECK(std::is_same_v<result::I, std::ratio<5>>);
-    CHECK(std::is_same_v<result::N, std::ratio<5>>);
-    CHECK(std::is_same_v<result::J, std::ratio<5>>);
-}
-
-TEST_CASE("Dimension power") {
-    using base_dim = dimension<std::ratio<1>, std::ratio<2>, std::ratio<3>, std::ratio<4>, std::ratio<5>, std::ratio<6>,
-                               std::ratio<7>>;
-    using squared = pow_t<base_dim, 2>;
-    using cubed = pow_t<base_dim, 3>;
-
-    CHECK(std::is_same_v<squared::L, std::ratio<2>>);
-    CHECK(std::is_same_v<squared::T, std::ratio<4>>);
-    CHECK(std::is_same_v<squared::M, std::ratio<6>>);
-    CHECK(std::is_same_v<squared::K, std::ratio<8>>);
-    CHECK(std::is_same_v<squared::I, std::ratio<10>>);
-    CHECK(std::is_same_v<squared::N, std::ratio<12>>);
-    CHECK(std::is_same_v<squared::J, std::ratio<14>>);
-
-    CHECK(std::is_same_v<cubed::L, std::ratio<3>>);
-    CHECK(std::is_same_v<cubed::T, std::ratio<6>>);
-    CHECK(std::is_same_v<cubed::M, std::ratio<9>>);
-    CHECK(std::is_same_v<cubed::K, std::ratio<12>>);
-    CHECK(std::is_same_v<cubed::I, std::ratio<15>>);
-    CHECK(std::is_same_v<cubed::N, std::ratio<18>>);
-    CHECK(std::is_same_v<cubed::J, std::ratio<21>>);
-}
-
-TEST_CASE("Dimension root") {
-    using base_dim = dimension<std::ratio<2>, std::ratio<4>, std::ratio<6>, std::ratio<8>, std::ratio<10>,
-                               std::ratio<12>, std::ratio<14>>;
-    using sqrt_dim = root_t<base_dim, 2>;
-
-    CHECK(std::is_same_v<sqrt_dim::L, std::ratio<1>>);
-    CHECK(std::is_same_v<sqrt_dim::T, std::ratio<2>>);
-    CHECK(std::is_same_v<sqrt_dim::M, std::ratio<3>>);
-    CHECK(std::is_same_v<sqrt_dim::K, std::ratio<4>>);
-    CHECK(std::is_same_v<sqrt_dim::I, std::ratio<5>>);
-    CHECK(std::is_same_v<sqrt_dim::N, std::ratio<6>>);
-    CHECK(std::is_same_v<sqrt_dim::J, std::ratio<7>>);
-}
-
-TEST_CASE("Dimension inverse") {
-    using base_dim = dimension<std::ratio<1>, std::ratio<2>, std::ratio<3>, std::ratio<4>, std::ratio<5>, std::ratio<6>,
-                               std::ratio<7>>;
-    using inv_dim = inv_t<base_dim>;
-
-    CHECK(std::is_same_v<inv_dim::L, std::ratio<-1>>);
-    CHECK(std::is_same_v<inv_dim::T, std::ratio<-2>>);
-    CHECK(std::is_same_v<inv_dim::M, std::ratio<-3>>);
-    CHECK(std::is_same_v<inv_dim::K, std::ratio<-4>>);
-    CHECK(std::is_same_v<inv_dim::I, std::ratio<-5>>);
-    CHECK(std::is_same_v<inv_dim::N, std::ratio<-6>>);
-    CHECK(std::is_same_v<inv_dim::J, std::ratio<-7>>);
-}
-
-TEST_CASE("Predefined dimensions") {
-    using namespace dimensions;
-
-    CHECK(std::is_same_v<dimensionless, dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>,
-                                                  std::ratio<0>, std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<length, dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>,
-                                           std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<dimensions::time, dimension<std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>,
-                                                     std::ratio<0>, std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<mass, dimension<std::ratio<0>, std::ratio<0>, std::ratio<1>, std::ratio<0>, std::ratio<0>,
-                                         std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<temperature, dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>,
-                                                std::ratio<0>, std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<current, dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>,
-                                            std::ratio<0>, std::ratio<0>>>);
-    CHECK(std::is_same_v<amount_of_substance, dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>,
-                                                        std::ratio<0>, std::ratio<1>, std::ratio<0>>>);
-    CHECK(std::is_same_v<luminous_intensity, dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>,
-                                                       std::ratio<0>, std::ratio<0>, std::ratio<1>>>);
-}
-
-TEST_CASE("Derived dimensions") {
-    using namespace dimensions;
-
-    CHECK(std::is_same_v<velocity, squint::div_t<length, dimensions::time>>);
-    CHECK(std::is_same_v<acceleration, squint::div_t<velocity, dimensions::time>>);
-    CHECK(std::is_same_v<force, mult_t<mass, acceleration>>);
-    CHECK(std::is_same_v<energy, mult_t<force, length>>);
-    CHECK(std::is_same_v<power, squint::div_t<energy, dimensions::time>>);
-    CHECK(std::is_same_v<pressure, squint::div_t<force, area>>);
-    CHECK(std::is_same_v<frequency, inv_t<dimensions::time>>);
-    CHECK(std::is_same_v<charge, mult_t<current, dimensions::time>>);
-    CHECK(std::is_same_v<voltage, squint::div_t<energy, charge>>);
-    CHECK(std::is_same_v<capacitance, squint::div_t<charge, voltage>>);
-    CHECK(std::is_same_v<resistance, squint::div_t<voltage, current>>);
-    CHECK(std::is_same_v<magnetic_flux, mult_t<voltage, dimensions::time>>);
-    CHECK(std::is_same_v<magnetic_flux_density, squint::div_t<magnetic_flux, area>>);
-    CHECK(std::is_same_v<inductance, squint::div_t<magnetic_flux, current>>);
-}
-
-TEST_CASE("Complex derived dimensions") {
+TEST_CASE("Base dimensions are correctly defined") {
     using namespace squint::dimensions;
 
-    using force_length = mult_t<force, length>;
-    // force = M * L * T^-2
-    // length = L
-    // force_length = M * L^2 * T^-2
-
-    using time_squared = mult_t<dimensions::time, dimensions::time>;
-    // time_squared = T^2
-
-    using force_length_per_time_squared = squint::div_t<force_length, time_squared>;
-    // force_length_per_time_squared = (M * L^2 * T^-2) / (T^2) = M * L^2 * T^-4
-
-    using temp_sqrt = root_t<temperature, 2>;
-    // temp_sqrt = K^(1/2)
-
-    using complex_dim = mult_t<force_length_per_time_squared, temp_sqrt>;
-    // complex_dim = (M * L^2 * T^-4) * K^(1/2) = M * L^2 * T^-4 * K^(1/2)
-
-    using expected = dimension<std::ratio<2>, std::ratio<-4>, std::ratio<1>, std::ratio<1, 2>, std::ratio<0>,
-                               std::ratio<0>, std::ratio<0>>;
-
-    CHECK(std::is_same_v<complex_dim, expected>);
-
-    // Let's also check each component individually
-    CHECK(std::is_same_v<complex_dim::L, std::ratio<2>>);
-    CHECK(std::is_same_v<complex_dim::T, std::ratio<-4>>);
-    CHECK(std::is_same_v<complex_dim::M, std::ratio<1>>);
-    CHECK(std::is_same_v<complex_dim::K, std::ratio<1, 2>>);
-    CHECK(std::is_same_v<complex_dim::I, std::ratio<0>>);
-    CHECK(std::is_same_v<complex_dim::N, std::ratio<0>>);
-    CHECK(std::is_same_v<complex_dim::J, std::ratio<0>>);
+    static_assert(std::is_same_v<dimensionless::L, std::ratio<0>>);
+    static_assert(std::is_same_v<length::L, std::ratio<1>>);
+    static_assert(std::is_same_v<time::T, std::ratio<1>>);
+    static_assert(std::is_same_v<mass::M, std::ratio<1>>);
+    static_assert(std::is_same_v<temperature::K, std::ratio<1>>);
+    static_assert(std::is_same_v<current::I, std::ratio<1>>);
+    static_assert(std::is_same_v<amount_of_substance::N, std::ratio<1>>);
+    static_assert(std::is_same_v<luminous_intensity::J, std::ratio<1>>);
 }
+
+TEST_CASE("Dimension arithmetic operations work correctly") {
+    using namespace squint;
+    using namespace squint::dimensions;
+
+    SUBCASE("Multiplication") {
+        using velocity = squint::div_t<length, squint::dimensions::time>;
+        using acceleration = squint::div_t<velocity, squint::dimensions::time>;
+        static_assert(std::is_same_v<mult_t<velocity, squint::dimensions::time>, length>);
+        static_assert(std::is_same_v<mult_t<acceleration, squint::dimensions::time>, velocity>);
+    }
+
+    SUBCASE("Division") {
+        using velocity = squint::div_t<length, squint::dimensions::time>;
+        static_assert(std::is_same_v<squint::div_t<length, velocity>, squint::dimensions::time>);
+    }
+
+    SUBCASE("Power") {
+        static_assert(std::is_same_v<pow_t<length, 2>, area>);
+        static_assert(std::is_same_v<pow_t<length, 3>, volume>);
+    }
+
+    SUBCASE("Root") {
+        static_assert(std::is_same_v<root_t<area, 2>, length>);
+        static_assert(std::is_same_v<root_t<volume, 3>, length>);
+    }
+
+    SUBCASE("Inversion") {
+        using frequency = inv_t<squint::dimensions::time>;
+        static_assert(std::is_same_v<mult_t<frequency, squint::dimensions::time>, squint::dimensions::dimensionless>);
+    }
+}
+
+TEST_CASE("Derived dimensions are correctly defined") {
+    using namespace squint::dimensions;
+
+    SUBCASE("Mechanical dimensions") {
+        static_assert(std::is_same_v<velocity, squint::div_t<length, squint::dimensions::time>>);
+        static_assert(std::is_same_v<acceleration, squint::div_t<velocity, squint::dimensions::time>>);
+        static_assert(std::is_same_v<force, squint::mult_t<mass, acceleration>>);
+        static_assert(std::is_same_v<energy, squint::mult_t<force, length>>);
+        static_assert(std::is_same_v<power, squint::div_t<energy, squint::dimensions::time>>);
+    }
+
+    SUBCASE("Electromagnetic dimensions") {
+        static_assert(std::is_same_v<charge, squint::mult_t<current, squint::dimensions::time>>);
+        static_assert(std::is_same_v<voltage, squint::div_t<energy, charge>>);
+        static_assert(std::is_same_v<capacitance, squint::div_t<charge, voltage>>);
+        static_assert(std::is_same_v<resistance, squint::div_t<voltage, current>>);
+        static_assert(std::is_same_v<magnetic_flux, squint::mult_t<voltage, squint::dimensions::time>>);
+    }
+
+    SUBCASE("Thermodynamic dimensions") {
+        static_assert(std::is_same_v<heat_capacity, squint::div_t<energy, temperature>>);
+        static_assert(std::is_same_v<specific_heat_capacity, squint::div_t<heat_capacity, mass>>);
+        static_assert(std::is_same_v<thermal_conductivity, squint::div_t<power, squint::mult_t<length, temperature>>>);
+    }
+
+    SUBCASE("Chemical dimensions") {
+        static_assert(std::is_same_v<molarity, squint::div_t<amount_of_substance, volume>>);
+        static_assert(std::is_same_v<molar_mass, squint::div_t<mass, amount_of_substance>>);
+        static_assert(std::is_same_v<catalytic_activity, squint::div_t<amount_of_substance, squint::dimensions::time>>);
+    }
+
+    SUBCASE("Optical dimensions") {
+        static_assert(std::is_same_v<luminance, squint::div_t<luminous_intensity, area>>);
+        static_assert(std::is_same_v<radiant_intensity, squint::div_t<power, solid_angle>>);
+        static_assert(std::is_same_v<radiance, squint::div_t<radiant_intensity, area>>);
+        static_assert(std::is_same_v<irradiance, squint::div_t<power, area>>);
+    }
+}
+
+TEST_CASE("Complex dimension combinations") {
+    using namespace squint;
+    using namespace squint::dimensions;
+
+    SUBCASE("Pressure * Volume = Energy") {
+        using pressure_volume = mult_t<pressure, volume>;
+        static_assert(std::is_same_v<pressure_volume, energy>);
+    }
+
+    SUBCASE("Force * Time = Momentum") {
+        using force_time = mult_t<force, squint::dimensions::time>;
+        static_assert(std::is_same_v<force_time, momentum>);
+    }
+
+    SUBCASE("Power / Velocity = Force") {
+        using power_over_velocity = squint::div_t<power, velocity>;
+        static_assert(std::is_same_v<power_over_velocity, force>);
+    }
+
+    SUBCASE("Energy / (Mass * Temperature) = Specific Heat Capacity") {
+        using energy_over_mass_temp = squint::div_t<energy, mult_t<mass, temperature>>;
+        static_assert(std::is_same_v<energy_over_mass_temp, specific_heat_capacity>);
+    }
+}
+
+TEST_CASE("Dimensionless quantities") {
+    using namespace squint::dimensions;
+
+    static_assert(std::is_same_v<angle, dimensionless>);
+    static_assert(std::is_same_v<solid_angle, dimensionless>);
+    static_assert(std::is_same_v<strain, dimensionless>);
+    static_assert(std::is_same_v<refractive_index, dimensionless>);
+}
+
+TEST_CASE("Dimension arithmetic with fractional exponents") {
+    using namespace squint;
+    using namespace squint::dimensions;
+
+    SUBCASE("Square root of area is length") { static_assert(std::is_same_v<root_t<area, 2>, length>); }
+
+    SUBCASE("Cube root of volume is length") { static_assert(std::is_same_v<root_t<volume, 3>, length>); }
+
+    SUBCASE("Square root of energy per mass is velocity") {
+        using energy_per_mass = squint::div_t<energy, mass>;
+        static_assert(std::is_same_v<root_t<energy_per_mass, 2>, velocity>);
+    }
+}
+
+TEST_CASE("Dimension arithmetic error cases") {
+    using namespace squint;
+    using namespace squint::dimensions;
+
+    SUBCASE("Cannot take 0th root") {
+        // This should cause a compile-time error
+        // Uncomment to test:
+        // using invalid_root = root_t<length, 0>;
+    }
+}
+// NOLINTEND

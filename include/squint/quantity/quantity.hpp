@@ -12,7 +12,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <functional>
 #include <limits>
 #include <type_traits>
 
@@ -123,6 +122,11 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     /// @{
 
     /**
+     * @brief Get the error checking policy
+     */
+    [[nodiscard]] static constexpr auto error_checking() noexcept -> error_checking { return E; }
+
+    /**
      * @brief Check for multiplication overflow
      * @tparam U Type of the second operand
      * @param a First operand
@@ -180,14 +184,14 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     }
 
     /**
-     * @brief Check for subtraction overflow
+     * @brief Check for subtraction underflow
      * @param a First operand
      * @param b Second operand
      */
-    static constexpr void check_overflow_subtract(const T &a, const T &b) {
+    static constexpr void check_underflow_subtract(const T &a, const T &b) {
         if constexpr (E == error_checking::enabled && std::is_integral_v<T>) {
             if ((b < 0 && a > std::numeric_limits<T>::max() + b) || (b > 0 && a < std::numeric_limits<T>::min() + b)) {
-                throw std::overflow_error("Subtraction would cause overflow");
+                throw std::underflow_error("Subtraction would cause underflow");
             }
         }
     }
@@ -243,7 +247,7 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      * @return Reference to this quantity
      */
     constexpr auto operator-=(const quantity &rhs) -> quantity & {
-        check_overflow_subtract(value_, rhs.value_);
+        check_underflow_subtract(value_, rhs.value_);
         value_ -= rhs.value_;
         return *this;
     }
@@ -312,13 +316,6 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
     constexpr auto operator==(const quantity &rhs) const noexcept -> bool { return value_ == rhs.value_; }
 
     /// @}
-
-    /**
-     * @brief Convert this quantity to another unit.
-     *
-     * @return The converted quantity.
-     */
-    template <template <typename, error_checking> typename UnitFunc> auto as() const { return UnitFunc<T, E>(value_); }
 
   private:
     T value_;

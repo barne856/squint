@@ -107,6 +107,7 @@ concept quantitative = requires(T t) {
     typename T::value_type;
     typename T::dimension_type;
     requires arithmetic<typename T::value_type>;
+    { T::error_checking() } -> std::same_as<error_checking>;
 };
 
 /**

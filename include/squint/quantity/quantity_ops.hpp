@@ -1,86 +1,101 @@
 /**
  * @file quantity_ops.hpp
- * @brief Defines arithmetic and stream operations for quantities.
+ * @brief Defines arithmetic and stream operations for quantitative types.
  *
  * This file provides operator overloads for arithmetic operations between
- * quantities, between quantities and scalars, and for stream I/O operations.
+ * quantitative types (such as quantities and units), between quantitative types
+ * and scalars, and for stream I/O operations. It uses concepts to ensure type
+ * safety and proper dimension handling in calculations.
+ *
+ * @note All operations return quantity types, even when operating on unit types,
+ * to ensure consistent behavior and dimension tracking.
+ *
  */
 
 #ifndef SQUINT_QUANTITY_QUANTITY_OPS_HPP
 #define SQUINT_QUANTITY_QUANTITY_OPS_HPP
 
+#include "squint/core/concepts.hpp"
 #include "squint/quantity/quantity.hpp"
 #include <iostream>
 
 namespace squint {
 
 /**
- * @brief Addition operator for quantities.
+ * @brief Addition operator for quantitative types.
  *
- * @tparam T1 The underlying type of the left-hand quantity.
- * @tparam T2 The underlying type of the right-hand quantity.
- * @tparam D The dimension of both quantities.
- * @tparam ErrorChecking1 Error checking policy of the left-hand quantity.
- * @tparam ErrorChecking2 Error checking policy of the right-hand quantity.
- * @param lhs Left-hand side quantity.
- * @param rhs Right-hand side quantity.
+ * @tparam T1 The type of the left-hand operand.
+ * @tparam T2 The type of the right-hand operand.
+ * @param lhs The left-hand side quantitative value.
+ * @param rhs The right-hand side quantitative value.
  * @return A new quantity representing the sum.
+ *
+ * @throws std::overflow_error if error checking is enabled and addition would cause overflow.
+ *
+ * @note Both operands must have the same dimension.
  */
-template <typename T1, typename T2, dimensional D, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator+(const quantity<T1, D, ErrorChecking1> &lhs, const quantity<T2, D, ErrorChecking2> &rhs) {
+template <quantitative T1, quantitative T2>
+    requires std::is_same_v<typename T1::dimension_type, typename T2::dimension_type>
+constexpr auto operator+(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() + rhs.value());
-    constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
+    using result_dimension = typename T1::dimension_type;
+    constexpr error_checking result_error_checking =
+        resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
     if constexpr (result_error_checking == error_checking::enabled) {
-        quantity<result_type, D, result_error_checking>::check_overflow_add(lhs.value(), rhs.value());
+        quantity<result_type, result_dimension, result_error_checking>::check_overflow_add(lhs.value(), rhs.value());
     }
 
-    return quantity<result_type, D, result_error_checking>(lhs.value() + rhs.value());
+    return quantity<result_type, result_dimension, result_error_checking>(lhs.value() + rhs.value());
 }
 
 /**
- * @brief Subtraction operator for quantities.
+ * @brief Subtraction operator for quantitative types.
  *
- * @tparam T1 The underlying type of the left-hand quantity.
- * @tparam T2 The underlying type of the right-hand quantity.
- * @tparam D The dimension of both quantities.
- * @tparam ErrorChecking1 Error checking policy of the left-hand quantity.
- * @tparam ErrorChecking2 Error checking policy of the right-hand quantity.
- * @param lhs Left-hand side quantity.
- * @param rhs Right-hand side quantity.
+ * @tparam T1 The type of the left-hand operand.
+ * @tparam T2 The type of the right-hand operand.
+ * @param lhs The left-hand side quantitative value.
+ * @param rhs The right-hand side quantitative value.
  * @return A new quantity representing the difference.
+ *
+ * @throws std::underflow_error if error checking is enabled and subtraction would cause underflow.
+ *
+ * @note Both operands must have the same dimension.
  */
-template <typename T1, typename T2, dimensional D, error_checking ErrorChecking1, error_checking ErrorChecking2>
-constexpr auto operator-(const quantity<T1, D, ErrorChecking1> &lhs, const quantity<T2, D, ErrorChecking2> &rhs) {
+template <quantitative T1, quantitative T2>
+    requires std::is_same_v<typename T1::dimension_type, typename T2::dimension_type>
+constexpr auto operator-(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() - rhs.value());
-    constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
+    using result_dimension = typename T1::dimension_type;
+    constexpr error_checking result_error_checking =
+        resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
     if constexpr (result_error_checking == error_checking::enabled) {
-        quantity<result_type, D, result_error_checking>::check_overflow_subtract(lhs.value(), rhs.value());
+        quantity<result_type, result_dimension, result_error_checking>::check_underflow_subtract(lhs.value(),
+                                                                                                 rhs.value());
     }
 
-    return quantity<result_type, D, result_error_checking>(lhs.value() - rhs.value());
+    return quantity<result_type, result_dimension, result_error_checking>(lhs.value() - rhs.value());
 }
 
 /**
- * @brief Multiplication operator for quantities.
+ * @brief Multiplication operator for quantitative types.
  *
- * @tparam T1 The underlying type of the left-hand quantity.
- * @tparam T2 The underlying type of the right-hand quantity.
- * @tparam D1 The dimension of the left-hand quantity.
- * @tparam D2 The dimension of the right-hand quantity.
- * @tparam ErrorChecking1 Error checking policy of the left-hand quantity.
- * @tparam ErrorChecking2 Error checking policy of the right-hand quantity.
- * @param lhs Left-hand side quantity.
- * @param rhs Right-hand side quantity.
+ * @tparam T1 The type of the left-hand operand.
+ * @tparam T2 The type of the right-hand operand.
+ * @param lhs The left-hand side quantitative value.
+ * @param rhs The right-hand side quantitative value.
  * @return A new quantity representing the product.
+ *
+ * @throws std::overflow_error if error checking is enabled and multiplication would cause overflow.
+ *
+ * @note The resulting dimension is the product of the operands' dimensions.
  */
-template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1,
-          error_checking ErrorChecking2>
-constexpr auto operator*(const quantity<T1, D1, ErrorChecking1> &lhs, const quantity<T2, D2, ErrorChecking2> &rhs) {
+template <quantitative T1, quantitative T2> constexpr auto operator*(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() * rhs.value());
-    using result_dimension = mult_t<D1, D2>;
-    constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
+    using result_dimension = mult_t<typename T1::dimension_type, typename T2::dimension_type>;
+    constexpr error_checking result_error_checking =
+        resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
     if constexpr (result_error_checking == error_checking::enabled) {
         quantity<result_type, result_dimension, result_error_checking>::check_overflow_multiply(lhs.value(),
@@ -91,24 +106,24 @@ constexpr auto operator*(const quantity<T1, D1, ErrorChecking1> &lhs, const quan
 }
 
 /**
- * @brief Division operator for quantities.
+ * @brief Division operator for quantitative types.
  *
- * @tparam T1 The underlying type of the left-hand quantity.
- * @tparam T2 The underlying type of the right-hand quantity.
- * @tparam D1 The dimension of the left-hand quantity.
- * @tparam D2 The dimension of the right-hand quantity.
- * @tparam ErrorChecking1 Error checking policy of the left-hand quantity.
- * @tparam ErrorChecking2 Error checking policy of the right-hand quantity.
- * @param lhs Left-hand side quantity.
- * @param rhs Right-hand side quantity.
+ * @tparam T1 The type of the left-hand operand.
+ * @tparam T2 The type of the right-hand operand.
+ * @param lhs The left-hand side quantitative value.
+ * @param rhs The right-hand side quantitative value.
  * @return A new quantity representing the quotient.
+ *
+ * @throws std::domain_error if error checking is enabled and the divisor is zero.
+ * @throws std::underflow_error if error checking is enabled and division would cause underflow.
+ *
+ * @note The resulting dimension is the quotient of the operands' dimensions.
  */
-template <typename T1, typename T2, dimensional D1, dimensional D2, error_checking ErrorChecking1,
-          error_checking ErrorChecking2>
-constexpr auto operator/(const quantity<T1, D1, ErrorChecking1> &lhs, const quantity<T2, D2, ErrorChecking2> &rhs) {
+template <quantitative T1, quantitative T2> constexpr auto operator/(const T1 &lhs, const T2 &rhs) {
     using result_type = decltype(lhs.value() / rhs.value());
-    using result_dimension = div_t<D1, D2>;
-    constexpr error_checking result_error_checking = resulting_error_checking<ErrorChecking1, ErrorChecking2>::value;
+    using result_dimension = div_t<typename T1::dimension_type, typename T2::dimension_type>;
+    constexpr error_checking result_error_checking =
+        resulting_error_checking<T1::error_checking(), T2::error_checking()>::value;
 
     if constexpr (result_error_checking == error_checking::enabled) {
         quantity<result_type, result_dimension, result_error_checking>::check_division_by_zero(rhs.value());
@@ -120,128 +135,122 @@ constexpr auto operator/(const quantity<T1, D1, ErrorChecking1> &lhs, const quan
 }
 
 /**
- * @brief Multiplication operator for scalar and quantity.
+ * @brief Multiplication operator for scalar and quantitative type.
  *
  * @tparam T The scalar type.
- * @tparam U The underlying type of the quantity.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
+ * @tparam U The quantitative type.
  * @param scalar The scalar value.
- * @param q The quantity.
+ * @param q The quantitative value.
  * @return A new quantity representing the product.
+ *
+ * @throws std::overflow_error if error checking is enabled and multiplication would cause overflow.
  */
-template <arithmetic T, typename U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator*(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
+template <arithmetic T, quantitative U> constexpr auto operator*(const T &scalar, const U &q) {
     using result_type = decltype(scalar * q.value());
+    using result_dimension = typename U::dimension_type;
 
-    if constexpr (ErrorChecking == error_checking::enabled) {
-        quantity<result_type, D, ErrorChecking>::check_overflow_multiply(scalar, q.value());
+    if constexpr (U::error_checking() == error_checking::enabled) {
+        quantity<result_type, result_dimension, U::error_checking()>::check_overflow_multiply(scalar, q.value());
     }
 
-    return quantity<result_type, D, ErrorChecking>(scalar * q.value());
+    return quantity<result_type, result_dimension, U::error_checking()>(scalar * q.value());
 }
 
 /**
- * @brief Multiplication operator for quantity and scalar.
+ * @brief Multiplication operator for quantitative type and scalar.
  *
- * @tparam T The underlying type of the quantity.
+ * @tparam T The quantitative type.
  * @tparam U The scalar type.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
- * @param q The quantity.
+ * @param q The quantitative value.
  * @param scalar The scalar value.
  * @return A new quantity representing the product.
+ *
+ * @note This operator delegates to the scalar-first multiplication operator.
  */
-template <typename T, arithmetic U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator*(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
-    return scalar * q;
-}
+template <quantitative T, arithmetic U> constexpr auto operator*(const T &q, const U &scalar) { return scalar * q; }
 
 /**
- * @brief Division operator for quantity and scalar.
+ * @brief Division operator for quantitative type and scalar.
  *
- * @tparam T The underlying type of the quantity.
+ * @tparam T The quantitative type.
  * @tparam U The scalar type.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
- * @param q The quantity.
+ * @param q The quantitative value.
  * @param scalar The scalar value.
  * @return A new quantity representing the quotient.
+ *
+ * @throws std::domain_error if error checking is enabled and the scalar is zero.
+ * @throws std::underflow_error if error checking is enabled and division would cause underflow.
  */
-template <typename T, arithmetic U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator/(const quantity<T, D, ErrorChecking> &q, const U &scalar) {
+template <quantitative T, arithmetic U> constexpr auto operator/(const T &q, const U &scalar) {
     using result_type = decltype(q.value() / scalar);
+    using result_dimension = typename T::dimension_type;
 
-    if constexpr (ErrorChecking == error_checking::enabled) {
-        quantity<result_type, D, ErrorChecking>::check_division_by_zero(scalar);
-        quantity<result_type, D, ErrorChecking>::check_underflow_divide(q.value(), scalar);
+    if constexpr (T::error_checking() == error_checking::enabled) {
+        quantity<result_type, result_dimension, T::error_checking()>::check_division_by_zero(scalar);
+        quantity<result_type, result_dimension, T::error_checking()>::check_underflow_divide(q.value(), scalar);
     }
 
-    return quantity<result_type, D, ErrorChecking>(q.value() / scalar);
+    return quantity<result_type, result_dimension, T::error_checking()>(q.value() / scalar);
 }
 
 /**
- * @brief Division operator for scalar and quantity.
+ * @brief Division operator for scalar and quantitative type.
  *
  * @tparam T The scalar type.
- * @tparam U The underlying type of the quantity.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
+ * @tparam U The quantitative type.
  * @param scalar The scalar value.
- * @param q The quantity.
+ * @param q The quantitative value.
  * @return A new quantity representing the quotient.
+ *
+ * @throws std::domain_error if error checking is enabled and the quantitative value is zero.
+ * @throws std::underflow_error if error checking is enabled and division would cause underflow.
+ *
+ * @note The resulting dimension is the inverse of the quantitative type's dimension.
  */
-template <arithmetic T, typename U, dimensional D, error_checking ErrorChecking>
-constexpr auto operator/(const T &scalar, const quantity<U, D, ErrorChecking> &q) {
+template <arithmetic T, quantitative U> constexpr auto operator/(const T &scalar, const U &q) {
     using result_type = decltype(scalar / q.value());
-    using result_dimension = inv_t<D>;
+    using result_dimension = inv_t<typename U::dimension_type>;
 
-    if constexpr (ErrorChecking == error_checking::enabled) {
-        quantity<result_type, result_dimension, ErrorChecking>::check_division_by_zero(q.value());
-        quantity<result_type, result_dimension, ErrorChecking>::check_underflow_divide(scalar, q.value());
+    if constexpr (U::error_checking() == error_checking::enabled) {
+        quantity<result_type, result_dimension, U::error_checking()>::check_division_by_zero(q.value());
+        quantity<result_type, result_dimension, U::error_checking()>::check_underflow_divide(scalar, q.value());
     }
 
-    return quantity<result_type, result_dimension, ErrorChecking>(scalar / q.value());
+    return quantity<result_type, result_dimension, U::error_checking()>(scalar / q.value());
 }
 
 /**
- * @brief Output stream operator for quantities.
+ * @brief Output stream operator for quantitative types.
  *
- * @tparam T The underlying type of the quantity.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
+ * @tparam T The quantitative type.
  * @param os The output stream.
- * @param q The quantity to output.
+ * @param q The quantitative value to output.
  * @return The output stream.
  */
-template <arithmetic T, dimensional D, error_checking ErrorChecking>
-auto operator<<(std::ostream &os, const quantity<T, D, ErrorChecking> &q) -> std::ostream & {
-    return os << q.value();
-}
+template <quantitative T> auto operator<<(std::ostream &os, const T &q) -> std::ostream & { return os << q.value(); }
 
 /**
- * @brief Input stream operator for quantities.
+ * @brief Input stream operator for quantitative types.
  *
- * @tparam T The underlying type of the quantity.
- * @tparam D The dimension of the quantity.
- * @tparam ErrorChecking Error checking policy of the quantity.
+ * @tparam T The quantitative type.
  * @param is The input stream.
- * @param q The quantity to input into.
+ * @param q The quantitative value to input into.
  * @return The input stream.
+ *
+ * @throws Any exception thrown by the quantitative type's constructor if error checking is enabled.
  */
-template <arithmetic T, dimensional D, error_checking ErrorChecking>
-auto operator>>(std::istream &is, quantity<T, D, ErrorChecking> &q) -> std::istream & {
-    T value;
+template <quantitative T> auto operator>>(std::istream &is, T &q) -> std::istream & {
+    typename T::value_type value;
     is >> value;
-    if constexpr (ErrorChecking == error_checking::enabled) {
+    if constexpr (T::error_checking() == error_checking::enabled) {
         try {
-            q = quantity<T, D, ErrorChecking>(value);
+            q = T(value);
         } catch (const std::exception &e) {
             is.setstate(std::ios_base::failbit);
             throw;
         }
     } else {
-        q = quantity<T, D, ErrorChecking>(value);
+        q = T(value);
     }
     return is;
 }

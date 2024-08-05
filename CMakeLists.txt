@@ -107,7 +107,9 @@ if(SQUINT_BUILD_TESTS)
 
     # Add tests
     add_squint_test(quantity_tests)
-    # add_squint_test(dimension_tests)
+    add_squint_test(dimension_tests)
+    add_squint_test(unit_tests)
+    add_squint_test(math_tests)
     # add_squint_test(linalg_tests)
     # add_squint_test(geometry_tests)
     # add_squint_test(tensor_tests)

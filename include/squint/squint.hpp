@@ -1,8 +1,8 @@
 #ifndef SQUINT_HPP
 #define SQUINT_HPP
 
-#include "geometry.hpp"
-#include "quantity.hpp"
-#include "tensor.hpp"
+#include "squint/geometry.hpp"
+#include "squint/quantity.hpp"
+#include "squint/tensor.hpp"
 
 #endif // SQUINT_HPP

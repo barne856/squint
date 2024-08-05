@@ -12,6 +12,7 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/quantity/dimension_types.hpp"
+#include "squint/quantity/quantity.hpp"
 #include "squint/util/math_utils.hpp"
 
 #include <cmath>
@@ -22,14 +23,14 @@ namespace squint {
  * @brief Approximately equal comparison for quantities
  * @tparam T First quantitative type
  * @tparam U Second quantitative type
- * @tparam Epsilon Arithmetic type for epsilon
  * @param a First quantity
  * @param b Second quantity
  * @param epsilon Tolerance for comparison
  * @return true if quantities are approximately equal, false otherwise
  */
-template <quantitative T, quantitative U, arithmetic Epsilon>
-auto approx_equal(const T &a, const U &b, const Epsilon &epsilon = Epsilon{DEFAULT_EPSILON}) -> bool {
+template <quantitative T, quantitative U>
+auto approx_equal(const T &a, const U &b,
+                  const typename T::value_type &epsilon = typename T::value_type{DEFAULT_EPSILON}) -> bool {
     static_assert(std::is_same_v<typename T::dimension_type, typename U::dimension_type>,
                   "Quantities must have the same dimension");
     return approx_equal(a.value(), b.value(), epsilon);
@@ -39,14 +40,13 @@ auto approx_equal(const T &a, const U &b, const Epsilon &epsilon = Epsilon{DEFAU
  * @brief Approximately equal comparison for mixed types (quantitative and arithmetic)
  * @tparam T Quantitative type
  * @tparam U Arithmetic type
- * @tparam V Arithmetic type for epsilon
  * @param a Quantity
  * @param b Arithmetic value
  * @param epsilon Tolerance for comparison
  * @return true if values are approximately equal, false otherwise
  */
-template <quantitative T, arithmetic U, arithmetic V>
-auto approx_equal(const T &a, const U &b, const V &epsilon = V{DEFAULT_EPSILON}) -> bool
+template <quantitative T, arithmetic U>
+auto approx_equal(const T &a, const U &b, const U &epsilon = U{DEFAULT_EPSILON}) -> bool
     requires std::is_same_v<typename T::dimension_type, dimensions::dimensionless>
 {
     return approx_equal(a.value(), b, epsilon);
@@ -56,14 +56,13 @@ auto approx_equal(const T &a, const U &b, const V &epsilon = V{DEFAULT_EPSILON})
  * @brief Approximately equal comparison for mixed types (arithmetic and quantitative)
  * @tparam T Arithmetic type
  * @tparam U Quantitative type
- * @tparam V Arithmetic type for epsilon
  * @param a Arithmetic value
  * @param b Quantity
  * @param epsilon Tolerance for comparison
  * @return true if values are approximately equal, false otherwise
  */
-template <arithmetic T, quantitative U, arithmetic V>
-auto approx_equal(const T &a, const U &b, const V &epsilon = V{DEFAULT_EPSILON}) -> bool
+template <arithmetic T, quantitative U>
+auto approx_equal(const T &a, const U &b, const T &epsilon = T{DEFAULT_EPSILON}) -> bool
     requires std::is_same_v<typename U::dimension_type, dimensions::dimensionless>
 {
     return approx_equal(a, b.value(), epsilon);
