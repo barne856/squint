@@ -122,24 +122,38 @@ TEST_CASE("quantity class comprehensive tests") {
         length l(10.0);
 
         CHECK(l.value() == 10.0);
-        CHECK(*l == 10.0);
-        CHECK(l.operator->() == &l.value());
+        // should not compile (uncomment to test):
+        // auto l_val = *l; // Error: non dimensionless quantity
+        // auto l_val = l.operator->(); // Error: non dimensionless quantity
 
         const length cl(20.0);
-        CHECK(cl.value() == 20.0);
-        CHECK(*cl == 20.0);
-        CHECK(cl.operator->() == &cl.value());
-
-        // Mutable access
-        l.value() = 30.0;
-        CHECK(l.value() == 30.0);
-
-        *l = 40.0;
-        CHECK(l.value() == 40.0);
+        // should not compile (uncomment to test):
+        // auto cl_val = *cl; // Error: non dimensionless quantity
+        // auto cl_val = cl.operator->(); // Error: non dimensionless quantity
 
         // These should not compile (uncomment to test):
         // cl.value() = 50.0;  // Error: assignment to const reference
         // *cl = 60.0;  // Error: assignment to const reference
+
+        dimensionless d(5.0);
+
+        CHECK(d.value() == 5.0);
+        CHECK(*d == 5.0);
+        CHECK(d.operator->() == &d.value());
+
+        const dimensionless cd(10.0);
+        CHECK(cd.value() == 10.0);
+        CHECK(*cd == 10.0);
+        CHECK(cd.operator->() == &cd.value());
+
+        // mutable accessors
+        CHECK(l.value() == 10.0);
+        l.value() = 20.0;
+        CHECK(l.value() == 20.0);
+
+        CHECK(d.value() == 5.0);
+        *d = 10.0;
+        CHECK(d.value() == 10.0);
     }
 
     SUBCASE("Arithmetic operators") {

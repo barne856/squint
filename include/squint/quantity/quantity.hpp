@@ -111,10 +111,26 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
 
     [[nodiscard]] constexpr auto value() noexcept -> T & { return value_; }
     [[nodiscard]] constexpr auto value() const noexcept -> const T & { return value_; }
-    [[nodiscard]] constexpr auto operator->() const noexcept -> const T * { return &value_; }
-    [[nodiscard]] constexpr auto operator->() noexcept -> T * { return &value_; }
-    [[nodiscard]] constexpr auto operator*() const noexcept -> const T & { return value_; }
-    [[nodiscard]] constexpr auto operator*() noexcept -> T & { return value_; }
+    [[nodiscard]] constexpr auto operator->() const noexcept -> const T *
+        requires std::is_same_v<D, dimensions::dimensionless>
+    {
+        return &value_;
+    }
+    [[nodiscard]] constexpr auto operator->() noexcept -> T *
+        requires std::is_same_v<D, dimensions::dimensionless>
+    {
+        return &value_;
+    }
+    [[nodiscard]] constexpr auto operator*() const noexcept -> const T &
+        requires std::is_same_v<D, dimensions::dimensionless>
+    {
+        return value_;
+    }
+    [[nodiscard]] constexpr auto operator*() noexcept -> T &
+        requires std::is_same_v<D, dimensions::dimensionless>
+    {
+        return value_;
+    }
 
     /// @}
 
