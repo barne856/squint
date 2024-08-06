@@ -1,0 +1,51 @@
+# Project information
+PROJECT_NAME           = "SQUINT"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring together compile-time dimensional analysis, unit conversion, and linear algebra operations in C++."
+
+# Input files
+INPUT                  = @DOXYGEN_INPUT_DIR@
+FILE_PATTERNS          = *.h *.hpp
+RECURSIVE              = YES
+STRIP_FROM_INC_PATH    = @DOXYGEN_INPUT_DIR@
+EXTRACT_CONCEPTS       = YES
+
+# Output directory
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIR@
+
+# Output formats
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+
+# Extraction settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+# Index
+ALPHABETICAL_INDEX     = YES
+
+# Preprocessing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+
+# Graphs and diagrams
+HAVE_DOT               = YES
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+
+# Miscellaneous
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES

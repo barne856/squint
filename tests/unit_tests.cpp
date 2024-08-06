@@ -245,17 +245,16 @@ calculate_hydrostatic_pressure(const squint::density &fluid_density, const squin
 }
 
 // Function to calculate volumetric flow rate
-squint::volume calculate_flow_rate(const squint::area &cross_sectional_area,
-                                            const squint::velocity &fluid_velocity) {
+squint::flow calculate_flow_rate(const squint::area &cross_sectional_area, const squint::velocity &fluid_velocity) {
     // Calculate flow rate: Q = Av
     return cross_sectional_area * fluid_velocity;
 }
 
 // Function to calculate Reynolds number
-squint::pure
-calculate_reynolds_number(const squint::density &fluid_density, const squint::velocity &characteristic_velocity,
-                          const squint::length &characteristic_length,
-                          const squint::quantity<float, squint::dimensions::force_dim> &dynamic_viscosity) {
+squint::pure calculate_reynolds_number(const squint::density &fluid_density,
+                                       const squint::velocity &characteristic_velocity,
+                                       const squint::length &characteristic_length,
+                                       const squint::viscosity &dynamic_viscosity) {
     // Calculate Reynolds number: Re = (ρvL) / μ
     return (fluid_density * characteristic_velocity * characteristic_length) / dynamic_viscosity;
 }
@@ -271,12 +270,46 @@ calculate_bernoulli_pressure(const squint::pressure &p1, const squint::density &
     return p1 + 0.5f * fluid_density * (v1 * v1 - v2 * v2) + fluid_density * gravity * (h1 - h2);
 }
 
-TEST_CASE("Test functions") {
+TEST_CASE("Test fluid dynamics functions") {
     SUBCASE("Calculate kinetic energy") {
-        kilograms m(10.0f);
-        meters_per_second v(5.0f);
-        joules ke = calculate_kinetic_energy(m, v);
+        units::kilograms m(10.0f);
+        units::meters_per_second v(5.0f);
+        units::joules ke = calculate_kinetic_energy(m, v);
         CHECK(ke.unit_value() == doctest::Approx(125.0f));
+    }
+
+    SUBCASE("Calculate hydrostatic pressure") {
+        units::kilograms_per_cubic_meter density(1000.0f); // Water density
+        units::meters depth(10.0f);
+        units::pascals pressure = calculate_hydrostatic_pressure(density, depth);
+        CHECK(pressure.unit_value() == doctest::Approx(98100.0f));
+    }
+
+    SUBCASE("Calculate flow rate") {
+        units::square_meters area(2.0f);
+        units::meters_per_second velocity(3.0f);
+        units::cubic_meters_per_second flow_rate = calculate_flow_rate(area, velocity);
+        CHECK(flow_rate.unit_value() == doctest::Approx(6.0f));
+    }
+
+    SUBCASE("Calculate Reynolds number") {
+        units::kilograms_per_cubic_meter density(1000.0f);
+        units::meters_per_second velocity(2.0f);
+        units::meters length(0.1f);
+        units::pascal_seconds viscosity(0.001f);
+        pure reynolds = calculate_reynolds_number(density, velocity, length, viscosity);
+        CHECK(reynolds.value() == doctest::Approx(200000.0f));
+    }
+
+    SUBCASE("Calculate Bernoulli pressure") {
+        units::pascals p1(100000.0f);
+        units::kilograms_per_cubic_meter density(1000.0f);
+        units::meters_per_second v1(2.0f);
+        units::meters h1(10.0f);
+        units::meters_per_second v2(4.0f);
+        units::meters h2(5.0f);
+        units::pascals p2 = calculate_bernoulli_pressure(p1, density, v1, h1, v2, h2);
+        CHECK(p2.unit_value() == doctest::Approx(143050.0f).epsilon(0.01));
     }
 }
 // NOLINTEND

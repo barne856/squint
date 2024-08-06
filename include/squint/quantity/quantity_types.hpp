@@ -114,6 +114,10 @@ template <typename T> using voltage_t = unchecked_quantity_t<T, dimensions::volt
 template <typename T> using inductance_t = unchecked_quantity_t<T, dimensions::inductance_dim>;
 /// @brief Type alias for a capacitance quantity.
 template <typename T> using capacitance_t = unchecked_quantity_t<T, dimensions::capacitance_dim>;
+/// @ brief Type alias for a flow quantity.
+template <typename T> using flow_t = unchecked_quantity_t<T, dimensions::flow_dim>;
+/// @brief Type alias for a viscosity quantity.
+template <typename T> using viscosity_t = unchecked_quantity_t<T, dimensions::viscosity_dim>;
 
 /** @} */ // end of derived_quantities group
 
@@ -192,6 +196,10 @@ using voltage = voltage_t<float>;
 using inductance = inductance_t<float>;
 /// @brief Type alias for a capacitance quantity with a float type.
 using capacitance = capacitance_t<float>;
+/// @brief Type alias for a flow quantity with a float type.
+using flow = flow_t<float>;
+/// @brief Type alias for a viscosity quantity with a float type.
+using viscosity = viscosity_t<float>;
 
 /** @} */ // end of float_derived_quantities group
 

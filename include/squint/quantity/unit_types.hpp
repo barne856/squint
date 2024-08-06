@@ -29,6 +29,7 @@ inline constexpr auto ATMOSPHERES_TO_PASCALS = 101325.0;
 inline constexpr auto BAR_TO_PASCALS = 100000.0;
 inline constexpr auto LITER_TO_CUBIC_METERS = 0.001;
 inline constexpr auto GALLONS_TO_CUBIC_METERS = 0.00378541;
+inline constexpr auto POISE_TO_PASCAL_SECONDS = 0.1;
 /// @}
 
 /// @brief Length units
@@ -236,6 +237,20 @@ template <typename T> using henrys_t = unit<T, dimensions::inductance_dim>;
 template <typename T> using farads_t = unit<T, dimensions::capacitance_dim>;
 /// @}
 
+/// @brief Flow units
+/// @{
+template <typename T> using cubic_meters_per_second_t = unit<T, dimensions::flow_dim>;
+template <typename T> using liters_per_second_t = unit<T, dimensions::flow_dim, static_cast<T>(LITER_TO_CUBIC_METERS)>;
+template <typename T>
+using gallons_per_second_t = unit<T, dimensions::flow_dim, static_cast<T>(GALLONS_TO_CUBIC_METERS)>;
+/// @}
+
+/// @brief Viscosity units
+/// @{
+template <typename T> using pascal_seconds_t = unit<T, dimensions::viscosity_dim>;
+template <typename T> using poise_t = unit<T, dimensions::viscosity_dim, static_cast<T>(POISE_TO_PASCAL_SECONDS)>;
+/// @}
+
 /// @brief Type aliases for length quantities with float type
 /// @{
 using meters = meters_t<float>;
@@ -408,6 +423,19 @@ using henrys = henrys_t<float>;
 /// @brief Type aliases for capacitance quantities with float type
 /// @{
 using farads = farads_t<float>;
+/// @}
+
+/// @brief Type aliases for flow quantities with float type
+/// @{
+using cubic_meters_per_second = cubic_meters_per_second_t<float>;
+using liters_per_second = liters_per_second_t<float>;
+using gallons_per_second = gallons_per_second_t<float>;
+/// @}
+
+/// @brief Type aliases for viscosity quantities with float type
+/// @{
+using pascal_seconds = pascal_seconds_t<float>;
+using poise = poise_t<float>;
 /// @}
 
 } // namespace squint::units

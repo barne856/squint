@@ -105,6 +105,8 @@ using momentum_dim = dim_mult_t<M, velocity_dim>;
 using voltage_dim = dim_div_t<power_dim, I>;
 using inductance_dim = dim_div_t<dim_div_t<voltage_dim, I>, T>;
 using capacitance_dim = dim_div_t<charge_dim, voltage_dim>;
+using flow_dim = dim_div_t<volume_dim, T>;
+using viscosity_dim = dim_mult_t<pressure_dim, T>;
 
 /** @} */  // end of derived_dimensions group
 
