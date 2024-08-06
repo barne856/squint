@@ -18,34 +18,33 @@ namespace squint::units {
 template <typename T, typename D, T Scale = T(1), T Offset = T(0),
           error_checking ErrorChecking = error_checking::disabled>
 struct unit : quantity<T, D, ErrorChecking> {
-    using base_type = quantity<T, D, ErrorChecking>;
-    using base_type::base_type; // Inherit constructors
+    using base_quantity_type = quantity<T, D, ErrorChecking>;
 
     static constexpr T scale = Scale;
     static constexpr T offset = Offset;
 
     // Implicit constructor from base unit
-    constexpr unit(const base_type &q) : base_type(q) {}
+    constexpr unit(const base_quantity_type &q) : base_quantity_type(q) {}
 
     // Implicit constructor from another unit with the same dimension
     template <typename U, U Scale2, U Offset2, error_checking OtherErrorChecking>
-    constexpr unit(const unit<U, D, Scale2, Offset2, OtherErrorChecking> &q) : base_type(q) {}
+    constexpr unit(const unit<U, D, Scale2, Offset2, OtherErrorChecking> &q) : base_quantity_type(q) {}
 
     // Deleted constructor from different base unit
     template <typename U, typename D2, error_checking OtherErrorChecking>
     unit(const quantity<U, D2, OtherErrorChecking> &q) = delete;
 
     // Constructor from value in this unit
-    constexpr explicit unit(T unit_value) : base_type((unit_value + offset) * scale) {}
+    constexpr explicit unit(T unit_value) : base_quantity_type((unit_value + offset) * scale) {}
 
     // Convert to value in this unit
-    [[nodiscard]] constexpr auto unit_value() const -> T { return this->base_type::value() / scale - offset; }
+    [[nodiscard]] constexpr auto unit_value() const -> T { return this->base_quantity_type::value() / scale - offset; }
 
     // Convert from base unit to this unit
-    static constexpr auto convert_to(const base_type &q) -> T { return q.value() / scale - offset; }
+    static constexpr auto convert_to(const base_quantity_type &q) -> T { return q.value() / scale - offset; }
 
     // Convert from this unit to base unit
-    static constexpr auto convert_from(T value) -> base_type { return base_type((value + offset) * scale); }
+    static constexpr auto convert_from(T value) -> base_quantity_type { return base_quantity_type((value + offset) * scale); }
 };
 
 /**

@@ -10,6 +10,7 @@
 #include <array>
 #include <ranges>
 #include <vector>
+#include <functional>
 
 namespace squint {
 

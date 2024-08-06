@@ -184,10 +184,12 @@ TEST_CASE("quantity class comprehensive tests") {
         CHECK(l1 != l2);
         CHECK(l1 == length(10.0));
 
-        // Three-way comparison
+        #ifndef _MSC_VER
+        // Three-way comparison (bug in MSVC prevents this from compiling)
         CHECK((l1 <=> l2) < 0);
         CHECK((l2 <=> l1) > 0);
         CHECK((l1 <=> length(10.0)) == 0);
+        #endif
 
         // These should not compile (uncomment to test):
         // CHECK(l1 < 10.0);  // Error: comparing quantity with scalar
