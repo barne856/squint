@@ -19,30 +19,13 @@ template <typename Derived, typename T, typename Shape, layout Layout, error_che
     static constexpr auto layout() -> layout { return Layout; }
     static constexpr auto error_checking() -> error_checking { return ErrorChecking; }
 
-    [[nodiscard]] constexpr auto rank() const -> std::size_t {
-        if constexpr (fixed_shape<Derived>) {
-            return Shape::size();
-        } else {
-            return static_cast<const Derived *>(this)->shape().size();
-        }
-    }
+    [[nodiscard]] constexpr auto rank() const -> std::size_t { return static_cast<const Derived *>(this)->rank(); }
 
-    [[nodiscard]] constexpr auto size() const -> std::size_t {
-        if constexpr (fixed_shape<Derived>) {
-            return product(Shape{});
-        } else {
-            return static_cast<const Derived *>(this)->shape().size();
-        }
-    }
+    [[nodiscard]] constexpr auto size() const -> std::size_t { return static_cast<const Derived *>(this)->size(); }
 
-    auto shape() const {
-        if constexpr (fixed_shape<Derived>) {
-            constexpr auto shape_arr = make_array(Shape{});
-            return std::vector<std::size_t>(shape_arr.begin(), shape_arr.end());
-        } else {
-            return static_cast<Derived *>(this)->shape();
-        }
-    }
+    auto shape() const { return static_cast<const Derived *>(this)->shape(); }
+
+    auto strides() const { return static_cast<const Derived *>(this)->strides(); }
 
     auto data() const -> const T * { return static_cast<const Derived *>(this)->data(); }
     auto data() -> T * { return static_cast<Derived *>(this)->data(); }

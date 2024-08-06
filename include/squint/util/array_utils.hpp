@@ -9,6 +9,8 @@
 #ifndef SQUINT_UTIL_ARRAY_UTILS_HPP
 #define SQUINT_UTIL_ARRAY_UTILS_HPP
 
+#include "squint/core/concepts.hpp"
+
 #include <array>
 #include <cstddef>
 #include <utility>
@@ -38,7 +40,41 @@ template <std::size_t... Ix> constexpr auto make_array(std::index_sequence<Ix...
  * @param unused An index sequence (unused, only used for type deduction).
  * @return std::size_t The product of all indices in the sequence.
  */
-template <std::size_t... Ix> constexpr std::size_t product(std::index_sequence<Ix...> /*unused*/) { return (Ix * ...); }
+template <std::size_t... Ix> constexpr auto product(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
+    return (Ix * ...);
+}
+
+/**
+ * @brief Computes the minimum index in an index sequence.
+ *
+ * This function returns the minimum index in the given index sequence.
+ *
+ * @tparam Ix Variadic template parameter for indices.
+ * @param unused An index sequence (unused, only used for type deduction).
+ * @return std::size_t The minimum index in the sequence.
+ */
+template <std::size_t... Ix> constexpr auto min(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
+    return (std::min({Ix...}));
+}
+
+/**
+ * @brief Computes the maximum index in an index sequence.
+ *
+ * This function returns the maximum index in the given index sequence.
+ *
+ * @tparam Ix Variadic template parameter for indices.
+ * @param unused An index sequence (unused, only used for type deduction).
+ * @return std::size_t The maximum index in the sequence.
+ */
+template <std::size_t... Ix> constexpr auto max(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
+    return (std::max({Ix...}));
+}
+
+// Helper function to check if tensor dimensions are divisible by subview dimensions
+template <fixed_shape T, std::size_t... SubviewDims> constexpr auto dimensions_divisible() -> bool {
+    constexpr auto shape_arr = make_array(typename T::shape_type{});
+    return ((shape_arr % SubviewDims == 0) && ...);
+}
 
 } // namespace squint
 

@@ -1,14 +1,14 @@
 #ifndef SQUINT_LINEAR_ALGEBRA_HPP
 #define SQUINT_LINEAR_ALGEBRA_HPP
 
-#ifdef BLAS_BACKEND_MKL
+#ifdef SQUINT_BLAS_BACKEND_MKL
 #include <mkl.h>
 #define BLAS_INT MKL_INT
-#elif defined(BLAS_BACKEND_OPENBLAS)
+#elif defined(SQUINT_BLAS_BACKEND_OPENBLAS)
 #include <cblas.h>
 #include <lapacke.h>
 #define BLAS_INT int
-#elif defined(BLAS_BACKEND_NONE)
+#elif defined(SQUINT_BLAS_BACKEND_NONE)
 #include "linear_algebra_fallback.hpp"
 #define BLAS_INT int
 #define cblas_sgemm gemm<float>

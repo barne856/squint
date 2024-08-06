@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.28)
 
 # BLAS/LAPACKE backend options
-set(BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
-set_property(CACHE BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
+set(SQUINT_BLAS_BACKEND "NONE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
+set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
 
 set(PROJECT_LANGUAGES CXX)
-if(BLAS_BACKEND STREQUAL "OpenBLAS")
+if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
   list(APPEND PROJECT_LANGUAGES C Fortran)
 endif()
 
@@ -22,14 +22,14 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Function to setup BLAS backend
 function(setup_blas_backend)
-  if(BLAS_BACKEND STREQUAL "OpenBLAS")
+  if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
     setup_openblas()
-  elseif(BLAS_BACKEND STREQUAL "MKL")
+  elseif(SQUINT_BLAS_BACKEND STREQUAL "MKL")
     setup_mkl()
-  elseif(BLAS_BACKEND STREQUAL "NONE")
+  elseif(SQUINT_BLAS_BACKEND STREQUAL "NONE")
     setup_none()
   else()
-    message(FATAL_ERROR "Unsupported BLAS backend: ${BLAS_BACKEND}")
+    message(FATAL_ERROR "Unsupported BLAS backend: ${SQUINT_BLAS_BACKEND}")
   endif()
 endfunction()
 
@@ -49,7 +49,7 @@ function(setup_openblas)
     ${CMAKE_BINARY_DIR}/generated
     ${CMAKE_BINARY_DIR}
   )
-  target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_OPENBLAS)
+  target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_OPENBLAS)
   set(EXCLUDE_FROM_ALL TRUE)
 endfunction()
 
@@ -60,12 +60,12 @@ function(setup_mkl)
   # If found by FindMKL, use the provided targets
   target_link_libraries(SQUINT INTERFACE MKL::MKL)
   # Add compile definition for MKL
-  target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_MKL)
+  target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_MKL)
 endfunction()
 
 # Function to setup NONE (fallback implementations)
 function(setup_none)
-  target_compile_definitions(SQUINT INTERFACE BLAS_BACKEND_NONE)
+  target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_NONE)
 endfunction()
 
 # Option to control building tests
@@ -105,17 +105,17 @@ if(SQUINT_BUILD_TESTS)
   add_squint_test(dimension_tests)
   add_squint_test(unit_tests)
   add_squint_test(math_tests)
+  add_squint_test(tensor_tests)
   # add_squint_test(linalg_tests)
   # add_squint_test(geometry_tests)
-  # add_squint_test(tensor_tests)
 endif()
 
 add_library(SQUINT::SQUINT ALIAS SQUINT)
 
 # Documentation
-option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" ${PROJECT_IS_TOP_LEVEL})
+option(SQUINT_BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" ${PROJECT_IS_TOP_LEVEL})
 
-if(BUILD_DOCUMENTATION)
+if(SQUINT_BUILD_DOCUMENTATION)
   # Find Doxygen
   find_package(Doxygen REQUIRED)
   

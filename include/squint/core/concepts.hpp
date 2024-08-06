@@ -71,6 +71,7 @@ concept tensorial = requires(T t) {
     { t.rank() } -> std::convertible_to<std::size_t>;
     { t.size() } -> std::convertible_to<std::size_t>;
     { t.shape() } -> std::convertible_to<std::vector<std::size_t>>;
+    { t.strides() } -> std::convertible_to<std::vector<std::size_t>>;
     { t.data() } -> std::convertible_to<typename T::value_type *>;
     { T::layout() } -> std::same_as<layout>;
     { T::error_checking() } -> std::same_as<error_checking>;
@@ -148,7 +149,10 @@ concept dimensionless_scalar = arithmetic<T> || dimensionless_quantity<T>;
  * @tparam T The type to check.
  */
 template <typename T>
-concept fixed_shape = tensorial<T> && is_index_sequence<typename T::shape_type>::value;
+concept fixed_shape =
+    tensorial<T> && is_index_sequence<typename T::shape_type>::value && requires(T t, std::size_t index) {
+        { t.template subview<0,0>(index, index) };
+    };
 
 /**
  * @concept dynamic_shape
@@ -157,10 +161,20 @@ concept fixed_shape = tensorial<T> && is_index_sequence<typename T::shape_type>:
  * @tparam T The type to check.
  */
 template <typename T>
-concept dynamic_shape = tensorial<T> && std::is_same_v<typename T::shape_type, std::vector<std::size_t>> &&
-                        requires(T t, const std::vector<std::size_t> &new_shape) {
-                            { t.reshape(new_shape) } -> std::same_as<void>;
-                        };
+concept dynamic_shape =
+    tensorial<T> && std::is_same_v<typename T::shape_type, std::vector<std::size_t>> &&
+    requires(T t, const std::vector<std::size_t> &subview_shape, const std::vector<std::size_t> &start_indices) {
+        { t.subview(subview_shape, start_indices) } -> std::same_as<decltype(t.subview(subview_shape, start_indices))>;
+    };
+
+/**
+ * @concept const_tensor
+ * @brief Concept for constant tensors.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept const_tensor = std::is_const_v<std::remove_reference_t<T>>;
 
 } // namespace squint
 
