@@ -23,7 +23,7 @@ struct unit : quantity<T, D, ErrorChecking> {
     static constexpr T scale = Scale;
     static constexpr T offset = Offset;
 
-    // Implicit constructor from base unit
+    // Implicit constructor from base unit with the same dimension
     constexpr unit(const base_quantity_type &q) : base_quantity_type(q) {}
 
     // Implicit constructor from another unit with the same dimension
@@ -33,6 +33,10 @@ struct unit : quantity<T, D, ErrorChecking> {
     // Deleted constructor from different base unit
     template <typename U, typename D2, error_checking OtherErrorChecking>
     unit(const quantity<U, D2, OtherErrorChecking> &q) = delete;
+
+    // Deleted constructor from different unit
+    template <typename U, typename D2, U Scale2, U Offset2, error_checking OtherErrorChecking>
+    unit(const unit<U, D2, Scale2, Offset2, OtherErrorChecking> &q) = delete;
 
     // Constructor from value in this unit
     constexpr explicit unit(T unit_value) : base_quantity_type((unit_value + offset) * scale) {}

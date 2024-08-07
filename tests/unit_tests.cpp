@@ -127,8 +127,11 @@ TEST_CASE("Unit arithmetic operations with conversions") {
 
         // should not compile (uncomment to test)
         // seconds s = convert_to<seconds_t>(l); // convert length to seconds
+        // seconds s = convert_to<seconds_t>(f); // convert feet to seconds
         // seconds s2 = l; // assign length to seconds
+        // seconds s2 = f; // assign feet to seconds
         // seconds s3(l); // construct seconds from length
+        // seconds s3(f); // construct seconds from feet
     }
 }
 
