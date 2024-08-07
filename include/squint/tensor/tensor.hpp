@@ -43,6 +43,10 @@ struct compute_strides<Layout, std::index_sequence<Is...>, std::index_sequence<D
     using type = std::index_sequence<compute_single_stride<Is, Layout, Dims...>::value...>;
 };
 
+// TODO, make tensor_base without initalizers, data array, or subscript operators
+// make dense_tensor with initalizers, data array, and subscript operators
+// make tensor_view with initalizers, data ptr, and subscript operators
+// make gpu_tensor with initalizers, data ptr
 template <typename T, typename Shape, layout Layout = layout::row_major,
           error_checking ErrorChecking = error_checking::disabled>
 class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
