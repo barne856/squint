@@ -71,9 +71,15 @@ template <std::size_t... Ix> constexpr auto max(std::index_sequence<Ix...> /*unu
 }
 
 // Helper function to check if tensor dimensions are divisible by subview dimensions
-template <fixed_shape T, std::size_t... SubviewDims> constexpr auto dimensions_divisible() -> bool {
+template <fixed_shape T, typename SubviewShape> constexpr auto dimensions_divisible() -> bool {
     constexpr auto shape_arr = make_array(typename T::shape_type{});
-    return ((shape_arr % SubviewDims == 0) && ...);
+    constexpr auto subview_arr = make_array(SubviewShape{});
+    for (std::size_t i = 0; i < shape_arr.size(); ++i) {
+        if (shape_arr[i] % subview_arr[i] != 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace squint

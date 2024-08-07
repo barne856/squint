@@ -67,14 +67,19 @@ concept dimensionless = dimensional<U> && (U::L::num == 0) && (U::T::num == 0) &
 template <typename T>
 concept tensorial = requires(T t) {
     typename T::value_type;
+    typename T::index_type;
     typename T::shape_type;
+    typename T::strides_type;
     { t.rank() } -> std::convertible_to<std::size_t>;
     { t.size() } -> std::convertible_to<std::size_t>;
-    { t.shape() } -> std::convertible_to<std::vector<std::size_t>>;
-    { t.strides() } -> std::convertible_to<std::vector<std::size_t>>;
+    { t.shape() } -> std::convertible_to<typename T::index_type>;
+    { t.strides() } -> std::convertible_to<typename T::index_type>;
     { t.data() } -> std::convertible_to<typename T::value_type *>;
+    { t.data() } -> std::convertible_to<const typename T::value_type *>;
     { T::layout() } -> std::same_as<layout>;
     { T::error_checking() } -> std::same_as<error_checking>;
+    { t[std::declval<typename T::index_type>()] } -> std::convertible_to<typename T::value_type &>;
+    { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;
 };
 
 /**
@@ -151,7 +156,7 @@ concept dimensionless_scalar = arithmetic<T> || dimensionless_quantity<T>;
 template <typename T>
 concept fixed_shape =
     tensorial<T> && is_index_sequence<typename T::shape_type>::value && requires(T t, std::size_t index) {
-        { t.template subview<0,0>(index, index) };
+        { t.template subview<0, 0>(index, index) };
     };
 
 /**
