@@ -63,7 +63,6 @@ class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
                 throw std::invalid_argument("Initializer list size does not match tensor size");
             }
         }
-        // data_ may be std::vector or std::array
         if constexpr (is_index_sequence<Shape>::value) {
             std::copy(init.begin(), init.end(), data_.begin());
         } else {
