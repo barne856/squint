@@ -76,7 +76,6 @@ concept tensorial = requires(T t) {
     { t.strides() } -> std::convertible_to<typename T::index_type>;
     { t.data() } -> std::convertible_to<typename T::value_type *>;
     { t.data() } -> std::convertible_to<const typename T::value_type *>;
-    { T::layout() } -> std::same_as<layout>;
     { T::error_checking() } -> std::same_as<error_checking>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<typename T::value_type &>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;

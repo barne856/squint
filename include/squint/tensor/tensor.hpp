@@ -1,64 +1,56 @@
-#ifndef SQUINT_TENSOR_TENSOR_HPP
-#define SQUINT_TENSOR_TENSOR_HPP
-
-#include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
 #include "squint/tensor/iterable_tensor.hpp"
 #include "squint/util/array_utils.hpp"
 #include "squint/util/type_traits.hpp"
-
 #include <array>
+#include <concepts>
 #include <cstddef>
-#include <numeric>
 #include <stdexcept>
 #include <type_traits>
-#include <utility>
+#include <variant>
 #include <vector>
 
 namespace squint {
 
-// Helper to compute the product of a range of values in a parameter pack
-template <std::size_t Begin, std::size_t End, std::size_t... Dims> struct product_range {
-    static constexpr std::size_t value = 1;
-};
+// Concept for compile-time shapes
+template <typename T>
+concept compile_time_shape = is_index_sequence<T>::value;
 
-template <std::size_t Begin, std::size_t End, std::size_t First, std::size_t... Rest>
-struct product_range<Begin, End, First, Rest...> {
-    static constexpr std::size_t value = (Begin < End ? First : 1) * product_range<Begin + 1, End, Rest...>::value;
-};
+// Concept for runtime shapes
+template <typename T>
+concept runtime_shape = std::is_same_v<T, std::vector<std::size_t>>;
 
-// Helper to compute a single stride
-template <std::size_t Idx, layout Layout, std::size_t... Dims> struct compute_single_stride {
-    static constexpr std::size_t value = Layout == layout::row_major
-                                             ? product_range<Idx + 1, sizeof...(Dims), Dims...>::value
-                                             : product_range<0, Idx, Dims...>::value;
-};
+// Unified Tensor class
+// TODO
+// - product for std::vector
+// - how to handle GPU specialized tensor with overide subscript operator?
+template <typename T, typename Shape, typename Strides = column_major_strides<Shape>,
+          error_checking ErrorChecking = error_checking::disabled, bool OwnData = true>
+class tensor : public iterable_tensor<tensor<T, Shape, Strides, ErrorChecking, OwnData>> {
+  private:
+    // Data storage
+    std::conditional_t<
+        OwnData, std::conditional_t<compile_time_shape<Shape>, std::array<T, product(Shape{})>, std::vector<T>>, T *>
+        data_;
 
-// Helper to compute all strides
-template <layout Layout, typename Seq, typename Shape> struct compute_strides;
+    // Shape and strides storage
+    [[no_unique_address]] std::conditional_t<compile_time_shape<Shape>, std::integral_constant<Shape, Shape{}>, Shape>
+        shape_;
 
-template <layout Layout, std::size_t... Is, std::size_t... Dims>
-struct compute_strides<Layout, std::index_sequence<Is...>, std::index_sequence<Dims...>> {
-    using type = std::index_sequence<compute_single_stride<Is, Layout, Dims...>::value...>;
-};
+    [[no_unique_address]] std::conditional_t<compile_time_shape<Strides>, std::integral_constant<Strides, Strides{}>,
+                                             Strides> strides_;
 
-// TODO, make tensor_base without initalizers, data array, or subscript operators
-// make dense_tensor with initalizers, data array, and subscript operators
-// make tensor_view with initalizers, data ptr, and subscript operators
-// make gpu_tensor with initalizers, data ptr
-template <typename T, typename Shape, layout Layout = layout::column_major,
-          error_checking ErrorChecking = error_checking::disabled>
-class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
   public:
     using value_type = T;
     using shape_type = Shape;
-    using index_type = std::conditional_t<is_index_sequence<Shape>::value, std::array<std::size_t, Shape::size()>,
-                                          std::vector<std::size_t>>;
-    // compute strides type as index sequence at compile time
-    using strides_type = typename compute_strides<Layout, std::make_index_sequence<Shape::size()>, Shape>::type;
+    using strides_type = Strides;
+    using index_type =
+        std::conditional_t<compile_time_shape<Shape>, std::array<std::size_t, Shape::size()>, std::vector<std::size_t>>;
 
-    tensor() = default;
+    tensor()
+        requires OwnData
+    = default;
 
     // construct from initializer list
     tensor(std::initializer_list<T> init) {
@@ -67,42 +59,77 @@ class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
                 throw std::invalid_argument("Initializer list size does not match tensor size");
             }
         }
-        if constexpr (is_index_sequence<Shape>::value) {
+        if constexpr (compile_time_shape<Shape>) {
             std::copy(init.begin(), init.end(), data_.begin());
         } else {
             data_ = std::vector<T>(init.begin(), init.end());
         }
     }
 
-    [[nodiscard]] constexpr auto rank() const -> std::size_t {
-        if constexpr (is_index_sequence<Shape>::value) {
+    // Constructor for runtime shapes
+    tensor(Shape shape, Strides strides)
+        requires(runtime_shape<Shape> && runtime_shape<Strides> && OwnData)
+        : shape_(std::move(shape)), strides_(std::move(strides)) {
+        data_.resize(product(shape_));
+    }
+
+    // Constructor for non-owned data (views)
+    tensor(T *data, Shape shape, Strides strides)
+        requires(!OwnData)
+        : data_(data), shape_(std::move(shape)), strides_(std::move(strides)) {}
+
+    // Rank of the tensor
+    [[nodiscard]] constexpr std::size_t rank() const {
+        if constexpr (compile_time_shape<Shape>) {
             return Shape::size();
+        } else {
+            return shape_.size();
         }
     }
 
-    [[nodiscard]] constexpr auto size() const -> std::size_t {
-        if constexpr (is_index_sequence<Shape>::value) {
-            return product(Shape{});
-        }
-    }
-
-    constexpr auto shape() const -> auto {
-        if constexpr (is_index_sequence<Shape>::value) {
+    // Shape of the tensor
+    [[nodiscard]] constexpr auto shape() const {
+        if constexpr (compile_time_shape<Shape>) {
             return make_array(Shape{});
+        } else {
+            return shape_;
         }
     }
 
-    constexpr auto strides() const -> auto {
-        if constexpr (is_index_sequence<Shape>::value) {
-            return make_array(strides_type{});
+    // Strides of the tensor
+    [[nodiscard]] constexpr auto strides() const {
+        if constexpr (compile_time_shape<Strides>) {
+            return make_array(Strides{});
+        } else {
+            return strides_;
         }
     }
 
-    auto data() const -> const T * { return data_.data(); }
-    auto data() -> T * { return data_.data(); }
+    // Total number of elements
+    [[nodiscard]] constexpr std::size_t size() const {
+        if constexpr (compile_time_shape<Shape>) {
+            return product(Shape{});
+        } else {
+            return product(shape_);
+        }
+    }
 
-    static constexpr auto layout() -> layout { return Layout; }
-    static constexpr auto error_checking() -> error_checking { return ErrorChecking; }
+    // Data access
+    [[nodiscard]] constexpr T *data() {
+        if constexpr (OwnData) {
+            return data_.data();
+        } else {
+            return data_;
+        }
+    }
+
+    [[nodiscard]] constexpr const T *data() const {
+        if constexpr (OwnData) {
+            return data_.data();
+        } else {
+            return data_;
+        }
+    }
 
     auto operator[](const index_type &indices) -> T & {
         if constexpr (ErrorChecking == error_checking::enabled) {
@@ -115,7 +142,7 @@ class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
                 }
             }
         }
-        return data_[compute_offset(indices)];
+        return data()[compute_offset(indices)];
     }
 
     auto operator[](const index_type &indices) const -> const T & {
@@ -129,25 +156,41 @@ class tensor : public iterable_tensor<tensor<T, Shape, Layout, ErrorChecking>> {
                 }
             }
         }
-        return data_[compute_offset(indices)];
+        return data()[compute_offset(indices)];
     }
 
-  private:
-    using data_type =
-        std::conditional_t<is_index_sequence<Shape>::value, std::array<T, product(Shape{})>, std::vector<T>>;
-    data_type data_;
+    // Error checking method
+    static constexpr auto error_checking() -> error_checking { return ErrorChecking; }
 
-    constexpr auto compute_offset(const index_type &indices) const -> std::size_t {
-        if constexpr (is_index_sequence<Shape>::value) {
-            std::size_t offset = 0;
+  private:
+    // Helper function to compute offset
+    template <typename... Indices> [[nodiscard]] constexpr std::size_t compute_offset(const index_type &indices) const {
+        std::size_t offset = 0;
+        if constexpr (compile_time_shape<Shape>) {
+            constexpr auto strides_array = make_array(Strides{});
             for (std::size_t i = 0; i < rank(); ++i) {
-                offset += indices[i] * strides()[i];
+                offset += indices[i] * strides_array[i];
             }
-            return offset;
+        } else {
+            for (std::size_t i = 0; i < rank(); ++i) {
+                offset += indices[i] * strides_[i];
+            }
         }
+        return offset;
     }
 };
 
-} // namespace squint
+// Type aliases for common use cases
+template <typename T, typename Shape, typename Strides = column_major_strides<Shape>,
+          error_checking ErrorChecking = error_checking::disabled>
+using owned_tensor = tensor<T, Shape, Strides, ErrorChecking, true>;
 
-#endif // SQUINT_TENSOR_TENSOR_HPP
+template <typename T, typename Shape, typename Strides = column_major_strides<Shape>,
+          error_checking ErrorChecking = error_checking::disabled>
+using tensor_view = tensor<T, Shape, Strides, ErrorChecking, false>;
+
+// tens
+template <typename T, std::size_t... Dims> using tens_t = tensor<T, std::index_sequence<Dims...>>;
+template <std::size_t... Dims> using tens = tens_t<float, Dims...>;
+
+} // namespace squint
