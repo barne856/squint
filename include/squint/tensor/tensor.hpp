@@ -312,6 +312,28 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         return const_cast<T &>(std::as_const(*this)(indices...));
     }
 
+#ifndef _MSC_VER
+    // MSVC does not support the multidimensional subscript operator yet
+
+    /**
+     * @brief Access an element of the tensor using variadic indices.
+     * @param indices Variadic list of indices.
+     * @return A const reference to the element at the specified indices.
+     */
+    template <typename... Indices> auto operator[](Indices... indices) const -> const T & {
+        return access_element({static_cast<std::size_t>(indices)...});
+    }
+
+    /**
+     * @brief Access an element of the tensor using variadic indices (non-const version).
+     * @param indices Variadic list of indices.
+     * @return A reference to the element at the specified indices.
+     */
+    template <typename... Indices> auto operator[](Indices... indices) -> T & {
+        return const_cast<T &>(std::as_const(*this)(indices...));
+    }
+#endif
+
     /**
      * @brief Access an element of the tensor using an index array.
      * @param indices An array or vector of indices.
