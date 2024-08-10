@@ -74,12 +74,10 @@ concept tensorial = requires(T t) {
     { t.size() } -> std::convertible_to<std::size_t>;
     { t.shape() } -> std::convertible_to<typename T::index_type>;
     { t.strides() } -> std::convertible_to<typename T::index_type>;
-    { t.data() } -> std::convertible_to<typename T::value_type *>;
     { t.data() } -> std::convertible_to<const typename T::value_type *>;
     { T::error_checking() } -> std::same_as<error_checking>;
     { T::ownership_type() } -> std::same_as<ownership_type>;
     { T::memory_space() } -> std::same_as<memory_space>;
-    { t[std::declval<typename T::index_type>()] } -> std::convertible_to<typename T::value_type &>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;
 };
 

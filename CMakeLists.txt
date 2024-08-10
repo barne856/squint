@@ -180,3 +180,5 @@ if(SQUINT_BUILD_DOCUMENTATION)
     DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()
+include_directories(include)
+add_executable(main main.cpp)

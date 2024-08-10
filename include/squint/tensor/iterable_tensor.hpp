@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <stdexcept>
 #include <vector>
 
 namespace squint {
@@ -122,7 +123,7 @@ class iterable_mixin {
      * @return const_iterator Pointing one past the last element of the tensor.
      */
     auto end() const {
-        return const_iterator(static_cast<const Derived *>(this), static_cast<Derived *>(this)->shape());
+        return const_iterator(static_cast<const Derived *>(this), static_cast<const Derived *>(this)->shape());
     }
 
     /**

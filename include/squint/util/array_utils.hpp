@@ -45,6 +45,24 @@ template <std::size_t... Ix> constexpr auto product(std::index_sequence<Ix...> /
     return (Ix * ...);
 }
 
+/**
+ * @brief Computes the sum of elements in an index sequence.
+ *
+ * This function adds all the indices in the given index sequence.
+ *
+ * @tparam Ix Variadic template parameter for indices.
+ * @param unused An index sequence (unused, only used for type deduction).
+ * @return std::size_t The sum of all indices in the sequence.
+ */
+template <std::size_t... Ix> constexpr auto sum(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
+    return (Ix + ...);
+}
+
+// check all elements of an index sequence are equal
+template <std::size_t... Ix> constexpr auto all_equal(std::index_sequence<Ix...> /*unused*/) -> bool {
+    return ((Ix == ...));
+}
+
 // Helper function to check if tensor dimensions are divisible by subview dimensions
 template <fixed_tensor T, typename SubviewShape> constexpr auto dimensions_divisible() -> bool {
     constexpr auto shape_arr = make_array(typename T::shape_type{});
@@ -76,6 +94,32 @@ template <std::size_t... Rest, std::size_t New> struct prepend_sequence<std::ind
 
 // Alias template for prepend_sequence
 template <typename Sequence, std::size_t New> using prepend_sequence_t = typename prepend_sequence<Sequence, New>::type;
+
+// Helper to remove the last element from a sequence
+template <typename Sequence> struct init_sequence;
+
+template <std::size_t... Is> struct init_sequence<std::index_sequence<Is...>> {
+    template <std::size_t... Ns>
+    static auto helper(std::index_sequence<Ns...>)
+        -> std::index_sequence<std::get<Ns>(make_array(std::index_sequence<Is...>{}))...>;
+
+    using all_but_last = std::make_index_sequence<sizeof...(Is) - 1>;
+    using type = decltype(helper(all_but_last{}));
+};
+
+// Alias template for init_sequence
+template <typename Sequence> using init_sequence_t = typename init_sequence<Sequence>::type;
+
+// Helper to append an element to a sequence
+template <typename Sequence, std::size_t New> struct append_sequence;
+
+template <std::size_t... Indices, std::size_t New> struct append_sequence<std::index_sequence<Indices...>, New> {
+    using type = std::index_sequence<Indices..., New>;
+};
+
+// Alias template for append_sequence
+template <typename Sequence, std::size_t New> using append_sequence_t = typename append_sequence<Sequence, New>::type;
+
 } // namespace squint
 
 #endif // SQUINT_UTIL_ARRAY_UTILS_HPP

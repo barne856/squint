@@ -30,6 +30,8 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <iomanip>
+#include <iostream>
 #include <random>
 #include <stdexcept>
 #include <type_traits>
@@ -359,7 +361,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     auto subview(const index_type &start_indices)
         requires fixed_shape<Shape> && fixed_shape<SubviewShape>
     {
-        static_assert(SubviewShape::size() == Shape::size(), "Subview dimensions must match tensor rank");
+        static_assert(SubviewShape::size() <= Shape::size(),
+                      "Subview dimensions must be less than or equal to tensor rank");
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (start_indices.size() != rank()) {
                 throw std::invalid_argument("Subview start indices must match tensor rank");
@@ -380,7 +383,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     auto subview(const index_type &start_indices) const
         requires fixed_shape<Shape> && fixed_shape<SubviewShape>
     {
-        static_assert(SubviewShape::size() == Shape::size(), "Subview dimensions must match tensor rank");
+        static_assert(SubviewShape::size() <= Shape::size(),
+                      "Subview dimensions must be less than or equal to tensor rank");
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (start_indices.size() != rank()) {
                 throw std::invalid_argument("Subview start indices must match tensor rank");
@@ -402,7 +406,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     auto subview(Indices... start_indices)
         requires fixed_shape<Shape> && fixed_shape<SubviewShape>
     {
-        static_assert(SubviewShape::size() == Shape::size(), "Subview dimensions must match tensor rank");
+        static_assert(SubviewShape::size() <= Shape::size(),
+                      "Subview dimensions must be less than or equal to tensor rank");
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (sizeof...(Indices) != rank()) {
                 throw std::invalid_argument("Subview start indices must match tensor rank");
@@ -424,7 +429,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     auto subview(Indices... start_indices) const
         requires fixed_shape<Shape> && fixed_shape<SubviewShape>
     {
-        static_assert(SubviewShape::size() == Shape::size(), "Subview dimensions must match tensor rank");
+        static_assert(SubviewShape::size() <= Shape::size(),
+                      "Subview dimensions must be less than or equal to tensor rank");
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (sizeof...(Indices) != rank()) {
                 throw std::invalid_argument("Subview start indices must match tensor rank");
@@ -446,8 +452,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         requires dynamic_shape<Shape> && dynamic_shape<Strides>
     {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (start_indices.size() != rank() || subview_shape.size() != rank()) {
-                throw std::invalid_argument("Subview dimensions must match tensor rank");
+            if (start_indices.size() > rank() || subview_shape.size() > rank()) {
+                throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");
             }
         }
         return tensor<T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking, ownership_type::reference,
@@ -466,8 +472,8 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         requires dynamic_shape<Shape> && dynamic_shape<Strides>
     {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (start_indices.size() != rank() || subview_shape.size() != rank()) {
-                throw std::invalid_argument("Subview dimensions must match tensor rank");
+            if (start_indices.size() > rank() || subview_shape.size() > rank()) {
+                throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");
             }
         }
         return tensor<const T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking,
@@ -648,22 +654,24 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not square (when ErrorChecking is enabled).
      */
     auto diag_view() {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() != 2 || this->shape()[0] != this->shape()[1]) {
-                throw std::invalid_argument("Diagonal view is only valid for square matrices");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            constexpr size_t diag_size = std::get<0>(Shape{});
+            static_assert(all_equal(Shape{}), "Diagonal view is only valid for square matrices");
+            constexpr size_t diag_size = std::get<0>(make_array(Shape{}));
             using DiagShape = std::index_sequence<diag_size>;
-            using DiagStrides = std::index_sequence<std::get<0>(Strides{}) + std::get<1>(Strides{})>;
+            using DiagStrides = std::index_sequence<sum(Strides{})>;
 
             return tensor<T, DiagShape, DiagStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
                 this->data());
         } else {
+            if constexpr (ErrorChecking == error_checking::enabled) {
+                bool all_equal = std::all_of(this->shape().begin(), this->shape().end(),
+                                             [&](size_t s) { return s == this->shape()[0]; });
+                if (!all_equal) {
+                    throw std::invalid_argument("Diagonal view is only valid for square matrices");
+                }
+            }
             std::vector<size_t> diag_shape = {this->shape()[0]};
-            std::vector<size_t> diag_strides = {this->strides()[0] + this->strides()[1]};
+            std::vector<size_t> diag_strides = std::accumulate(this->strides().begin(), this->strides().end(), 0);
 
             return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
                           MemorySpace>(this->data(), diag_shape, diag_strides);
@@ -677,24 +685,26 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not square (when ErrorChecking is enabled).
      */
     auto diag_view() const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() != 2 || this->shape()[0] != this->shape()[1]) {
-                throw std::invalid_argument("Diagonal view is only valid for square matrices");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            constexpr size_t diag_size = std::get<0>(Shape{});
+            static_assert(all_equal(Shape{}), "Diagonal view is only valid for square matrices");
+            constexpr size_t diag_size = std::get<0>(make_array(Shape{}));
             using DiagShape = std::index_sequence<diag_size>;
-            using DiagStrides = std::index_sequence<std::get<0>(Strides{}) + std::get<1>(Strides{})>;
+            using DiagStrides = std::index_sequence<sum(Strides{})>;
 
-            return tensor<const T, DiagShape, DiagStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
+            return tensor<T, DiagShape, DiagStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
                 this->data());
         } else {
+            if constexpr (ErrorChecking == error_checking::enabled) {
+                bool all_equal = std::all_of(this->shape().begin(), this->shape().end(),
+                                             [&](size_t s) { return s == this->shape()[0]; });
+                if (!all_equal) {
+                    throw std::invalid_argument("Diagonal view is only valid for square matrices");
+                }
+            }
             std::vector<size_t> diag_shape = {this->shape()[0]};
-            std::vector<size_t> diag_strides = {this->strides()[0] + this->strides()[1]};
+            std::vector<size_t> diag_strides = std::accumulate(this->strides().begin(), this->strides().end(), 0);
 
-            return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
+            return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
                           MemorySpace>(this->data(), diag_shape, diag_strides);
         }
     }
@@ -856,25 +866,13 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not at least 2D (when ErrorChecking is enabled).
      */
     auto rows() {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() < 2) {
-                throw std::invalid_argument("Rows iterator is only valid for tensors with at least 2 dimensions");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            using RowShape = tail_sequence_t<Shape>;
-            using RowStrides = tail_sequence_t<Strides>;
-
-            return iterator_range(subview_iterator<tensor, RowShape>(this, std::array<size_t, Shape::size()>{}),
-                                  subview_iterator<tensor, RowShape>(this, make_array(Shape{})));
+            using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
+            return this->template subviews<RowShape>();
         } else {
-            std::vector<size_t> row_shape(this->shape().begin() + 1, this->shape().end());
-            std::vector<size_t> row_strides(this->strides().begin() + 1, this->strides().end());
-
-            return iterator_range(
-                subview_iterator<tensor, std::vector<size_t>>(this, std::vector<size_t>(this->rank(), 0), row_shape),
-                subview_iterator<tensor, std::vector<size_t>>(this, this->shape(), row_shape));
+            std::vector<std::size_t> row_shape = this->shape();
+            row_shape[0] = 1;
+            return this->subviews(row_shape);
         }
     }
 
@@ -885,25 +883,13 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not at least 2D (when ErrorChecking is enabled).
      */
     auto rows() const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() < 2) {
-                throw std::invalid_argument("Rows iterator is only valid for tensors with at least 2 dimensions");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            using RowShape = tail_sequence_t<Shape>;
-            using RowStrides = tail_sequence_t<Strides>;
-
-            return iterator_range(subview_iterator<const tensor, RowShape>(this, std::array<size_t, Shape::size()>{}),
-                                  subview_iterator<const tensor, RowShape>(this, make_array(Shape{})));
+            using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
+            return this->template subviews<RowShape>();
         } else {
-            std::vector<size_t> row_shape(this->shape().begin() + 1, this->shape().end());
-            std::vector<size_t> row_strides(this->strides().begin() + 1, this->strides().end());
-
-            return iterator_range(subview_iterator<const tensor, std::vector<size_t>>(
-                                      this, std::vector<size_t>(this->rank(), 0), row_shape),
-                                  subview_iterator<const tensor, std::vector<size_t>>(this, this->shape(), row_shape));
+            std::vector<std::size_t> row_shape = this->shape();
+            row_shape[0] = 1;
+            return this->subviews(row_shape);
         }
     }
 
@@ -914,27 +900,13 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not at least 2D (when ErrorChecking is enabled).
      */
     auto cols() {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() < 2) {
-                throw std::invalid_argument("Columns iterator is only valid for tensors with at least 2 dimensions");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Shape>>, std::get<0>(Shape{})>;
-            using ColStrides = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Strides>>, std::get<0>(Strides{})>;
-
-            return iterator_range(subview_iterator<tensor, ColShape>(this, std::array<size_t, Shape::size()>{}),
-                                  subview_iterator<tensor, ColShape>(this, make_array(Shape{})));
+            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            return this->template subviews<ColShape>();
         } else {
-            std::vector<size_t> col_shape = {this->shape()[0]};
-            col_shape.insert(col_shape.end(), this->shape().begin() + 2, this->shape().end());
-            std::vector<size_t> col_strides = {this->strides()[0]};
-            col_strides.insert(col_strides.end(), this->strides().begin() + 2, this->strides().end());
-
-            return iterator_range(
-                subview_iterator<tensor, std::vector<size_t>>(this, std::vector<size_t>(this->rank(), 0), col_shape),
-                subview_iterator<tensor, std::vector<size_t>>(this, this->shape(), col_shape));
+            std::vector<size_t> col_shape = this->shape();
+            col_shape[col_shape.size() - 1] = 1;
+            return this->subviews(col_shape);
         }
     }
 
@@ -945,27 +917,13 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      * @throws std::invalid_argument If the tensor is not at least 2D (when ErrorChecking is enabled).
      */
     auto cols() const {
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (this->rank() < 2) {
-                throw std::invalid_argument("Columns iterator is only valid for tensors with at least 2 dimensions");
-            }
-        }
-
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Shape>>, std::get<0>(Shape{})>;
-            using ColStrides = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Strides>>, std::get<0>(Strides{})>;
-
-            return iterator_range(subview_iterator<const tensor, ColShape>(this, std::array<size_t, Shape::size()>{}),
-                                  subview_iterator<const tensor, ColShape>(this, make_array(Shape{})));
+            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            return this->template subviews<ColShape>();
         } else {
-            std::vector<size_t> col_shape = {this->shape()[0]};
-            col_shape.insert(col_shape.end(), this->shape().begin() + 2, this->shape().end());
-            std::vector<size_t> col_strides = {this->strides()[0]};
-            col_strides.insert(col_strides.end(), this->strides().begin() + 2, this->strides().end());
-
-            return iterator_range(subview_iterator<const tensor, std::vector<size_t>>(
-                                      this, std::vector<size_t>(this->rank(), 0), col_shape),
-                                  subview_iterator<const tensor, std::vector<size_t>>(this, this->shape(), col_shape));
+            std::vector<size_t> col_shape = this->shape();
+            col_shape[col_shape.size() - 1] = 1;
+            return this->subviews(col_shape);
         }
     }
 
@@ -978,23 +936,20 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto row(size_t index) {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (index >= std::get<0>(Shape{})) {
+            if (index >= std::get<0>(make_array(Shape{}))) {
                 throw std::out_of_range("Row index out of range");
             }
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using RowShape = tail_sequence_t<Shape>;
-            using RowStrides = tail_sequence_t<Strides>;
-
-            return tensor<T, RowShape, RowStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<0>(Strides{}));
+            using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
+            return tensor<T, RowShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<0>(make_array(Strides{})));
         } else {
-            std::vector<size_t> row_shape(this->shape().begin() + 1, this->shape().end());
-            std::vector<size_t> row_strides(this->strides().begin() + 1, this->strides().end());
-
+            std::vector<size_t> row_shape = this->shape();
+            row_shape[0] = 1;
             return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[0], row_shape, row_strides);
+                          MemorySpace>(this->data() + index * this->strides()[0], row_shape, this->strides());
         }
     }
 
@@ -1007,23 +962,20 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto row(size_t index) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (index >= std::get<0>(Shape{})) {
+            if (index >= std::get<0>(make_array(Shape{}))) {
                 throw std::out_of_range("Row index out of range");
             }
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using RowShape = tail_sequence_t<Shape>;
-            using RowStrides = tail_sequence_t<Strides>;
-
-            return tensor<const T, RowShape, RowStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<0>(Strides{}));
+            using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
+            return tensor<T, RowShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<0>(make_array(Strides{})));
         } else {
-            std::vector<size_t> row_shape(this->shape().begin() + 1, this->shape().end());
-            std::vector<size_t> row_strides(this->strides().begin() + 1, this->strides().end());
-
-            return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[0], row_shape, row_strides);
+            std::vector<size_t> row_shape = this->shape();
+            row_shape[0] = 1;
+            return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
+                          MemorySpace>(this->data() + index * this->strides()[0], row_shape, this->strides());
         }
     }
 
@@ -1036,25 +988,20 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto col(size_t index) {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (index >= std::get<1>(Shape{})) {
+            if (index >= std::get<1>(make_array(Shape{}))) {
                 throw std::out_of_range("Column index out of range");
             }
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Shape>>, std::get<0>(Shape{})>;
-            using ColStrides = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Strides>>, std::get<0>(Strides{})>;
-
-            return tensor<T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<1>(Strides{}));
+            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            return tensor<T, ColShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<1>(make_array(Strides{})));
         } else {
-            std::vector<size_t> col_shape = {this->shape()[0]};
-            col_shape.insert(col_shape.end(), this->shape().begin() + 2, this->shape().end());
-            std::vector<size_t> col_strides = {this->strides()[0]};
-            col_strides.insert(col_strides.end(), this->strides().begin() + 2, this->strides().end());
-
+            std::vector<size_t> col_shape = this->shape();
+            col_shape[col_shape.size() - 1] = 1;
             return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, col_strides);
+                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, this->strides());
         }
     }
 
@@ -1067,25 +1014,20 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto col(size_t index) const {
         if constexpr (ErrorChecking == error_checking::enabled) {
-            if (index >= std::get<1>(Shape{})) {
+            if (index >= std::get<1>(make_array(Shape{}))) {
                 throw std::out_of_range("Column index out of range");
             }
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Shape>>, std::get<0>(Shape{})>;
-            using ColStrides = prepend_sequence_t<tail_sequence_t<tail_sequence_t<Strides>>, std::get<0>(Strides{})>;
-
-            return tensor<const T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<1>(Strides{}));
+            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            return tensor<T, ColShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<1>(make_array(Strides{})));
         } else {
-            std::vector<size_t> col_shape = {this->shape()[0]};
-            col_shape.insert(col_shape.end(), this->shape().begin() + 2, this->shape().end());
-            std::vector<size_t> col_strides = {this->strides()[0]};
-            col_strides.insert(col_strides.end(), this->strides().begin() + 2, this->strides().end());
-
-            return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, col_strides);
+            std::vector<size_t> col_shape = this->shape();
+            col_shape[col_shape.size() - 1] = 1;
+            return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
+                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, this->strides());
         }
     }
 
@@ -1108,6 +1050,87 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
 
         this->shape_ = std::move(new_shape);
         this->strides_ = compute_strides(l);
+    }
+
+    friend auto operator<<(std::ostream &os, const tensor &t) -> std::ostream & {
+        // Helper function to print a single element
+        auto print_element = [&os](const T &element) {
+            os << std::setw(10) << std::setprecision(4) << std::fixed << element;
+        };
+
+        // Helper function to print a row
+        auto print_row = [&](const auto &row) {
+            os << "[";
+            bool first = true;
+            for (const auto &element : row) {
+                if (!first) {
+                    os << ", ";
+                }
+                print_element(element);
+                first = false;
+            }
+            os << "]";
+        };
+
+        // Print the tensor shape
+        os << "Tensor(shape=[";
+        const auto &shape = t.shape();
+        for (size_t i = 0; i < t.rank(); ++i) {
+            if (i > 0) {
+                os << ", ";
+            }
+            os << shape[i];
+        }
+        os << "]):\n";
+
+        if (t.rank() == 1) {
+            print_row(t);
+        } else if (t.rank() == 2) {
+            os << "[";
+            bool first_row = true;
+            for (const auto &row : t.rows()) {
+                if (!first_row) {
+                    os << ",\n ";
+                }
+                print_row(row);
+                first_row = false;
+            }
+            os << "]";
+        } else {
+            // For higher dimensions, we'll print the first two dimensions and indicate if there are more
+            os << "[";
+            bool first_slice = true;
+            for (size_t i = 0; i < std::min(shape[0], size_t(3)); ++i) {
+                if (!first_slice) {
+                    os << ",\n\n";
+                }
+                os << " [";
+                bool first_row = true;
+                for (size_t j = 0; j < std::min(shape[1], size_t(3)); ++j) {
+                    if (!first_row) {
+                        os << ",\n  ";
+                    }
+                    if constexpr (fixed_shape<Shape>) {
+                        print_row(t.template subview<tail_sequence_t<tail_sequence_t<Shape>>>(i, j));
+                    } else {
+                        std::vector<size_t> subview_shape(t.shape().begin() + 2, t.shape().end());
+                        print_row(t.subview(subview_shape, {i, j}));
+                    }
+                    first_row = false;
+                }
+                if (shape[1] > 3) {
+                    os << ",\n  ...";
+                }
+                os << "]";
+                first_slice = false;
+            }
+            if (shape[0] > 3) {
+                os << ",\n\n ...";
+            }
+            os << "]";
+        }
+
+        return os;
     }
 
   private:
