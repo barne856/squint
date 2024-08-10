@@ -1096,8 +1096,9 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         os << "Tensor shape: [";
         for (size_t i = 0; i < rank; ++i) {
             os << shape[i];
-            if (i < rank - 1)
+            if (i < rank - 1) {
                 os << ", ";
+            }
         }
         os << "]\n";
 
@@ -1144,9 +1145,11 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         for (size_t i = 0; i < rows; ++i) {
             os << "[";
             for (size_t j = 0; j < cols; ++j) {
-                os << std::setw(8) << std::setprecision(4) << t(i, j);
-                if (j < cols - 1)
+                constexpr std::size_t width = 8;
+                os << std::setw(width) << std::setprecision(4) << t(i, j);
+                if (j < cols - 1) {
                     os << ", ";
+                }
             }
             os << "]\n";
         }
