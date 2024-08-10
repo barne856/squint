@@ -2,7 +2,7 @@
 #define SQUINT_CORE_CONCEPTS_HPP
 
 #include "squint/core/error_checking.hpp"
-#include "squint/core/layout.hpp"
+#include "squint/core/memory.hpp"
 #include "squint/util/type_traits.hpp"
 
 #include <concepts>
@@ -77,6 +77,8 @@ concept tensorial = requires(T t) {
     { t.data() } -> std::convertible_to<typename T::value_type *>;
     { t.data() } -> std::convertible_to<const typename T::value_type *>;
     { T::error_checking() } -> std::same_as<error_checking>;
+    { T::ownership_type() } -> std::same_as<ownership_type>;
+    { T::memory_space() } -> std::same_as<memory_space>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<typename T::value_type &>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;
 };
@@ -147,16 +149,35 @@ template <typename T>
 concept dimensionless_scalar = arithmetic<T> || dimensionless_quantity<T>;
 
 /**
+ * @concept compile_time_shape
+ * @brief Concept for compile-time shapes.
+ *
+ * This concept checks if a type is an index sequence.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept fixed_shape = is_index_sequence<T>::value;
+
+/**
+ * @concept runtime_shape
+ * @brief Concept for runtime shapes.
+ *
+ * This concept checks if a type is a vector of size_t.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept dynamic_shape = std::is_same_v<T, std::vector<std::size_t>>;
+
+/**
  * @concept fixed_shape
  * @brief Concept for tensors with a fixed shape.
  *
  * @tparam T The type to check.
  */
 template <typename T>
-concept fixed_shape =
-    tensorial<T> && is_index_sequence<typename T::shape_type>::value && requires(T t, std::size_t index) {
-        { t.template subview<0, 0>(index, index) };
-    };
+concept fixed_tensor = tensorial<T> && fixed_shape<typename T::shape_type> && fixed_shape<typename T::strides_type>;
 
 /**
  * @concept dynamic_shape
@@ -165,11 +186,8 @@ concept fixed_shape =
  * @tparam T The type to check.
  */
 template <typename T>
-concept dynamic_shape =
-    tensorial<T> && std::is_same_v<typename T::shape_type, std::vector<std::size_t>> &&
-    requires(T t, const std::vector<std::size_t> &subview_shape, const std::vector<std::size_t> &start_indices) {
-        { t.subview(subview_shape, start_indices) } -> std::same_as<decltype(t.subview(subview_shape, start_indices))>;
-    };
+concept dynamic_tensor =
+    tensorial<T> && dynamic_shape<typename T::shape_type> && dynamic_shape<typename T::strides_type>;
 
 /**
  * @concept const_tensor
@@ -179,6 +197,17 @@ concept dynamic_shape =
  */
 template <typename T>
 concept const_tensor = std::is_const_v<std::remove_reference_t<T>>;
+
+/**
+ * @concept view_tensor
+ * @brief Concept for tensor views.
+ *
+ * This concept checks if a tensor is a view (i.e., does not own its data).
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept view_tensor = tensorial<T> && T::is_view::value;
 
 } // namespace squint
 

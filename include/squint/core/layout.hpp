@@ -52,10 +52,10 @@ struct compute_strides<Layout, std::index_sequence<Is...>, std::index_sequence<D
     using type = std::index_sequence<compute_single_stride<Is, Layout, Dims...>::value...>;
 };
 
-// alias for row-major strides
+// alias for compile time row-major strides
 template <typename Shape> using row_major_strides = typename compute_strides<layout::row_major, std::make_index_sequence<Shape::size()>, Shape>::type;
 
-// alias for column-major strides
+// alias for compile time column-major strides
 template <typename Shape> using column_major_strides = typename compute_strides<layout::column_major, std::make_index_sequence<Shape::size()>, Shape>::type;
 
 

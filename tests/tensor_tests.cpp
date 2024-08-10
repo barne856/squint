@@ -2,7 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/core/concepts.hpp"
-#include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_types.hpp"
 
 using namespace squint;
 
@@ -25,13 +25,24 @@ TEST_CASE("Fixed tensors can be iterated over") {
     CHECK(tensor[{1, 1}] == 4);
     CHECK(tensor[{0, 2}] == 5);
     CHECK(tensor[{1, 2}] == 6);
-    
 
-
-    // int i = 1;
-    // for (auto &elem : tensor) {
-    //     CHECK(elem == i++);
-    // }
+     // flat iterator
+     int i = 0;
+     std::array<int, 6> expected{1, 3, 5, 2, 4, 6};
+     for (auto &elem : tensor) {
+         CHECK(elem == expected[i++]);
+     }
+     // subview iterator
+     i = 0;
+     for (auto subview : tensor.subviews<2, 1>()) {
+         CHECK(subview.ownership_type() == ownership_type::reference);
+         CHECK(subview.size() == 2);
+         CHECK(subview.strides()[0] == 1);
+         CHECK(subview.strides()[1] == 2);
+         CHECK(subview[{0, 0}] == 2 * i + 1);
+         CHECK(subview[{1, 0}] == 2 * i + 2);
+         i++;
+     }
 }
 
 // NOLINTEND

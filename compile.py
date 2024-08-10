@@ -32,7 +32,7 @@ def count_tokens(text):
     return len(encoding.encode(text))
 
 # Specify the folder path and file extensions to include
-folder_path = "./include/squint"
+folder_path = "./include/squint/tensor"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt']
 
 # Specify the subdirectories to exclude
