@@ -63,7 +63,7 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
      * @return Reference to the updated iterator.
      */
     auto operator++() -> subview_iterator & {
-        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+        for (size_t i = 0; i < current_indices_.size(); ++i) {
             if (++current_indices_[i] < tensor_shape_[i] / subview_shape_[i]) {
                 return *this;
             }

@@ -723,6 +723,10 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         requires(fixed_shape<Shape> && fixed_shape<Strides> && OwnershipType == ownership_type::owner &&
                  std::same_as<column_major_strides<Shape>, Strides>)
     {
+        // existing strides must be column-major or row-major
+        static_assert(std::is_same_v<Strides, column_major_strides<Shape>> ||
+                          std::is_same_v<Strides, row_major_strides<Shape>>,
+                      "Existing strides must be column-major or row-major");
         constexpr size_t new_size = (NewDims * ...);
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (new_size != this->size()) {
@@ -731,9 +735,13 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         }
 
         using NewShape = std::index_sequence<NewDims...>;
-        using NewStrides = column_major_strides<NewShape>;
-
-        return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
+        if constexpr (std::is_same_v<Strides, column_major_strides<Shape>>) {
+            using NewStrides = column_major_strides<NewShape>;
+            return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
+        } else {
+            using NewStrides = row_major_strides<NewShape>;
+            return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
+        }
     }
 
     /**
@@ -749,6 +757,10 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         requires(fixed_shape<Shape> && fixed_shape<Strides> && OwnershipType == ownership_type::owner &&
                  std::same_as<column_major_strides<Shape>, Strides>)
     {
+        // existing strides must be column-major or row-major
+        static_assert(std::is_same_v<Strides, column_major_strides<Shape>> ||
+                          std::is_same_v<Strides, row_major_strides<Shape>>,
+                      "Existing strides must be column-major or row-major");
         constexpr size_t new_size = (NewDims * ...);
         if constexpr (ErrorChecking == error_checking::enabled) {
             if (new_size != this->size()) {
@@ -757,10 +769,15 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         }
 
         using NewShape = std::index_sequence<NewDims...>;
-        using NewStrides = column_major_strides<NewShape>;
-
-        return tensor<const T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            this->data());
+        if constexpr (std::is_same_v<Strides, column_major_strides<Shape>>) {
+            using NewStrides = column_major_strides<NewShape>;
+            return tensor<const T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data());
+        } else {
+            using NewStrides = row_major_strides<NewShape>;
+            return tensor<const T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data());
+        }
     }
 
     /**
@@ -990,7 +1007,7 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     }
 
     /**
-     * @brief Reshapes the tensor in-place (only for dynamic shape tensors).
+     * @brief Reshapes the tensor and returns a view of the new shape.
      *
      * @param new_shape The new shape for the tensor.
      * @throws std::invalid_argument If the new shape doesn't match the total number of elements (when ErrorChecking is
@@ -1006,8 +1023,33 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
             }
         }
 
-        this->shape_ = std::move(new_shape);
-        this->strides_ = compute_strides(l);
+        std::vector<size_t> new_strides = compute_strides(l);
+
+        return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
+                      MemorySpace>(this->data(), new_shape, new_strides);
+    }
+
+    /**
+     * @brief Reshapes the tensor and returns a view of the new shape.
+     *
+     * @param new_shape The new shape for the tensor.
+     * @throws std::invalid_argument If the new shape doesn't match the total number of elements (when ErrorChecking is
+     * enabled).
+     */
+    void reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
+        requires(dynamic_shape<Shape> && dynamic_shape<Strides> && OwnershipType == ownership_type::owner)
+    {
+        if constexpr (ErrorChecking == error_checking::enabled) {
+            size_t new_size = std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>());
+            if (new_size != this->size()) {
+                throw std::invalid_argument("New shape must have the same number of elements as the original tensor");
+            }
+        }
+
+        std::vector<size_t> new_strides = compute_strides(l);
+
+        return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
+                      MemorySpace>(this->data(), new_shape, new_strides);
     }
 
     /**
@@ -1059,84 +1101,55 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         }
         os << "]\n";
 
-        // Print the tensor elements using flat iterator
         // print as 2D slices
         if constexpr (fixed_shape<Shape>) {
             if constexpr (Shape::size() == 1) {
-                print_tensor(os, t.reshape<std::get<0>(make_array(Shape{})), 1>());
+                // print as a column vector
+                print_slice(os, t.reshape<std::get<0>(make_array(Shape{})), 1>());
             } else if constexpr (Shape::size() == 2) {
-                print_tensor(os, t.transpose());
+                print_slice(os, t);
             } else {
+                std::size_t slice_index = 0;
                 for (const auto &slice :
                      t.template subviews<std::get<0>(make_array(Shape{})), std::get<1>(make_array(Shape{}))>()) {
-                    print_tensor(os, slice.transpose());
+                    std::cout << "Slice " << slice_index++ << ":\n";
+                    print_slice(os, slice);
+                    std::cout << "\n";
                 }
             }
         } else {
-            print_tensor(os, t);
+            if (rank == 1) {
+                // print as a column vector
+                print_slice(os, t.reshape({t.shape()[0], 1}));
+            } else if (rank == 2) {
+                print_slice(os, t);
+            } else {
+                std::size_t slice_index = 0;
+                for (const auto &slice : t.subviews({shape[0], shape[1]})) {
+                    std::cout << "Slice " << slice_index++ << ":\n";
+                    print_slice(os, slice);
+                    std::cout << "\n";
+                }
+            }
         }
         return os;
     }
 
   private:
-    template <typename TensorType> static void print_tensor(std::ostream &os, const TensorType &t) {
+    template <typename TensorType> static void print_slice(std::ostream &os, const TensorType &t) {
         const auto &shape = t.shape();
-        const auto rank = t.rank();
+        const auto rows = shape[0];
+        const auto cols = shape.size() > 1 ? shape[1] : 1;
 
-        // Calculate total number of elements
-        size_t total_elements = 1;
-        for (size_t i = 0; i < rank; ++i) {
-            total_elements *= shape[i];
-        }
-
-        // Use flat iterator to traverse elements
-        auto it = t.begin();
-        size_t current_element = 0;
-
-        // Print opening brackets
-        for (size_t i = 0; i < rank; ++i) {
+        for (size_t i = 0; i < rows; ++i) {
             os << "[";
-        }
-
-        // Print elements
-        while (current_element < total_elements) {
-            os << std::setw(8) << std::setprecision(4) << *it;
-
-            ++it;
-            ++current_element;
-
-            // Determine when to close brackets and add commas
-            size_t temp = current_element;
-            for (int i = rank - 1; i >= 0; --i) {
-                if (temp % shape[i] == 0) {
-                    os << "]";
-                    if (i > 0 && temp != total_elements) {
-                        os << ",\n" << std::string(i, ' ');
-                    }
-                } else {
-                    if (i == rank - 1 && temp != total_elements) {
-                        os << ", ";
-                    }
-                    break;
-                }
-                temp /= shape[i];
+            for (size_t j = 0; j < cols; ++j) {
+                os << std::setw(8) << std::setprecision(4) << t(i, j);
+                if (j < cols - 1)
+                    os << ", ";
             }
-
-            // Add opening brackets for next set if needed
-            if (current_element < total_elements) {
-                for (int i = rank - 1; i >= 0; --i) {
-                    if (current_element %
-                            (std::accumulate(shape.begin(), shape.begin() + i + 1, 1, std::multiplies<size_t>())) ==
-                        0) {
-                        os << "[";
-                    } else {
-                        break;
-                    }
-                }
-            }
+            os << "]\n";
         }
-
-        os << "\n";
     }
 
     /**
