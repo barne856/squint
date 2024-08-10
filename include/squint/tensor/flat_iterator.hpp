@@ -94,7 +94,7 @@ class flat_iterator {
      * @return flat_iterator& Reference to the incremented iterator.
      */
     auto operator++() -> flat_iterator & {
-        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
             if (++current_indices_[i] < shape_[i]) {
                 return *this;
             }
@@ -121,7 +121,7 @@ class flat_iterator {
      * @return flat_iterator& Reference to the decremented iterator.
      */
     auto operator--() -> flat_iterator & {
-        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
             if (current_indices_[i]-- > 0) {
                 return *this;
             }
@@ -151,7 +151,7 @@ class flat_iterator {
     auto operator+=(difference_type n) -> flat_iterator & {
         std::size_t total_offset =
             std::inner_product(current_indices_.begin(), current_indices_.end(), strides_.begin(), 0ULL) + n;
-        for (int i = current_indices_.size() - 1; i >= 0; --i) {
+        for (std::size_t i = 0; i < current_indices_.size(); ++i) {
             current_indices_[i] = total_offset / strides_[i];
             total_offset %= strides_[i];
         }

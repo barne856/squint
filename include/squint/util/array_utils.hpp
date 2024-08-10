@@ -142,6 +142,20 @@ template <std::size_t... Is, std::size_t N> struct remove_last_n<std::index_sequ
 // Alias template for remove_last_n
 template <typename Sequence, std::size_t N> using remove_last_n_t = typename remove_last_n<Sequence, N>::type;
 
+// Helper to reverse an index sequence
+template <typename Sequence> struct reverse_sequence;
+
+template <std::size_t... Is> struct reverse_sequence<std::index_sequence<Is...>> {
+    template <std::size_t... Ns>
+    static auto helper(std::index_sequence<Ns...>)
+        -> std::index_sequence<std::get<sizeof...(Is) - 1 - Ns>(std::array{Is...})...>;
+
+    using type = decltype(helper(std::make_index_sequence<sizeof...(Is)>{}));
+};
+
+// Alias template for reverse_sequence
+template <typename Sequence> using reverse_sequence_t = typename reverse_sequence<Sequence>::type;
+
 } // namespace squint
 
 #endif // SQUINT_UTIL_ARRAY_UTILS_HPP
