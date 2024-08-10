@@ -60,14 +60,21 @@ template <std::size_t... Ix> constexpr auto sum(std::index_sequence<Ix...> /*unu
 
 // check all elements of an index sequence are equal
 template <std::size_t... Ix> constexpr auto all_equal(std::index_sequence<Ix...> /*unused*/) -> bool {
-    return ((Ix == ...));
+    if constexpr (sizeof...(Ix) == 0) {
+        // An empty sequence is considered to have all elements equal
+        return true;
+    } else {
+        // Use fold expression to compare all elements with the first one
+        return ((Ix == std::get<0>(std::tuple{Ix...})) && ...);
+    }
 }
 
 // Helper function to check if tensor dimensions are divisible by subview dimensions
 template <fixed_tensor T, typename SubviewShape> constexpr auto dimensions_divisible() -> bool {
     constexpr auto shape_arr = make_array(typename T::shape_type{});
     constexpr auto subview_arr = make_array(SubviewShape{});
-    for (std::size_t i = 0; i < shape_arr.size(); ++i) {
+    std::size_t min_length = shape_arr.size() < subview_arr.size() ? shape_arr.size() : subview_arr.size();
+    for (std::size_t i = 0; i < min_length; ++i) {
         if (shape_arr[i] % subview_arr[i] != 0) {
             return false;
         }
@@ -119,6 +126,21 @@ template <std::size_t... Indices, std::size_t New> struct append_sequence<std::i
 
 // Alias template for append_sequence
 template <typename Sequence, std::size_t New> using append_sequence_t = typename append_sequence<Sequence, New>::type;
+
+// Helper to remove the last N elements from a sequence
+template <typename Sequence, std::size_t N> struct remove_last_n;
+
+template <std::size_t... Is, std::size_t N> struct remove_last_n<std::index_sequence<Is...>, N> {
+    static_assert(N <= sizeof...(Is), "Cannot remove more elements than the sequence contains");
+
+    template <std::size_t... Ns>
+    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<std::get<Ns>(std::array{Is...})...>;
+
+    using type = decltype(helper(std::make_index_sequence<sizeof...(Is) - N>{}));
+};
+
+// Alias template for remove_last_n
+template <typename Sequence, std::size_t N> using remove_last_n_t = typename remove_last_n<Sequence, N>::type;
 
 } // namespace squint
 

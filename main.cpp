@@ -7,10 +7,6 @@
 using namespace squint;
 
 int main() {
-    tens<2, 2, 2> B{1, 2, 3, 4, 5, 6, 7, 8};
-    for(const auto &elem : B) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
+    tens<2> B{1, 2};
     std::cout << B << std::endl;
 }

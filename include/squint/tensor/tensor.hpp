@@ -35,6 +35,7 @@
 #include <random>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace squint {
@@ -351,10 +352,10 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     auto operator[](const index_type &indices) -> T & { return const_cast<T &>(std::as_const(*this)[indices]); }
 
     /**
-     * @brief Create a subview of the tensor with fixed shape.
+     * @brief Create a const subview of the tensor with fixed shape.
      * @tparam SubviewShape The shape type of the subview.
      * @param start_indices The starting indices of the subview.
-     * @return A new tensor representing the subview.
+     * @return A new const tensor representing the subview.
      * @throws std::invalid_argument If start_indices size doesn't match tensor rank (when ErrorChecking is enabled).
      */
     template <typename SubviewShape>
@@ -363,12 +364,9 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     {
         static_assert(SubviewShape::size() <= Shape::size(),
                       "Subview dimensions must be less than or equal to tensor rank");
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (start_indices.size() != rank()) {
-                throw std::invalid_argument("Subview start indices must match tensor rank");
-            }
-        }
-        return tensor<T, SubviewShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+        // make subview strides same length as subview shape
+        using SubviewStrides = remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>;
+        return tensor<T, SubviewShape, SubviewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
             data() + compute_offset(start_indices));
     }
 
@@ -385,59 +383,44 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     {
         static_assert(SubviewShape::size() <= Shape::size(),
                       "Subview dimensions must be less than or equal to tensor rank");
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (start_indices.size() != rank()) {
-                throw std::invalid_argument("Subview start indices must match tensor rank");
-            }
-        }
-        return tensor<const T, SubviewShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+        // make subview strides same length as subview shape
+        using SubviewStrides = remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>;
+        return tensor<const T, SubviewShape, SubviewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
             data() + compute_offset(start_indices));
     }
 
     /**
      * @brief Create a subview of the tensor with fixed shape using variadic indices.
-     * @tparam SubviewShape The shape type of the subview.
+     * @tparam Dims The indices of the dimensions to keep in the subview.
      * @tparam Indices Types of the variadic indices.
      * @param start_indices Variadic list of starting indices for the subview.
      * @return A new tensor representing the subview.
      * @throws std::invalid_argument If the number of indices doesn't match tensor rank (when ErrorChecking is enabled).
+     * @note The number of indices must match the rank of the tensor.
      */
-    template <typename SubviewShape, typename... Indices>
+    template <std::size_t... Dims, typename... Indices>
     auto subview(Indices... start_indices)
-        requires fixed_shape<Shape> && fixed_shape<SubviewShape>
+        requires fixed_shape<Shape>
     {
-        static_assert(SubviewShape::size() <= Shape::size(),
-                      "Subview dimensions must be less than or equal to tensor rank");
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (sizeof...(Indices) != rank()) {
-                throw std::invalid_argument("Subview start indices must match tensor rank");
-            }
-        }
-        return tensor<T, SubviewShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            data() + compute_offset({start_indices...}));
+        static_assert(sizeof...(Indices) == Shape::size(), "Subview start indices must match tensor rank");
+        return this->template subview<std::index_sequence<Dims...>>({static_cast<std::size_t>(start_indices)...});
     }
 
     /**
-     * @brief Create a const subview of the tensor with fixed shape using variadic indices.
-     * @tparam SubviewShape The shape type of the subview.
+     * @brief Create a subview of the tensor with fixed shape using variadic indices.
+     * @tparam Dims The indices of the dimensions to keep in the subview.
      * @tparam Indices Types of the variadic indices.
      * @param start_indices Variadic list of starting indices for the subview.
-     * @return A new const tensor representing the subview.
+     * @return A new tensor representing the subview.
      * @throws std::invalid_argument If the number of indices doesn't match tensor rank (when ErrorChecking is enabled).
+     * @note The number of indices must match the rank of the tensor.
      */
-    template <typename SubviewShape, typename... Indices>
+    template <std::size_t... Dims, typename... Indices>
     auto subview(Indices... start_indices) const
-        requires fixed_shape<Shape> && fixed_shape<SubviewShape>
+        requires fixed_shape<Shape>
     {
-        static_assert(SubviewShape::size() <= Shape::size(),
-                      "Subview dimensions must be less than or equal to tensor rank");
-        if constexpr (ErrorChecking == error_checking::enabled) {
-            if (sizeof...(Indices) != rank()) {
-                throw std::invalid_argument("Subview start indices must match tensor rank");
-            }
-        }
-        return tensor<const T, SubviewShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            data() + compute_offset({start_indices...}));
+        static_assert(sizeof...(Indices) == Shape::size(), "Subview start indices must match tensor rank");
+        return this->template subview<std::index_sequence<Dims...>>({start_indices...});
     }
 
     /**
@@ -455,16 +438,25 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
             if (start_indices.size() > rank() || subview_shape.size() > rank()) {
                 throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");
             }
+            if (start_indices.size() != this->shape().size()) {
+                throw std::invalid_argument("Tensor shape and start indices must have the same size");
+            }
+        }
+        // make subview strides same length as subview shape by removing last n strides from the std::vector
+        auto n = this->shape().size() - subview_shape.size();
+        auto subview_strides = strides_;
+        while (n-- > 0) {
+            subview_strides.pop_back();
         }
         return tensor<T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking, ownership_type::reference,
-                      MemorySpace>(data() + compute_offset(start_indices), subview_shape, strides_);
+                      MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
     }
 
     /**
-     * @brief Create a const subview of the tensor with dynamic shape.
+     * @brief Create a subview of the tensor with dynamic shape.
      * @param subview_shape The shape of the subview.
      * @param start_indices The starting indices of the subview.
-     * @return A new const tensor representing the subview.
+     * @return A new tensor representing the subview.
      * @throws std::invalid_argument If subview_shape or start_indices size doesn't match tensor rank (when
      * ErrorChecking is enabled).
      */
@@ -475,10 +467,19 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
             if (start_indices.size() > rank() || subview_shape.size() > rank()) {
                 throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");
             }
+            if (start_indices.size() != this->shape().size()) {
+                throw std::invalid_argument("Tensor shape and start indices must have the same size");
+            }
+        }
+        // make subview strides same length as subview shape by removing last n strides from the std::vector
+        auto n = this->shape().size() - subview_shape.size();
+        auto subview_strides = strides_;
+        while (n-- > 0) {
+            subview_strides.pop_back();
         }
         return tensor<const T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking,
                       ownership_type::reference, MemorySpace>(data() + compute_offset(start_indices), subview_shape,
-                                                              strides_);
+                                                              subview_strides);
     }
 
     /**
@@ -901,11 +902,11 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto cols() {
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            using ColShape = init_sequence_t<Shape>;
             return this->template subviews<ColShape>();
         } else {
             std::vector<size_t> col_shape = this->shape();
-            col_shape[col_shape.size() - 1] = 1;
+            col_shape.pop_back();
             return this->subviews(col_shape);
         }
     }
@@ -918,11 +919,11 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
      */
     auto cols() const {
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
+            using ColShape = init_sequence_t<Shape>;
             return this->template subviews<ColShape>();
         } else {
             std::vector<size_t> col_shape = this->shape();
-            col_shape[col_shape.size() - 1] = 1;
+            col_shape.pop_back();
             return this->subviews(col_shape);
         }
     }
@@ -994,14 +995,19 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
-            return tensor<T, ColShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<1>(make_array(Strides{})));
+            using ColShape = init_sequence_t<Shape>;
+            using ColStrides = init_sequence_t<Strides>;
+            constexpr std::size_t N = ColStrides::size();
+            return tensor<T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<N>(make_array(Strides{})));
         } else {
             std::vector<size_t> col_shape = this->shape();
-            col_shape[col_shape.size() - 1] = 1;
+            col_shape.pop_back();
+            std::vector<size_t> col_strides = this->strides();
+            col_strides.pop_back();
+            std::size_t N = col_strides.size();
             return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, this->strides());
+                          MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
         }
     }
 
@@ -1020,14 +1026,19 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
         }
 
         if constexpr (fixed_shape<Shape>) {
-            using ColShape = append_sequence_t<init_sequence_t<Shape>, 1>;
-            return tensor<T, ColShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-                this->data() + index * std::get<1>(make_array(Strides{})));
+            using ColShape = init_sequence_t<Shape>;
+            using ColStrides = init_sequence_t<Strides>;
+            constexpr std::size_t N = ColStrides::size();
+            return tensor<T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                this->data() + index * std::get<N>(make_array(Strides{})));
         } else {
             std::vector<size_t> col_shape = this->shape();
-            col_shape[col_shape.size() - 1] = 1;
+            col_shape.pop_back();
+            std::vector<size_t> col_strides = this->strides();
+            col_strides.pop_back();
+            std::size_t N = col_strides.size();
             return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                          MemorySpace>(this->data() + index * this->strides()[1], col_shape, this->strides());
+                          MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
         }
     }
 
@@ -1053,87 +1064,60 @@ class tensor : public iterable_mixin<tensor<T, Shape, Strides, ErrorChecking, Ow
     }
 
     friend auto operator<<(std::ostream &os, const tensor &t) -> std::ostream & {
-        // Helper function to print a single element
-        auto print_element = [&os](const T &element) {
-            os << std::setw(10) << std::setprecision(4) << std::fixed << element;
-        };
+        const auto shape = t.shape();
+        const auto rank = t.rank();
 
-        // Helper function to print a row
-        auto print_row = [&](const auto &row) {
-            os << "[";
-            bool first = true;
-            for (const auto &element : row) {
-                if (!first) {
-                    os << ", ";
-                }
-                print_element(element);
-                first = false;
-            }
-            os << "]";
-        };
-
-        // Print the tensor shape
-        os << "Tensor(shape=[";
-        const auto &shape = t.shape();
-        for (size_t i = 0; i < t.rank(); ++i) {
-            if (i > 0) {
+        // Print shape information
+        os << "Tensor shape: [";
+        for (size_t i = 0; i < rank; ++i) {
+            os << shape[i];
+            if (i < rank - 1) {
                 os << ", ";
             }
-            os << shape[i];
         }
-        os << "]):\n";
+        os << "]\n";
 
-        if (t.rank() == 1) {
-            print_row(t);
-        } else if (t.rank() == 2) {
-            os << "[";
-            bool first_row = true;
-            for (const auto &row : t.rows()) {
-                if (!first_row) {
-                    os << ",\n ";
-                }
-                print_row(row);
-                first_row = false;
-            }
-            os << "]";
+        // Print the tensor elements
+        if constexpr (fixed_shape<Shape>) {
+            typename tensor::index_type indices{};
+            print_tensor_recursive(os, t, indices, 0);
         } else {
-            // For higher dimensions, we'll print the first two dimensions and indicate if there are more
-            os << "[";
-            bool first_slice = true;
-            for (size_t i = 0; i < std::min(shape[0], size_t(3)); ++i) {
-                if (!first_slice) {
-                    os << ",\n\n";
-                }
-                os << " [";
-                bool first_row = true;
-                for (size_t j = 0; j < std::min(shape[1], size_t(3)); ++j) {
-                    if (!first_row) {
-                        os << ",\n  ";
-                    }
-                    if constexpr (fixed_shape<Shape>) {
-                        print_row(t.template subview<tail_sequence_t<tail_sequence_t<Shape>>>(i, j));
-                    } else {
-                        std::vector<size_t> subview_shape(t.shape().begin() + 2, t.shape().end());
-                        print_row(t.subview(subview_shape, {i, j}));
-                    }
-                    first_row = false;
-                }
-                if (shape[1] > 3) {
-                    os << ",\n  ...";
-                }
-                os << "]";
-                first_slice = false;
-            }
-            if (shape[0] > 3) {
-                os << ",\n\n ...";
-            }
-            os << "]";
+            typename tensor::index_type indices(rank, 0);
+            print_tensor_recursive(os, t, indices, 0);
         }
+        os << "\n";
 
         return os;
     }
 
   private:
+    friend void print_tensor_recursive(std::ostream &os, const tensor &t, typename tensor::index_type &indices,
+                                       size_t depth) {
+        if (depth == t.rank() - 1) {
+            // Base case: print the last dimension
+            os << "[";
+            for (size_t i = 0; i < t.shape()[depth]; ++i) {
+                indices[depth] = i;
+                os << std::setw(8) << std::setprecision(4) << t[indices];
+                if (i < t.shape()[depth] - 1) {
+                    os << ", ";
+                }
+            }
+            os << "]";
+        } else {
+            // Recursive case: print nested brackets and recurse
+            os << "[";
+            for (size_t i = 0; i < t.shape()[depth]; ++i) {
+                indices[depth] = i;
+                print_tensor_recursive(os, t, indices, depth + 1);
+                if (i < t.shape()[depth] - 1) {
+                    os << ",\n" << std::string(depth + 1, ' ');
+                }
+            }
+            os << "]";
+        }
+    }
+
     /**
      * @brief Compute the offset for a given set of indices (implementation for fixed strides).
      * @param indices The indices to compute the offset for.

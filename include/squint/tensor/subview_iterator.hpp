@@ -1,11 +1,11 @@
 /**
  * @file subview_iterator.hpp
  * @brief Defines the subview_iterator class for iterating over subviews of tensors.
- * 
+ *
  * This file contains the implementation of the subview_iterator class, which allows
  * efficient iteration over subviews of tensors. It supports both fixed and dynamic
  * tensor types and provides a forward iterator interface.
- * 
+ *
  */
 
 #ifndef SQUINT_SUBVIEW_ITERATOR_HPP
@@ -18,22 +18,21 @@ namespace squint {
 
 /**
  * @brief Iterator class for tensor subviews.
- * 
+ *
  * This class provides an iterator interface for traversing subviews of a tensor.
  * It supports both fixed and dynamic tensor types and allows efficient iteration
  * over subviews without creating new tensor objects for each subview.
- * 
+ *
  * @tparam TensorType The type of the tensor being iterated.
  * @tparam SubviewShape The shape of the subview being iterated.
  */
-template <typename TensorType, typename SubviewShape>
-class subview_iterator {
-    TensorType *tensor_;  ///< Pointer to the tensor being iterated.
-    using value_type = typename TensorType::value_type;  ///< Type of the tensor elements.
-    using index_type = typename TensorType::index_type;  ///< Type used for indexing.
-    index_type current_indices_;  ///< Current position of the iterator.
-    index_type subview_shape_;    ///< Shape of the subview.
-    index_type tensor_shape_;     ///< Shape of the entire tensor.
+template <typename TensorType, typename SubviewShape> class subview_iterator {
+    TensorType *tensor_;                                ///< Pointer to the tensor being iterated.
+    using value_type = typename TensorType::value_type; ///< Type of the tensor elements.
+    using index_type = typename TensorType::index_type; ///< Type used for indexing.
+    index_type current_indices_;                        ///< Current position of the iterator.
+    index_type subview_shape_;                          ///< Shape of the subview.
+    index_type tensor_shape_;                           ///< Shape of the entire tensor.
 
   public:
     /// @brief Iterator category (forward iterator).
@@ -46,33 +45,21 @@ class subview_iterator {
     using reference = std::conditional_t<const_tensor<TensorType>, const value_type &, value_type &>;
 
     /**
-     * @brief Constructor for dynamic tensors.
-     * 
+     * @brief Constructor
+     *
      * @param tensor Pointer to the tensor being iterated.
      * @param start_indices Starting indices of the subview.
      * @param subview_shape Shape of the subview.
      */
     subview_iterator(TensorType *tensor, const index_type &start_indices, const index_type &subview_shape)
-        requires dynamic_tensor<TensorType>
         : tensor_(tensor), current_indices_(start_indices), subview_shape_(subview_shape),
           tensor_shape_(tensor->shape()) {}
 
     /**
-     * @brief Constructor for fixed tensors.
-     * 
-     * @param tensor Pointer to the tensor being iterated.
-     * @param start_indices Starting indices of the subview.
-     */
-    subview_iterator(TensorType *tensor, const index_type &start_indices)
-        requires fixed_tensor<TensorType>
-        : tensor_(tensor), current_indices_(start_indices), subview_shape_(make_array(SubviewShape{})),
-          tensor_shape_(make_array(typename TensorType::shape_type{})) {}
-
-    /**
      * @brief Pre-increment operator.
-     * 
+     *
      * Advances the iterator to the next subview position.
-     * 
+     *
      * @return Reference to the updated iterator.
      */
     auto operator++() -> subview_iterator & {
@@ -92,9 +79,9 @@ class subview_iterator {
 
     /**
      * @brief Post-increment operator.
-     * 
+     *
      * Creates a copy of the iterator, then advances it.
-     * 
+     *
      * @return Copy of the iterator before incrementing.
      */
     auto operator++(int) -> subview_iterator {
@@ -105,20 +92,25 @@ class subview_iterator {
 
     /**
      * @brief Dereference operator.
-     * 
+     *
      * @return A subview of the tensor at the current iterator position.
      */
     auto operator*() const {
         if constexpr (fixed_tensor<TensorType>) {
             return this->tensor_->template subview<SubviewShape>(this->get_offset());
         } else {
-            return this->tensor_->subview(this->subview_shape_, this->get_offset());
+            // remove trailing 1s from the subview shape
+            std::vector<std::size_t> subview_shape = this->subview_shape_;
+            while (subview_shape.back() == 1) {
+                subview_shape.pop_back();
+            }
+            return this->tensor_->subview(subview_shape, this->get_offset());
         }
     }
 
     /**
      * @brief Equality comparison operator.
-     * 
+     *
      * @param other Another subview_iterator to compare with.
      * @return true if the iterators are equal, false otherwise.
      */
@@ -128,7 +120,7 @@ class subview_iterator {
 
     /**
      * @brief Inequality comparison operator.
-     * 
+     *
      * @param other Another subview_iterator to compare with.
      * @return true if the iterators are not equal, false otherwise.
      */
@@ -137,7 +129,7 @@ class subview_iterator {
   private:
     /**
      * @brief Calculates the offset for the current subview.
-     * 
+     *
      * @return The index_type representing the offset of the current subview.
      */
     auto get_offset() const -> index_type {
