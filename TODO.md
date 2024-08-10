@@ -1,26 +1,159 @@
 # Overview
 
-1. tensor_base<T, Derived>
-   - Common base class for all tensor types
-   - Methods:
-     * rank()
-     * size()
-     * shape()
-     * strides()
-     * get_layout()
-     * at(indices...)
-     * operator()
-     * operator[]
-     * data()
-     * raw_data()
+# List of Test Cases
 
-2. iterable_tensor<Derived, T> : public tensor_base<T, Derived>
-   - Mixin class for iteration capabilities
-   - Methods:
-     * begin()
-     * end()
-     * cbegin()
-     * cend()
+1. Fixed Tensor Sizeof Test
+   - Mat4
+
+2. Fixed Tensor Creation and Basic Operations
+   - Default constructor
+   - Constructor with initializer list
+   - Constructor with value
+   - Constructor with tensor block
+   - Constructor with array of blocks
+   - Copy constructor
+   - Move constructor
+   - Assignment operator
+   - Assignment from const
+   - Move assignment operator
+
+3. Fixed Tensor Element Access
+   - Multidimensional subscript operator[]
+   - Multidimensional subscript operator()
+   - at() method
+   - at() method with vector of indices
+
+4. Fixed Tensor Layout and Strides
+   - Row-major layout
+   - Column-major layout
+
+5. Fixed Tensor Views
+   - Create view
+   - Create const view
+   - Modify through view
+   - Create subview
+   - Modify through subview
+   - Assign from const tensor
+   - Assign from const view
+
+6. Fixed Tensor Iteration
+   - Range-based for loop
+   - Iterator-based loop
+   - Const iteration
+   - Non const iteration
+
+7. Fixed Tensor Subview Iteration
+   - Iterate over 1x4 subviews
+
+8. Dynamic Tensor Creation and Basic Operations
+   - Constructor with shape
+   - Constructor with shape and layout
+   - Constructor with vector of elements
+   - Constructor with value
+   - Constructor with tensor block
+   - Constructor with array of blocks
+   - Copy constructor
+   - Move constructor
+   - Assignment operator
+   - Move assignment operator
+
+9. Dynamic Tensor Element Access
+   - Multidimensional subscript operator[]
+   - Multidimensional subscript operator()
+   - at() method
+   - at() method with vector of indices
+
+10. Dynamic Tensor Layout and Strides
+    - Row-major layout
+    - Column-major layout
+
+11. Dynamic Tensor Views
+    - Create view
+    - Create const view
+    - Modify through view
+    - Create subview
+    - Modify through subview
+    - Assign from const tensor
+    - Assign from const view
+
+12. Dynamic Tensor Iteration
+    - Range-based for loop
+    - Iterator-based loop
+    - Const iteration
+
+13. Dynamic Tensor Subview Iteration
+    - Iterate over 1x4 subviews
+
+14. Fixed Tensor with Error Checking
+    - Out of bounds access
+    - Subview out of bounds
+
+15. Dynamic Tensor with Error Checking
+    - Out of bounds access
+    - Invalid number of indices
+    - Subview out of bounds
+
+16. Tensor View Error Checking
+    - Fixed tensor view with error checking
+    - Dynamic tensor view with error checking
+
+17. Error Checking Disabled
+    - Fixed tensor without error checking
+    - Dynamic tensor without error checking
+
+18. fixed_tensor static methods
+    - zeros
+    - ones
+    - full
+    - arange
+    - diag
+    - diag with scalar
+    - random
+    - I
+
+19. dynamic_tensor static methods
+    - zeros
+    - ones
+    - full
+    - arange
+    - diag
+    - diag with scalar
+    - random
+    - I
+
+20. fixed_tensor fill and flatten methods
+    - fill
+    - flatten non-const
+    - flatten const
+    - view flatten
+    - view flatten const
+
+21. dynamic_tensor fill and flatten methods
+    - fill
+    - flatten non-const
+    - flatten const
+    - view flatten
+    - view flatten const
+
+22. fixed_tensor rows() and cols() tests
+    - 2D tensor (rows() and cols())
+    - 3D tensor (rows() and cols())
+    - 1D tensor (rows() and cols())
+
+23. dynamic_tensor rows() and cols() tests
+    - 2D tensor (rows() and cols())
+    - 3D tensor (rows() and cols())
+    - 1D tensor (rows() and cols())
+
+24. Diagonal Views
+    - Fixed tensor 2D
+    - Fixed tensor 2D const
+    - Fixed tensor 2D subview
+    - Fixed tensor 2D subview const
+    - Dynamic tensor 2D
+    - Dynamic tensor 2D const
+    - Dynamic tensor 2D subview
+    - Dynamic tensor 2D subview const
 
 3. linear_algebra_mixin<Derived, T>
    - Mixin class for linear algebra operations
@@ -31,40 +164,6 @@
      * trace()
      * mean(), sum()
      * min(), max()
-
-4. tensor<T, Shape, Layout, ErrorChecking>
-   : public tensor_base<T, tensor<T,Shape,Layout,ErrorChecking>>
-   : public iterable_tensor<tensor<T,Shape,Layout,ErrorChecking>, T>
-   : public linear_algebra_mixin<tensor<T,Shape,Layout,ErrorChecking>, T>
-   - Unified tensor class for both fixed and dynamic tensors
-   - Shape can be either std::array<std::size_t, N> for fixed or std::vector<std::size_t> for dynamic
-   - Methods:
-     * Constructors (default, shape, initializer list, etc.)
-     * reshape()
-     * transpose()
-     * subview()
-     * flatten()
-     * diag_view()
-     * rows(), cols()
-     * row(index), col(index)
-     
-   - Static methods:
-     * zeros(), ones(), full()
-     * arange(), linspace()
-     * random()
-     * eye(), identity()
-
-5. tensor_view<T, TensorType, Constness>
-   : public tensor_base<T, tensor_view<T,TensorType,Constness>>
-   : public iterable_tensor<tensor_view<T,TensorType,Constness>, T>
-   : public linear_algebra_mixin<tensor_view<T,TensorType,Constness>, T>
-   - Unified view class for both fixed and dynamic tensors
-   - Methods:
-     * Constructors
-     * subview()
-     * reshape()
-     * transpose()
-     * flatten()
 
 6. blas_lapack_interface<Backend>
    - Template interface for BLAS/LAPACK operations
@@ -89,16 +188,3 @@
      * dot()
      * cross()
      * normalize()
-
-8. dimension<L, T, M, K, I, N, J>
-   - Dimension class (unchanged)
-
-9. quantity<T, D, ErrorChecking>
-   - Quantity class (mostly unchanged)
-   - Consider integrating error checking into the class itself
-
-10. units namespace
-    - Unit definitions and conversions (unchanged)
-
-11. constants namespace
-    - Physical and mathematical constants (unchanged)
