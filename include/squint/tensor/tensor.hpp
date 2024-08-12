@@ -166,8 +166,10 @@ class tensor {
     template <size_t... NewDims>
     auto reshape() const
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
-    auto flatten();
-    auto flatten() const;
+    auto flatten()
+        requires(OwnershipType == ownership_type::owner);
+    auto flatten() const
+        requires(OwnershipType == ownership_type::owner);
     void reshape(std::vector<size_t> new_shape, layout l = layout::column_major)
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     void reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const

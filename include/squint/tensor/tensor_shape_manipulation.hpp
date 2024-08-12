@@ -54,7 +54,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten()
+    requires(OwnershipType == ownership_type::owner)
+{
     if constexpr (fixed_shape<Shape>) {
         constexpr size_t total_size = product(Shape{});
         using FlatShape = std::index_sequence<total_size>;
@@ -72,7 +74,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatt
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() const {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() const
+    requires(OwnershipType == ownership_type::owner)
+{
     if constexpr (fixed_shape<Shape>) {
         constexpr size_t total_size = product(Shape{});
         using FlatShape = std::index_sequence<total_size>;
