@@ -3,7 +3,7 @@
 
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
-#include "squint/util/type_traits.hpp"
+#include "squint/util/sequence_utils.hpp"
 
 #include <concepts>
 #include <ratio>
@@ -116,7 +116,7 @@ concept quantitative = requires(T t) {
 };
 
 /**
- * @concept scalar_like
+ * @concept scalar
  * @brief Concept for scalar-like types.
  *
  * This concept includes both arithmetic types and quantitative types.
@@ -124,7 +124,7 @@ concept quantitative = requires(T t) {
  * @tparam T The type to check.
  */
 template <typename T>
-concept scalar_like = arithmetic<T> || quantitative<T>;
+concept scalar = arithmetic<T> || quantitative<T>;
 
 /**
  * @concept dimensionless_quantity
@@ -197,15 +197,31 @@ template <typename T>
 concept const_tensor = std::is_const_v<std::remove_reference_t<T>>;
 
 /**
- * @concept view_tensor
- * @brief Concept for tensor views.
- *
- * This concept checks if a tensor is a view (i.e., does not own its data).
+ * @concept owning_tensor
+ * @brief Concept for owning tensors.
  *
  * @tparam T The type to check.
  */
 template <typename T>
-concept view_tensor = tensorial<T> && T::is_view::value;
+concept owning_tensor = tensorial<T> && (T::ownership_type() == ownership_type::owner);
+
+/**
+ * @concept error_checking_enabled
+ * @brief Concept for types with error checking enabled.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept error_checking_enabled = (T::error_checking() == error_checking::enabled);
+
+/**
+ * @concept host_tensor
+ * @brief Concept for tensors residing in host memory.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept host_tensor = (T::memory_space() == memory_space::host);
 
 } // namespace squint
 

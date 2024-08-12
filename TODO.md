@@ -1,5 +1,7 @@
 # Overview
 
+Add steps to subviews
+
 # List of Test Cases
 
 1. Fixed Tensor Sizeof Test
@@ -155,36 +157,3 @@
     - Dynamic tensor 2D subview
     - Dynamic tensor 2D subview const
 
-3. linear_algebra_mixin<Derived, T>
-   - Mixin class for linear algebra operations
-   - Methods:
-     * operator+=, operator-=
-     * operator*=, operator/= (scalar)
-     * norm(), squared_norm()
-     * trace()
-     * mean(), sum()
-     * min(), max()
-
-6. blas_lapack_interface<Backend>
-   - Template interface for BLAS/LAPACK operations
-   - Specializations for different backends (OpenBLAS, MKL, fallback)
-   - Methods:
-     * gemm()
-     * gesv()
-     * getrf()
-     * getri()
-     * gels()
-
-7. linear_algebra_operations
-   - Free functions for linear algebra operations
-   - Functions:
-     * operator+, operator- (element-wise)
-     * operator* (matrix multiplication)
-     * operator/ (matrix division / solve)
-     * solve()
-     * solve_lls()
-     * inv()
-     * pinv()
-     * dot()
-     * cross()
-     * normalize()

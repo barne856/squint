@@ -2,7 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/core/concepts.hpp"
-#include "squint/tensor/tensor_types.hpp"
+#include "squint/tensor.hpp"
 
 using namespace squint;
 
@@ -28,7 +28,7 @@ TEST_CASE("Fixed tensors can be iterated over") {
 
      // flat iterator
      int i = 0;
-     std::array<int, 6> expected{1, 3, 5, 2, 4, 6};
+     std::array<int, 6> expected{1, 2, 3, 4, 5, 6};
      for (auto &elem : tensor) {
          CHECK(elem == expected[i++]);
      }

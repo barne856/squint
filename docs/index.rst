@@ -38,9 +38,8 @@ Contents
    api/linalg/matrix_ops
    api/geometry/transformations
    api/geometry/projections
-   api/util/array_utils
+   api/util/sequence_utils
    api/util/math_utils
-   api/util/type_traits
 
 .. toctree::
    :maxdepth: 1

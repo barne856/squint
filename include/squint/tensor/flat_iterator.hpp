@@ -20,7 +20,7 @@
 #define SQUINT_FLAT_ITERATOR_HPP
 
 #include "squint/core/concepts.hpp"
-#include "squint/util/array_utils.hpp"
+#include "squint/util/sequence_utils.hpp"
 #include <algorithm>
 #include <numeric>
 #include <type_traits>

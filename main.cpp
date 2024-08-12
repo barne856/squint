@@ -1,6 +1,4 @@
-#include "squint/tensor/tensor_ops.hpp"
-#include "squint/tensor/tensor_types.hpp"
-#include "squint/util/array_utils.hpp"
+#include "squint/tensor.hpp"
 #include <iostream>
 #include <utility>
 
