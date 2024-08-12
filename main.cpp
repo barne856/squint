@@ -4,12 +4,11 @@
 
 using namespace squint;
 
-int main() {
-    tens<2, 2> A{1.457347, 2.34573456737354673, 3.14, 4};
+auto main() -> int {
+    tens<4, 4> A{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 
-    std::cout << A << std::endl;
-
-    tens<2,3> B{1, 2, 3, 4, 5, 6};
-    std::cout << B << std::endl;
-    std::cout << B.transpose() << std::endl;
+    for (const auto &view : A.subviews<4, 1>()) {
+        tens<4> B = view;
+        std::cout << B.transpose() << std::endl;
+    }
 }

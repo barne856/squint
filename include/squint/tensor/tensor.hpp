@@ -9,6 +9,7 @@
  * subviews and iterating over tensor elements.
  *
  * Key features:
+ * - Single class policy based design
  * - Support for fixed and dynamic tensor shapes
  * - Configurable error checking
  * - Flexible memory ownership (owner or reference)
@@ -43,7 +44,7 @@ namespace squint {
  * @tparam OwnershipType Enum to specify whether the tensor owns its data or is a view.
  * @tparam MemorySpace Enum to specify the memory space of the tensor data.
  */
-template <typename T, typename Shape, typename Strides = column_major_strides<Shape>,
+template <typename T, typename Shape, typename Strides = strides::column_major<Shape>,
           error_checking ErrorChecking = error_checking::disabled, ownership_type OwnershipType = ownership_type::owner,
           memory_space MemorySpace = memory_space::host>
 class tensor {
@@ -80,9 +81,9 @@ class tensor {
         requires(OwnershipType == ownership_type::owner)
     = default;
     tensor(std::initializer_list<T> init)
-        requires(OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     explicit tensor(const T &value)
-        requires(OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     tensor(const std::array<T, product(Shape{})> &elements)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     tensor(Shape shape, Strides strides)
@@ -91,6 +92,15 @@ class tensor {
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     tensor(std::vector<size_t> shape, const std::vector<T> &elements, layout l = layout::column_major)
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+    tensor(std::vector<size_t> shape, const T &value, layout l = layout::column_major)
+        requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+    
+    template <typename U, typename OtherShape, typename OtherStrides>
+    tensor(const tensor<U, OtherShape, OtherStrides, ErrorChecking, OwnershipType, MemorySpace> &other) requires fixed_shape<Shape>;
+    template <typename U, typename OtherShape, typename OtherStrides>
+    tensor(const tensor<U, OtherShape, OtherStrides, ErrorChecking, ownership_type::reference, MemorySpace> &other)
+        requires(OwnershipType == ownership_type::owner);
+    
     tensor(T *data, Shape shape, Strides strides)
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::reference);
     tensor(T *data)
@@ -174,6 +184,21 @@ class tensor {
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     void reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+    template <valid_index_permutation IndexPermutation>
+    auto transpose() requires fixed_shape<Shape>;
+    template <valid_index_permutation IndexPermutation>
+    auto transpose() const requires fixed_shape<Shape>;
+    template <std::size_t... Permutation>
+    auto transpose() requires(sizeof...(Permutation) > 0 && valid_index_permutation<std::index_sequence<Permutation...>> && fixed_shape<Shape>){
+        return transpose<std::index_sequence<Permutation...>>();
+    }
+    template <std::size_t... Permutation>
+    auto transpose() const requires (sizeof...(Permutation) > 0 && valid_index_permutation<std::index_sequence<Permutation...>> && fixed_shape<Shape>){
+        return transpose<std::index_sequence<Permutation...>>();
+    }
+    auto transpose(const std::vector<std::size_t>& index_permutation) requires dynamic_shape<Shape>;
+    auto transpose(const std::vector<std::size_t>& index_permutation) const requires dynamic_shape<Shape>;
+    // Convenience methods for common transpositions of 1D and 2D tensors
     auto transpose();
     auto transpose() const;
 
@@ -205,9 +230,9 @@ class tensor {
     auto subviews() const -> iterator_range<subview_iterator<const tensor, std::index_sequence<Dims...>>>
         requires fixed_shape<Shape>;
     auto subviews(const std::vector<std::size_t> &subview_shape)
-        -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>>;
+        -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>> requires dynamic_shape<Shape>;
     auto subviews(const std::vector<std::size_t> &subview_shape) const
-        -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>>;
+        -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>> requires dynamic_shape<Shape>;
 
   private:
     template <std::size_t... Is>

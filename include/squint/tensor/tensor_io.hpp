@@ -9,8 +9,11 @@
 
 namespace squint {
 
+constexpr int SCALAR_WIDTH = 6;
+constexpr int SCALAR_PRECISION = 4;
+
 // Helper function to print a 2D slice of a tensor
-template <typename TensorType> void print_slice(std::ostream &os, const TensorType &t) {
+template <typename TensorType> void print_2d_slice(std::ostream &os, const TensorType &t) {
     const auto &shape = t.shape();
     const auto rows = shape[0];
     const auto cols = shape.size() > 1 ? shape[1] : 1;
@@ -18,12 +21,23 @@ template <typename TensorType> void print_slice(std::ostream &os, const TensorTy
     for (size_t i = 0; i < rows; ++i) {
         os << "[";
         for (size_t j = 0; j < cols; ++j) {
-            constexpr std::size_t width = 8;
-            os << std::setw(width) << std::setprecision(4) << t(i, j);
+            os << std::setw(SCALAR_WIDTH) << std::setprecision(SCALAR_PRECISION) << t(i, j);
             if (j < cols - 1) {
                 os << ", ";
             }
         }
+        os << "]\n";
+    }
+}
+
+// Helper function to print a 1D slice of a tensor as column vector
+template <typename TensorType> void print_1d_slice(std::ostream &os, const TensorType &t) {
+    const auto &shape = t.shape();
+    const auto size = shape[0];
+
+    for (size_t i = 0; i < size; ++i) {
+        os << "[";
+        os << std::setw(SCALAR_WIDTH) << std::setprecision(SCALAR_PRECISION) << t(i);
         os << "]\n";
     }
 }
@@ -50,29 +64,29 @@ auto operator<<(std::ostream &os,
     if constexpr (fixed_shape<Shape>) {
         if constexpr (Shape::size() == 1) {
             // Print as a column vector
-            print_slice(os, t.template reshape<std::get<0>(make_array(Shape{})), 1>());
+            print_1d_slice(os, t);
         } else if constexpr (Shape::size() == 2) {
-            print_slice(os, t);
+            print_2d_slice(os, t);
         } else {
             std::size_t slice_index = 0;
             for (const auto &slice :
                  t.template subviews<std::get<0>(make_array(Shape{})), std::get<1>(make_array(Shape{}))>()) {
                 os << "Slice " << slice_index++ << ":\n";
-                print_slice(os, slice);
+                print_2d_slice(os, slice);
                 os << "\n";
             }
         }
     } else {
         if (rank == 1) {
             // Print as a column vector
-            print_slice(os, t.reshape({t.shape()[0], 1}));
+            print_1d_slice(os, t);
         } else if (rank == 2) {
-            print_slice(os, t);
+            print_2d_slice(os, t);
         } else {
             std::size_t slice_index = 0;
             for (const auto &slice : t.subviews({shape[0], shape[1]})) {
                 os << "Slice " << slice_index++ << ":\n";
-                print_slice(os, slice);
+                print_2d_slice(os, slice);
                 os << "\n";
             }
         }

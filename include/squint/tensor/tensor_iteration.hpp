@@ -309,8 +309,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(
-    const std::vector<std::size_t> &subview_shape)
-    -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>> {
+    const std::vector<std::size_t> &subview_shape) -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>>
+    requires dynamic_shape<Shape>
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (subview_shape.size() > this->rank()) {
             throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");
@@ -343,7 +344,9 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(
     const std::vector<std::size_t> &subview_shape) const
-    -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>> {
+    -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>>
+    requires dynamic_shape<Shape>
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (subview_shape.size() > this->rank()) {
             throw std::invalid_argument("Subview dimensions must be less than or equal to tensor rank");

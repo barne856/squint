@@ -20,25 +20,20 @@ namespace squint {
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std::initializer_list<T> init)
-    requires(OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
 {
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (init.size() != this->size()) {
             throw std::invalid_argument("Initializer list size does not match tensor size");
         }
     }
-
-    if constexpr (fixed_tensor<tensor>) {
-        std::copy(init.begin(), init.end(), data_.begin());
-    } else {
-        data_ = std::vector<T>(init.begin(), init.end());
-    }
+    std::copy(init.begin(), init.end(), data_.begin());
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(const T &value)
-    requires(OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
     : data_() {
     std::fill(data_.begin(), data_.end(), value);
 }
@@ -82,6 +77,67 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std
         size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
         if (elements.size() != total_size) {
             throw std::invalid_argument("Input vector size does not match tensor size");
+        }
+    }
+}
+
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std::vector<size_t> shape, const T &value,
+                                                                             layout l)
+    requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner)
+    : shape_(std::move(shape)), strides_(compute_strides(l)) {
+    size_t total_size = std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>());
+    data_.resize(total_size, value);
+}
+
+// construct from another tensor of a different shape (allows for implicit conversion to tensor of same shape with
+// trailing 1's removed) allows implicit conversion for compatible tensors of various shape of the same ownership type
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+template <typename U, typename OtherShape, typename OtherStrides>
+tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
+    const tensor<U, OtherShape, OtherStrides, ErrorChecking, OwnershipType, MemorySpace> &other)
+    requires fixed_shape<Shape>
+{
+    if constexpr (OwnershipType == ownership_type::owner) {
+        // for owner ownership, only shape must be convertible
+        static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
+        std::size_t index = 0;
+        for (auto elem : other) {
+            data_[index++] = elem;
+        }
+    } else {
+        // for reference ownership, both strides and shape must be convertible
+        static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
+        static_assert(implicit_convertible_strides_v<Strides, OtherStrides>, "Invalid strides conversion");
+        data_ = other.data();
+    }
+}
+
+// Allows implicit conversion for compatible tensors of various shape from reference ownership type to owner ownership
+// type
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+template <typename U, typename OtherShape, typename OtherStrides>
+tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
+    const tensor<U, OtherShape, OtherStrides, ErrorChecking, ownership_type::reference, MemorySpace> &other)
+    requires(OwnershipType == ownership_type::owner)
+{
+    if constexpr (dynamic_shape<Shape>) {
+        static_assert(dynamic_shape<OtherShape>, "Invalid shape conversion");
+        static_assert(dynamic_shape<OtherStrides>, "Invalid strides conversion");
+        shape_ = other.shape();
+        strides_ = other.strides();
+        data_.reserve(other.size());
+        for (auto &elem : other) {
+            data_.push_back(elem);
+        }
+    } else {
+        static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
+        std::size_t index = 0;
+        for (auto elem : other) {
+            data_[index++] = elem;
         }
     }
 }
