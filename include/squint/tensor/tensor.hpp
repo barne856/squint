@@ -87,6 +87,9 @@ class tensor {
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     tensor(const std::array<T, product(Shape{})> &elements)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+    template <fixed_tensor... OtherTensor>
+    tensor(const OtherTensor &... ts)
+        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     // Dynamic shape constructors
     tensor(Shape shape, Strides strides)
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);

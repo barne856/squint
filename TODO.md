@@ -1,7 +1,6 @@
 # Overview
 
 
-Constructors for broadcasting from single block or array of blocks
 Add steps to subviews
 impl linalg with BLAS backends
 optimize small tensor ops with SIMD

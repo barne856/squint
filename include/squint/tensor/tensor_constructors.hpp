@@ -12,6 +12,7 @@
 #define SQUINT_TENSOR_TENSOR_CONSTRUCTORS_HPP
 
 #include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_iteration.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -49,6 +50,18 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
             throw std::invalid_argument("Input array size does not match tensor size");
         }
     }
+}
+
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+template <fixed_tensor... OtherTensor>
+tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(const OtherTensor &...ts)
+    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+{
+    using OtherShape = typename std::common_type_t<OtherTensor...>::shape_type;
+    dimensions_divisible<tensor, OtherShape>();
+    auto blocks = subviews<OtherShape>().begin();
+    ((*blocks++ = ts), ...);
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
