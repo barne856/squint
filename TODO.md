@@ -1,6 +1,15 @@
 # Overview
 
+
+Constructors for broadcasting from single block or array of blocks
 Add steps to subviews
+impl linalg with BLAS backends
+optimize small tensor ops with SIMD
+
+Harder, but maybe?
+broadcasting views using modulo indexing to avoid copy
+einsum
+fused operations at compile time with computation graph See Fastor
 
 # List of Test Cases
 

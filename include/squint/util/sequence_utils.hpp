@@ -76,6 +76,11 @@ template <std::size_t... Ix> constexpr auto all_less_than(std::index_sequence<Ix
     return ((Ix < max_value) && ...);
 }
 
+// max of sequence
+template <std::size_t... Ix> constexpr auto max(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
+    return std::max({Ix...});
+}
+
 // Helper to concatenate two index sequences
 template <typename Sequence1, typename Sequence2> struct concat_sequence;
 

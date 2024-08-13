@@ -103,10 +103,7 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     if constexpr (OwnershipType == ownership_type::owner) {
         // for owner ownership, only shape must be convertible
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
-        std::size_t index = 0;
-        for (auto elem : other) {
-            data_[index++] = elem;
-        }
+        std::copy(other.begin(), other.end(), begin());
     } else {
         // for reference ownership, both strides and shape must be convertible
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
@@ -129,16 +126,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
         static_assert(dynamic_shape<OtherStrides>, "Invalid strides conversion");
         shape_ = other.shape();
         strides_ = other.strides();
-        data_.reserve(other.size());
-        for (auto &elem : other) {
-            data_.push_back(elem);
-        }
+        data_.resize(other.size());
+        std::copy(other.begin(), other.end(), begin());
     } else {
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
-        std::size_t index = 0;
-        for (auto elem : other) {
-            data_[index++] = elem;
-        }
+        std::copy(other.begin(), other.end(), begin());
     }
 }
 

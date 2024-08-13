@@ -25,7 +25,7 @@ auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool {
 
 // helper to apply index permutation to a std::vector
 auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<size_t> &permutation,
-                       std::size_t pad_value) -> std::vector<size_t> {
+                              std::size_t pad_value) -> std::vector<size_t> {
     std::vector<size_t> result(permutation.size(), pad_value);
     for (std::size_t i = 0; i < vec.size(); ++i) {
         result[permutation[i]] = vec[i];
@@ -146,7 +146,7 @@ void tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <valid_index_permutation IndexPermutation>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose()
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute()
     requires fixed_shape<Shape>
 {
 
@@ -160,7 +160,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <valid_index_permutation IndexPermutation>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose() const
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute() const
     requires fixed_shape<Shape>
 {
     static_assert(Shape::size() <= IndexPermutation::size(), "Index permutation must be at least as long as the shape");
@@ -172,7 +172,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose(
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute(
     const std::vector<std::size_t> &index_permutation)
     requires dynamic_shape<Shape>
 {
@@ -181,10 +181,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
             throw std::invalid_argument(
                 "Index permutation must have at least the same number of elements as the shape");
         }
-        // if (!static_cast<bool>(std::unique(index_permutation.begin(), index_permutation.end()) ==
-        //                        index_permutation.end())) {
-        //     throw std::invalid_argument("Index permutation must not contain duplicates");
-        // }
+        auto non_const_permutation = index_permutation;
+        if (!static_cast<bool>(std::unique(non_const_permutation.begin(), non_const_permutation.end()) ==
+                               non_const_permutation.end())) {
+            throw std::invalid_argument("Index permutation must not contain duplicates");
+        }
         if (!all_less_than(index_permutation, shape_.size())) {
             throw std::invalid_argument("Index permutation must be less than the number of dimensions");
         }
@@ -197,7 +198,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose(
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute(
     const std::vector<std::size_t> &index_permutation) const
     requires dynamic_shape<Shape>
 {
@@ -206,10 +207,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
             throw std::invalid_argument(
                 "Index permutation must have at least the same number of elements as the shape");
         }
-        // if (!static_cast<bool>(std::unique(index_permutation.begin(), index_permutation.end()) ==
-        //                        index_permutation.end())) {
-        //     throw std::invalid_argument("Index permutation must not contain duplicates");
-        // }
+        auto non_const_permutation = index_permutation;
+        if (!static_cast<bool>(std::unique(non_const_permutation.begin(), non_const_permutation.end()) ==
+                               non_const_permutation.end())) {
+            throw std::invalid_argument("Index permutation must not contain duplicates");
+        }
         if (!all_less_than(index_permutation, shape_.size())) {
             throw std::invalid_argument("Index permutation must be less than the number of dimensions");
         }
@@ -226,14 +228,14 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose() {
     if constexpr (fixed_shape<Shape>) {
         if constexpr (Shape::size() == 1 || Shape::size() == 2) {
-            return this->transpose<std::index_sequence<1, 0>>();
+            return this->permute<std::index_sequence<1, 0>>();
         } else {
             throw std::invalid_argument(
                 "You must provide an index permutation for tensors with more than 2 dimensions");
         }
     } else {
         if (shape_.size() == 1 || shape_.size() == 2) {
-            return transpose(std::vector<size_t>{1, 0});
+            return permute(std::vector<size_t>{1, 0});
         } else {
             throw std::invalid_argument(
                 "You must provide an index permutation for tensors with more than 2 dimensions");
@@ -246,14 +248,14 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose() const {
     if constexpr (fixed_shape<Shape>) {
         if constexpr (Shape::size() == 1 || Shape::size() == 2) {
-            return this->transpose<std::index_sequence<1, 0>>();
+            return this->permute<std::index_sequence<1, 0>>();
         } else {
             throw std::invalid_argument(
                 "You must provide an index permutation for tensors with more than 2 dimensions");
         }
     } else {
         if (shape_.size() == 1 || shape_.size() == 2) {
-            return transpose(std::vector<size_t>{1, 0});
+            return permute(std::vector<size_t>{1, 0});
         } else {
             throw std::invalid_argument(
                 "You must provide an index permutation for tensors with more than 2 dimensions");
