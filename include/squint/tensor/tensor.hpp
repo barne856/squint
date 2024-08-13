@@ -278,6 +278,32 @@ class tensor {
         -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>>
         requires dynamic_shape<Shape>;
 
+    // Incremental operators
+    template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
+              enum ownership_type OtherOwnershipType>
+    auto
+    operator+=(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other)
+        -> tensor &;
+    template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
+              enum ownership_type OtherOwnershipType>
+    auto
+    operator-=(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other)
+        -> tensor &;
+    // Comparison operators
+    template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
+              enum ownership_type OtherOwnershipType>
+    auto operator==(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace>
+                        &other) const -> bool;
+    template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
+              enum ownership_type OtherOwnershipType>
+    auto operator!=(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace>
+                        &other) const -> bool;
+    // Unary operators
+    auto operator-() const -> tensor;
+    // scalar operations
+    template <dimensionless_scalar U> auto operator*=(const U &s) -> tensor &;
+    template <dimensionless_scalar U> auto operator/=(const U &s) -> tensor &;
+
   private:
     template <std::size_t... Is>
     [[nodiscard]] constexpr auto compute_offset_impl(const index_type &indices,

@@ -3,20 +3,21 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/tensor.hpp"
+#include "squint/core/layout.hpp"
 #include <array>
 #include <stdexcept>
 #include <vector>
 
 TEST_CASE("Tensor Construction and Basic Operations") {
     SUBCASE("Default construction") {
-        squint::tensor<float, std::index_sequence<2, 3>> t;
+        squint::tensor<float, squint::shape<2, 3>> t;
         CHECK(t.size() == 6);
         CHECK(t.rank() == 2);
         CHECK(t.shape() == std::array<std::size_t, 2>{2, 3});
     }
 
     SUBCASE("Construction with initializer list (column-major)") {
-        squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         CHECK(t(0, 0) == 1);
         CHECK(t(1, 0) == 4);
         CHECK(t(0, 1) == 2);
@@ -26,7 +27,7 @@ TEST_CASE("Tensor Construction and Basic Operations") {
     }
 
     SUBCASE("Construction with scalar value") {
-        squint::tensor<float, std::index_sequence<2, 3>> t(42.0f);
+        squint::tensor<float, squint::shape<2, 3>> t(42.0f);
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 3; ++j) {
                 CHECK(t(i, j) == 42.0f);
@@ -36,7 +37,7 @@ TEST_CASE("Tensor Construction and Basic Operations") {
 
     SUBCASE("Construction with std::array (column-major)") {
         std::array<float, 6> arr = {1, 4, 2, 5, 3, 6};
-        squint::tensor<float, std::index_sequence<2, 3>> t(arr);
+        squint::tensor<float, squint::shape<2, 3>> t(arr);
         CHECK(t(0, 0) == 1);
         CHECK(t(1, 0) == 4);
         CHECK(t(0, 1) == 2);
@@ -46,9 +47,9 @@ TEST_CASE("Tensor Construction and Basic Operations") {
     }
 
     SUBCASE("Construction from other tensors") {
-        squint::tensor<float, std::index_sequence<2, 2>> t1{1, 3, 2, 4};
-        squint::tensor<float, std::index_sequence<2, 2>> t2{5, 7, 6, 8};
-        squint::tensor<float, std::index_sequence<2, 2, 2>> t(t1, t2);
+        squint::tensor<float, squint::shape<2, 2>> t1{1, 3, 2, 4};
+        squint::tensor<float, squint::shape<2, 2>> t2{5, 7, 6, 8};
+        squint::tensor<float, squint::shape<2, 2, 2>> t(t1, t2);
         CHECK(t(0, 0, 0) == 1);
         CHECK(t(1, 0, 0) == 3);
         CHECK(t(0, 1, 0) == 2);
@@ -102,7 +103,7 @@ TEST_CASE("Tensor Construction and Basic Operations") {
 }
 
 TEST_CASE("Tensor Element Access") {
-    squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+    squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
 
     SUBCASE("Operator()") {
         CHECK(t(0, 0) == 1);
@@ -161,8 +162,8 @@ TEST_CASE("Tensor Element Access") {
 
 TEST_CASE("Tensor Assignment") {
     SUBCASE("Fixed shape assignment") {
-        squint::tensor<float, std::index_sequence<2, 3>> t1{1, 4, 2, 5, 3, 6};
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2 = t1;
         CHECK(t2(0, 0) == 1);
         CHECK(t2(1, 0) == 4);
@@ -186,8 +187,8 @@ TEST_CASE("Tensor Assignment") {
     }
 
     SUBCASE("Assignment with type conversion") {
-        squint::tensor<int, std::index_sequence<2, 3>> t1{1, 4, 2, 5, 3, 6};
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<int, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2 = t1;
         CHECK(t2(0, 0) == 1.0f);
         CHECK(t2(1, 0) == 4.0f);
@@ -198,8 +199,8 @@ TEST_CASE("Tensor Assignment") {
     }
 
     SUBCASE("Assigment to compatible shapes") {
-        squint::tensor<float, std::index_sequence<2, 3, 1>> t1{1, 4, 2, 5, 3, 6};
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<float, squint::shape<2, 3, 1>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2 = t1;
         CHECK(t2(0, 0) == 1);
         CHECK(t2(1, 0) == 4);
@@ -210,9 +211,9 @@ TEST_CASE("Tensor Assignment") {
     }
 
     SUBCASE("Assignment to tensor view") {
-        squint::tensor<float, std::index_sequence<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
         auto view = t1.view();
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2 = view;
         CHECK(t2(0, 0) == 1);
         CHECK(t2(1, 0) == 4);
@@ -223,8 +224,8 @@ TEST_CASE("Tensor Assignment") {
     }
 
     SUBCASE("Assignment from tensor view") {
-        squint::tensor<float, std::index_sequence<2, 3>> t1{1, 4, 2, 5, 3, 6};
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2 = t1.view();
         CHECK(t2(0, 0) == 1);
         CHECK(t2(1, 0) == 4);
@@ -235,10 +236,10 @@ TEST_CASE("Tensor Assignment") {
     }
 
     SUBCASE("Assignment view to view") {
-        squint::tensor<float, std::index_sequence<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
         auto view1 = t1.view();
         auto view2 = view1.view();
-        squint::tensor<float, std::index_sequence<2, 3>> t2;
+        squint::tensor<float, squint::shape<2, 3>> t2;
         t2.view() = view2;
         CHECK(t2(0, 0) == 1);
         CHECK(t2(1, 0) == 4);
@@ -250,7 +251,7 @@ TEST_CASE("Tensor Assignment") {
 }
 
 TEST_CASE("Tensor Accessors") {
-    squint::tensor<float, std::index_sequence<2, 3, 4>> t;
+    squint::tensor<float, squint::shape<2, 3, 4>> t;
 
     SUBCASE("rank()") { CHECK(t.rank() == 3); }
 
@@ -275,7 +276,7 @@ TEST_CASE("Tensor Accessors") {
 }
 
 TEST_CASE("Tensor Static Accessors") {
-    using TensorType = squint::tensor<float, std::index_sequence<2, 3>>;
+    using TensorType = squint::tensor<float, squint::shape<2, 3>>;
 
     SUBCASE("error_checking()") { CHECK(TensorType::error_checking() == squint::error_checking::disabled); }
 
@@ -286,7 +287,7 @@ TEST_CASE("Tensor Static Accessors") {
 
 TEST_CASE("Tensor Subview Operations") {
     SUBCASE("Fixed shape subview") {
-        squint::tensor<float, std::index_sequence<3, 4, 5>> t;
+        squint::tensor<float, squint::shape<3, 4, 5>> t;
         for (size_t i = 0; i < t.size(); ++i) {
             t.data()[i] = static_cast<float>(i);
         }
@@ -312,8 +313,8 @@ TEST_CASE("Tensor Subview Operations") {
     }
 
     SUBCASE("Subview with step") {
-        auto t = squint::tensor<float, std::index_sequence<4, 4>>::arange(1.0f, 1.0f);
-        auto sub = t.subview<std::index_sequence<2, 2>, std::index_sequence<3, 3>>({0, 0});
+        auto t = squint::tensor<float, squint::shape<4, 4>>::arange(1.0f, 1.0f);
+        auto sub = t.subview<squint::shape<2, 2>, squint::seq<3, 3>>({0, 0});
         CHECK(sub(0, 0) == 1);
         CHECK(sub(1, 0) == 4);
         CHECK(sub(0, 1) == 13);
@@ -323,7 +324,7 @@ TEST_CASE("Tensor Subview Operations") {
 
 TEST_CASE("Tensor View Operations") {
     SUBCASE("Fixed shape view") {
-        squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto v = t.view();
         CHECK(v.data() == t.data());
         CHECK(v.shape() == t.shape());
@@ -340,7 +341,7 @@ TEST_CASE("Tensor View Operations") {
     }
 
     SUBCASE("Diagonal view") {
-        squint::tensor<float, std::index_sequence<3, 3>> t{1, 4, 7, 2, 5, 8, 3, 6, 9};
+        squint::tensor<float, squint::shape<3, 3>> t{1, 4, 7, 2, 5, 8, 3, 6, 9};
         auto diag = t.diag_view();
         CHECK(diag.rank() == 1);
         CHECK(diag.shape() == std::array<std::size_t, 1>{3});
@@ -363,7 +364,7 @@ TEST_CASE("Tensor View Operations") {
 
 TEST_CASE("Tensor Static Creation Methods") {
     SUBCASE("zeros") {
-        auto t = squint::tensor<float, std::index_sequence<2, 3>>::zeros();
+        auto t = squint::tensor<float, squint::shape<2, 3>>::zeros();
         CHECK(t.size() == 6);
         for (size_t i = 0; i < t.size(); ++i) {
             CHECK(t.data()[i] == 0.0f);
@@ -371,7 +372,7 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 
     SUBCASE("ones") {
-        auto t = squint::tensor<float, std::index_sequence<2, 3>>::ones();
+        auto t = squint::tensor<float, squint::shape<2, 3>>::ones();
         CHECK(t.size() == 6);
         for (size_t i = 0; i < t.size(); ++i) {
             CHECK(t.data()[i] == 1.0f);
@@ -379,7 +380,7 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 
     SUBCASE("full") {
-        auto t = squint::tensor<float, std::index_sequence<2, 3>>::full(3.14f);
+        auto t = squint::tensor<float, squint::shape<2, 3>>::full(3.14f);
         CHECK(t.size() == 6);
         for (size_t i = 0; i < t.size(); ++i) {
             CHECK(t.data()[i] == 3.14f);
@@ -387,7 +388,7 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 
     SUBCASE("eye") {
-        auto t = squint::tensor<float, std::index_sequence<3, 3>>::eye();
+        auto t = squint::tensor<float, squint::shape<3, 3>>::eye();
         CHECK(t(0, 0) == 1.0f);
         CHECK(t(1, 1) == 1.0f);
         CHECK(t(2, 2) == 1.0f);
@@ -396,7 +397,7 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 
     SUBCASE("diag") {
-        auto t = squint::tensor<float, std::index_sequence<3, 3>>::diag(2.0f);
+        auto t = squint::tensor<float, squint::shape<3, 3>>::diag(2.0f);
         CHECK(t(0, 0) == 2.0f);
         CHECK(t(1, 1) == 2.0f);
         CHECK(t(2, 2) == 2.0f);
@@ -405,7 +406,7 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 
     SUBCASE("arange") {
-        auto t = squint::tensor<float, std::index_sequence<2, 3>>::arange(1.0f, 0.5f);
+        auto t = squint::tensor<float, squint::shape<2, 3>>::arange(1.0f, 0.5f);
         CHECK(t(0, 0) == 1.0f);
         CHECK(t(1, 0) == 1.5f);
         CHECK(t(0, 1) == 2.0f);
@@ -417,7 +418,7 @@ TEST_CASE("Tensor Static Creation Methods") {
 
 TEST_CASE("Tensor Shape Manipulation") {
     SUBCASE("Fixed shape reshape") {
-        squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto reshaped = t.template reshape<3, 2>();
         CHECK(reshaped.shape() == std::array<std::size_t, 2>{3, 2});
         CHECK(reshaped(0, 0) == 1);
@@ -442,7 +443,7 @@ TEST_CASE("Tensor Shape Manipulation") {
     }
 
     SUBCASE("Flatten") {
-        squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto flattened = t.flatten();
         CHECK(flattened.rank() == 1);
         CHECK(flattened.shape() == std::array<std::size_t, 1>{6});
@@ -452,7 +453,7 @@ TEST_CASE("Tensor Shape Manipulation") {
     }
 
     SUBCASE("Permute") {
-        squint::tensor<float, std::index_sequence<2, 3, 4>> t;
+        squint::tensor<float, squint::shape<2, 3, 4>> t;
         for (size_t i = 0; i < t.size(); ++i) {
             t.data()[i] = static_cast<float>(i);
         }
@@ -463,7 +464,7 @@ TEST_CASE("Tensor Shape Manipulation") {
     }
 
     SUBCASE("Transpose") {
-        squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto transposed = t.transpose();
         CHECK(transposed.shape() == std::array<std::size_t, 2>{3, 2});
         CHECK(transposed(0, 0) == 1);
@@ -476,7 +477,7 @@ TEST_CASE("Tensor Shape Manipulation") {
 }
 
 TEST_CASE("Tensor Iteration Methods") {
-    squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+    squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
 
     SUBCASE("begin() and end()") {
         std::vector<float> values;
@@ -515,9 +516,9 @@ TEST_CASE("Tensor Iteration Methods") {
     }
 
     SUBCASE("subviews()") {
-        squint::tensor<float, std::index_sequence<4, 4>> t{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        squint::tensor<float, squint::shape<4, 4>> t{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         std::vector<float> subview_sums;
-        for (auto subview : t.template subviews<std::index_sequence<2, 2>>()) {
+        for (auto subview : t.template subviews<squint::shape<2, 2>>()) {
             subview_sums.push_back(std::accumulate(subview.begin(), subview.end(), 0.0f));
         }
         CHECK(subview_sums == std::vector<float>{14, 22, 46, 54});
@@ -526,7 +527,7 @@ TEST_CASE("Tensor Iteration Methods") {
 
 TEST_CASE("Error Checking") {
     using ErrorTensor =
-        squint::tensor<float, std::index_sequence<2, 3>, std::index_sequence<3, 1>, squint::error_checking::enabled>;
+        squint::tensor<float, squint::shape<2, 3>, squint::shape<3, 1>, squint::error_checking::enabled>;
     ErrorTensor t{1, 4, 2, 5, 3, 6};
 
     SUBCASE("Out of bounds access") {
@@ -537,7 +538,7 @@ TEST_CASE("Error Checking") {
 
 TEST_CASE("Memory Space") {
     using DeviceTensor =
-        squint::tensor<float, std::index_sequence<2, 3>, std::index_sequence<3, 1>, squint::error_checking::disabled,
+        squint::tensor<float, squint::shape<2, 3>, squint::shape<3, 1>, squint::error_checking::disabled,
                        squint::ownership_type::owner, squint::memory_space::device>;
 
     SUBCASE("Device memory space") {
@@ -547,7 +548,7 @@ TEST_CASE("Memory Space") {
 }
 
 TEST_CASE("Random Tensor Creation") {
-    auto t = squint::tensor<float, std::index_sequence<2, 3>>::random(0.0f, 1.0f);
+    auto t = squint::tensor<float, squint::shape<2, 3>>::random(0.0f, 1.0f);
 
     SUBCASE("Values within range") {
         for (float val : t) {
@@ -558,7 +559,7 @@ TEST_CASE("Random Tensor Creation") {
 }
 
 TEST_CASE("Const Correctness") {
-    const squint::tensor<float, std::index_sequence<2, 3>> t{1, 4, 2, 5, 3, 6};
+    const squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
 
     SUBCASE("Const element access") {
         CHECK(t(0, 0) == 1);
@@ -582,14 +583,14 @@ TEST_CASE("Const Correctness") {
 
 TEST_CASE("Edge Cases") {
     SUBCASE("Zero-dimensional tensor") {
-        squint::tensor<float, std::index_sequence<>> t{42};
+        squint::tensor<float, squint::shape<>> t{42};
         CHECK(t.rank() == 0);
         CHECK(t.size() == 1);
         CHECK(t() == 42);
     }
 
     SUBCASE("Empty tensor") {
-        squint::tensor<float, std::index_sequence<0>> t;
+        squint::tensor<float, squint::shape<0>> t;
         CHECK(t.rank() == 1);
         CHECK(t.size() == 0);
     }

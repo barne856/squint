@@ -41,8 +41,7 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
-    const std::array<T, _size()> &elements)
+tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(const std::array<T, _size()> &elements)
     requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
     : data_(elements) {
     if constexpr (ErrorChecking == error_checking::enabled) {
@@ -59,7 +58,7 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
     requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
 {
     using OtherShape = typename std::common_type_t<OtherTensor...>::shape_type;
-    dimensions_divisible<tensor, OtherShape>();
+    static_assert(dimensions_divisible<tensor, OtherShape>(), "Incompatible tensor shapes");
     auto blocks = subviews<OtherShape>().begin();
     ((*blocks++ = ts), ...);
 }

@@ -59,7 +59,8 @@ struct strides{
 };
 
 // alias for compile time shape
-template <std::size_t... Dims> using shape = std::index_sequence<Dims...>;
+template <std::size_t... Dims> using seq = std::index_sequence<Dims...>;
+template <std::size_t... Dims> using shape = seq<Dims...>;
 
 } // namespace squint
 
