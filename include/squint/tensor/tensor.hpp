@@ -30,6 +30,7 @@
 
 #include <array>
 #include <cstddef>
+#include <variant>
 #include <vector>
 
 namespace squint {
@@ -49,16 +50,30 @@ template <typename T, typename Shape, typename Strides = strides::column_major<S
           memory_space MemorySpace = memory_space::host>
 class tensor {
   private:
+    [[nodiscard]] static constexpr auto _size() -> std::size_t {
+        if constexpr (fixed_shape<Shape>) {
+            return product(Shape{});
+        } else {
+            return 0;
+        }
+    }
+    [[nodiscard]] static constexpr auto _rank() -> std::size_t {
+        if constexpr (fixed_shape<Shape>) {
+            return Shape::size();
+        } else {
+            return 0;
+        }
+    }
     /// @brief Type alias for shape storage, using std::integral_constant for fixed shapes.
-    using shape_storage = std::conditional_t<fixed_shape<Shape>, std::integral_constant<Shape, Shape{}>, Shape>;
+    using shape_storage =
+        std::conditional_t<fixed_shape<Shape>, std::integral_constant<std::monostate, std::monostate{}>, Shape>;
     /// @brief Type alias for strides storage, using std::integral_constant for fixed strides.
     using strides_storage =
-        std::conditional_t<fixed_shape<Strides>, std::integral_constant<Strides, Strides{}>, Strides>;
+        std::conditional_t<fixed_shape<Strides>, std::integral_constant<std::monostate, std::monostate{}>, Strides>;
     /// @brief Type alias for data storage, using std::array for fixed shapes and std::vector for dynamic shapes.
     using data_storage =
         std::conditional_t<OwnershipType == ownership_type::owner,
-                           std::conditional_t<fixed_shape<Shape>, std::array<T, product(Shape{})>, std::vector<T>>,
-                           T *>;
+                           std::conditional_t<fixed_shape<Shape>, std::array<T, _size()>, std::vector<T>>, T *>;
 
     // Shape and strides storage
     // These are effectively empty if the shape is fixed. [[no_unique_address]] is used to avoid increasing the size of
@@ -74,7 +89,7 @@ class tensor {
     using strides_type = Strides; ///< The type used to represent the tensor strides.
     /// @brief The type used for indexing, std::array for fixed shapes, std::vector for dynamic shapes.
     using index_type =
-        std::conditional_t<fixed_shape<Shape>, std::array<std::size_t, Shape::size()>, std::vector<std::size_t>>;
+        std::conditional_t<fixed_shape<Shape>, std::array<std::size_t, _rank()>, std::vector<std::size_t>>;
 
     // Constructors
     tensor()
@@ -85,10 +100,10 @@ class tensor {
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     explicit tensor(const T &value)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
-    tensor(const std::array<T, product(Shape{})> &elements)
+    tensor(const std::array<T, _size()> &elements)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     template <fixed_tensor... OtherTensor>
-    tensor(const OtherTensor &... ts)
+    tensor(const OtherTensor &...ts)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     // Dynamic shape constructors
     tensor(Shape shape, Strides strides)
@@ -111,12 +126,6 @@ class tensor {
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::reference);
     tensor(T *data)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::reference);
-
-    // Implicit conversion operators
-    operator std::array<T, product(Shape{})>() const
-        requires(fixed_shape<Shape>);
-    operator std::vector<T>() const
-        requires(dynamic_shape<Shape>);
 
     // Assignment operators
     template <typename U, typename OtherShape, typename OtherStrides, ownership_type OtherOwnershipType>
@@ -150,10 +159,10 @@ class tensor {
 #endif
 
     // Subview operations
-    template <typename SubviewShape>
+    template <typename SubviewShape, typename StepSizes>
     auto subview(const index_type &start_indices)
         requires fixed_shape<Shape>;
-    template <typename SubviewShape>
+    template <typename SubviewShape, typename StepSizes>
     auto subview(const index_type &start_indices) const
         requires fixed_shape<Shape>;
     template <std::size_t... Dims, typename... Indices>
@@ -165,6 +174,10 @@ class tensor {
     auto subview(const index_type &subview_shape, const index_type &start_indices)
         requires dynamic_shape<Shape>;
     auto subview(const index_type &subview_shape, const index_type &start_indices) const
+        requires dynamic_shape<Shape>;
+    auto subview(const index_type &subview_shape, const index_type &start_indices, const index_type &step_sizes)
+        requires dynamic_shape<Shape>;
+    auto subview(const index_type &subview_shape, const index_type &start_indices, const index_type &step_sizes) const
         requires dynamic_shape<Shape>;
 
     // View operations
@@ -185,6 +198,8 @@ class tensor {
     static auto eye(const std::vector<size_t> &shape = {}, layout l = layout::column_major)
         requires(OwnershipType == ownership_type::owner);
     static auto diag(const T &value, const std::vector<size_t> &shape = {}, layout l = layout::column_major)
+        requires(OwnershipType == ownership_type::owner);
+    static auto arange(T start, T step, const std::vector<size_t> &shape = {}, layout l = layout::column_major)
         requires(OwnershipType == ownership_type::owner);
 
     // Shape manipulation
@@ -269,7 +284,26 @@ class tensor {
                                                      std::index_sequence<Is...> /*unused*/) const -> std::size_t;
     [[nodiscard]] constexpr auto compute_offset(const index_type &indices) const -> std::size_t;
     constexpr auto check_bounds(const index_type &indices) const -> void;
-    [[nodiscard]] auto compute_strides(layout layout) const -> std::vector<std::size_t>;
+    [[nodiscard]] auto compute_strides(layout l) const -> std::vector<std::size_t>
+        requires dynamic_shape<Shape>
+    {
+        if (l == layout::row_major) {
+            // Compute row-major strides runtime
+            std::vector<std::size_t> row_major_strides(rank());
+            row_major_strides[rank() - 1] = 1;
+            for (std::size_t i = rank() - 1; i > 0; --i) {
+                row_major_strides[i - 1] = row_major_strides[i] * shape_[i];
+            }
+            return row_major_strides;
+        }
+        // Compute column-major strides runtime
+        std::vector<std::size_t> column_major_strides(rank());
+        column_major_strides[0] = 1;
+        for (std::size_t i = 1; i < rank(); ++i) {
+            column_major_strides[i] = column_major_strides[i - 1] * shape_[i - 1];
+        }
+        return column_major_strides;
+    }
 };
 
 } // namespace squint

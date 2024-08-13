@@ -42,7 +42,7 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
-    const std::array<T, product(Shape{})> &elements)
+    const std::array<T, _size()> &elements)
     requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
     : data_(elements) {
     if constexpr (ErrorChecking == error_checking::enabled) {

@@ -12,6 +12,7 @@
 #define SQUINT_TENSOR_TENSOR_VIEW_OPERATIONS_HPP
 
 #include "squint/tensor/tensor.hpp"
+#include "squint/util/sequence_utils.hpp"
 #include <stdexcept>
 
 namespace squint {
@@ -20,27 +21,31 @@ namespace squint {
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-template <typename SubviewShape>
+template <typename SubviewShape, typename StepSizes>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &start_indices)
     requires fixed_shape<Shape>
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
-    using SubviewStrides = remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>;
+    static_assert(StepSizes::size() <= Shape::size(), "Step sizes must match subview rank");
+    using SubviewStrides =
+        multiply_sequences_t<remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>, StepSizes>;
     return tensor<T, SubviewShape, SubviewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
         data() + compute_offset(start_indices));
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-template <typename SubviewShape>
+template <typename SubviewShape, typename StepSizes>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(
     const index_type &start_indices) const
     requires fixed_shape<Shape>
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
-    using SubviewStrides = remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>;
+    static_assert(StepSizes::size() <= Shape::size(), "Step sizes must match subview rank");
+    using SubviewStrides =
+        multiply_sequences_t<remove_last_n_t<Strides, Shape::size() - SubviewShape::size()>, StepSizes>;
     return tensor<const T, SubviewShape, SubviewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
         data() + compute_offset(start_indices));
 }
@@ -52,7 +57,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     requires fixed_shape<Shape>
 {
     static_assert(sizeof...(Indices) == Shape::size(), "Number of indices must match tensor rank");
-    return this->template subview<std::index_sequence<Dims...>>({static_cast<std::size_t>(start_indices)...});
+    using StepSizes = repeat_sequence_t<sizeof...(Dims), 1>;
+    return this->template subview<std::index_sequence<Dims...>, StepSizes>(
+        {static_cast<std::size_t>(start_indices)...});
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
@@ -62,7 +69,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     requires fixed_shape<Shape>
 {
     static_assert(sizeof...(Indices) == Shape::size(), "Number of indices must match tensor rank");
-    return this->template subview<std::index_sequence<Dims...>>({static_cast<std::size_t>(start_indices)...});
+    using StepSizes = repeat_sequence_t<sizeof...(Dims), 1>;
+    return this->template subview<std::index_sequence<Dims...>, StepSizes>(
+        {static_cast<std::size_t>(start_indices)...});
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
@@ -84,8 +93,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(
-    const index_type &subview_shape, const index_type &start_indices) const
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
+                                                                                   const index_type &start_indices) const
     requires dynamic_shape<Shape>
 {
     if constexpr (ErrorChecking == error_checking::enabled) {
@@ -95,6 +104,48 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     }
     auto subview_strides = strides_;
     subview_strides.resize(subview_shape.size());
+    return tensor<const T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking, ownership_type::reference,
+                  MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
+}
+
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
+                                                                                   const index_type &start_indices,
+                                                                                   const index_type &step_sizes)
+    requires dynamic_shape<Shape>
+{
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        if (start_indices.size() != rank() || subview_shape.size() > rank()) {
+            throw std::invalid_argument("Invalid subview dimensions");
+        }
+    }
+    auto subview_strides = strides_;
+    subview_strides.resize(subview_shape.size());
+    for (size_t i = 0; i < subview_shape.size(); ++i) {
+        subview_strides[i] *= step_sizes[i];
+    }
+    return tensor<T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking, ownership_type::reference,
+                  MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
+}
+
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
+                                                                                   const index_type &start_indices,
+                                                                                   const index_type &step_sizes) const
+    requires dynamic_shape<Shape>
+{
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        if (start_indices.size() != rank() || subview_shape.size() > rank()) {
+            throw std::invalid_argument("Invalid subview dimensions");
+        }
+    }
+    auto subview_strides = strides_;
+    subview_strides.resize(subview_shape.size());
+    for (size_t i = 0; i < subview_shape.size(); ++i) {
+        subview_strides[i] *= step_sizes[i];
+    }
     return tensor<const T, std::vector<std::size_t>, std::vector<std::size_t>, ErrorChecking, ownership_type::reference,
                   MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
 }

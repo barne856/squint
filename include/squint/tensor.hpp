@@ -5,7 +5,6 @@
 #include "tensor/tensor_types.hpp"
 #include "squint/tensor/tensor_accessors.hpp"
 #include "squint/tensor/tensor_assignment.hpp"
-#include "squint/tensor/tensor_conversions.hpp"
 #include "squint/tensor/tensor_constructors.hpp"
 #include "squint/tensor/tensor_creation.hpp"
 #include "squint/tensor/tensor_element_access.hpp"

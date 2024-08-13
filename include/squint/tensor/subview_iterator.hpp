@@ -19,6 +19,7 @@
 #define SQUINT_SUBVIEW_ITERATOR_HPP
 
 #include "squint/core/concepts.hpp"
+#include "squint/util/sequence_utils.hpp"
 #include <iterator>
 
 namespace squint {
@@ -193,7 +194,7 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
      */
     auto operator*() const {
         if constexpr (fixed_tensor<TensorType>) {
-            return this->tensor_->template subview<SubviewShape>(this->get_offset());
+            return this->tensor_->template subview<SubviewShape, repeat_sequence_t<SubviewShape::size(), 1>>(this->get_offset());
         } else {
             std::vector<std::size_t> subview_shape = this->subview_shape_;
             while (subview_shape.back() == 1) {

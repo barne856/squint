@@ -11,11 +11,11 @@
 #ifndef SQUINT_UTIL_SEQUENCE_UTILS_HPP
 #define SQUINT_UTIL_SEQUENCE_UTILS_HPP
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
-#include <algorithm>
 
 namespace squint {
 
@@ -41,7 +41,7 @@ template <std::size_t... Ix> constexpr auto make_array(std::index_sequence<Ix...
  * @tparam Ix Variadic template parameter for indices.
  * @return std::size_t The product of all indices in the sequence.
  */
-template <std::size_t... Ix> constexpr auto product(std::index_sequence<Ix...> /*seq*/) { return (Ix * ...); }
+template <std::size_t... Ix> constexpr auto product(std::index_sequence<Ix...> /*seq*/) { return (Ix * ... * 1); }
 
 /**
  * @brief Computes the sum of elements in an index sequence.
@@ -71,8 +71,8 @@ template <std::size_t... Ix> constexpr auto all_equal(std::index_sequence<Ix...>
  * @param max_value The maximum value to compare against.
  * @return bool True if all elements are less than max_value, false otherwise.
  */
-template <std::size_t... Ix> constexpr auto all_less_than(std::index_sequence<Ix...> /*unused*/, std::size_t max_value)
-    -> bool {
+template <std::size_t... Ix>
+constexpr auto all_less_than(std::index_sequence<Ix...> /*unused*/, std::size_t max_value) -> bool {
     return ((Ix < max_value) && ...);
 }
 
@@ -80,6 +80,18 @@ template <std::size_t... Ix> constexpr auto all_less_than(std::index_sequence<Ix
 template <std::size_t... Ix> constexpr auto max(std::index_sequence<Ix...> /*unused*/) -> std::size_t {
     return std::max({Ix...});
 }
+
+// multiply sequences element-wise
+template <typename Sequence1, typename Sequence2> struct multiply_sequences;
+
+template <std::size_t... Ns1, std::size_t... Ns2>
+struct multiply_sequences<std::index_sequence<Ns1...>, std::index_sequence<Ns2...>> {
+    using type = std::index_sequence<Ns1 * Ns2...>;
+};
+
+// Alias template for multiply_sequences
+template <typename Sequence1, typename Sequence2>
+using multiply_sequences_t = typename multiply_sequences<Sequence1, Sequence2>::type;
 
 // Helper to concatenate two index sequences
 template <typename Sequence1, typename Sequence2> struct concat_sequence;
@@ -90,7 +102,8 @@ struct concat_sequence<std::index_sequence<Ns1...>, std::index_sequence<Ns2...>>
 };
 
 // Alias template for concat_sequence
-template <typename Sequence1, typename Sequence2> using concat_sequence_t = typename concat_sequence<Sequence1, Sequence2>::type;
+template <typename Sequence1, typename Sequence2>
+using concat_sequence_t = typename concat_sequence<Sequence1, Sequence2>::type;
 
 // Helper to remove the first element from a sequence
 template <typename Sequence> struct tail_sequence;
@@ -105,8 +118,7 @@ template <typename Sequence> using tail_sequence_t = typename tail_sequence<Sequ
 // Helper to remove the last element from a sequence
 template <typename Sequence> struct init_sequence {
     template <typename S, std::size_t... Ns>
-    static auto helper(std::index_sequence<Ns...>)
-        -> std::index_sequence<std::get<Ns>(make_array(S{}))...>;
+    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<std::get<Ns>(make_array(S{}))...>;
 
     using type = decltype(helper<Sequence>(std::make_index_sequence<Sequence::size() - 1>{}));
 };
@@ -128,7 +140,7 @@ template <typename Sequence, std::size_t New> using prepend_sequence_t = typenam
 template <typename Sequence, std::size_t New> struct append_sequence;
 
 // Helper to append an element to a sequence
-template <std::size_t... Rest, std::size_t New> struct append_sequence<std::index_sequence<Rest...>, New>{
+template <std::size_t... Rest, std::size_t New> struct append_sequence<std::index_sequence<Rest...>, New> {
     using type = std::index_sequence<Rest..., New>;
 };
 
@@ -149,7 +161,7 @@ template <typename Sequence, std::size_t N> struct remove_last_n {
 template <typename Sequence, std::size_t N> using remove_last_n_t = typename remove_last_n<Sequence, N>::type;
 
 // Helper to reverse an index sequence
-template <typename Sequence> struct reverse_sequence{
+template <typename Sequence> struct reverse_sequence {
     template <typename S, std::size_t... Ns>
     static auto helper(std::index_sequence<Ns...>)
         -> std::index_sequence<std::get<Sequence::size() - 1 - Ns>(make_array(S{}))...>;
@@ -162,7 +174,8 @@ template <typename Sequence> using reverse_sequence_t = typename reverse_sequenc
 
 // Helper to make repeating index sequences of a single value and length N
 template <std::size_t N, std::size_t Value> struct repeat_sequence {
-    template <std::size_t... Ns> static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<(Value + Ns*0)...>;
+    template <std::size_t... Ns>
+    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<(Value + Ns * 0)...>;
 
     using type = decltype(helper(std::make_index_sequence<N>{}));
 };
@@ -179,26 +192,24 @@ template <typename Sequence> constexpr bool is_unique() {
 // Concept for valid index permutation used to transpose a tensor.
 // All indices must have no duplicates, and be less than the total number of indices.
 template <typename Sequence>
-concept valid_index_permutation =
-    is_unique<Sequence>() && all_less_than(Sequence{}, Sequence::size());
-
+concept valid_index_permutation = is_unique<Sequence>() && all_less_than(Sequence{}, Sequence::size());
 
 // Apply index permutation to a sequence
-template <typename Sequence, typename IndexPermutation, std::size_t pad_value>
-struct apply_permutation {
+template <typename Sequence, typename IndexPermutation, std::size_t pad_value> struct apply_permutation {
     template <typename S, std::size_t... Ns>
-    static auto helper(std::index_sequence<Ns...>)
-        -> std::index_sequence<std::get<Ns>(make_array(S{}))...>;
+    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<std::get<Ns>(make_array(S{}))...>;
 
-    using type = decltype(helper<concat_sequence_t<Sequence,repeat_sequence_t<IndexPermutation::size() - Sequence::size(), pad_value>>>(IndexPermutation{}));
+    using type =
+        decltype(helper<concat_sequence_t<Sequence,
+                                          repeat_sequence_t<IndexPermutation::size() - Sequence::size(), pad_value>>>(
+            IndexPermutation{}));
 };
 
 template <typename Sequence, typename IndexPermutation, std::size_t pad_value>
 using apply_permutation_t = typename apply_permutation<Sequence, IndexPermutation, pad_value>::type;
 
 // Helper to determine if two sequences representing tensor shapes can be implicitly converted
-template <typename Sequence1, typename Sequence2>
-struct implicit_convertible_shapes {
+template <typename Sequence1, typename Sequence2> struct implicit_convertible_shapes {
     static constexpr bool helper() {
         constexpr auto arr1 = make_array(Sequence1{});
         constexpr auto arr2 = make_array(Sequence2{});
@@ -208,17 +219,20 @@ struct implicit_convertible_shapes {
 
         // Check if the common elements are the same
         for (std::size_t i = 0; i < min_size; ++i) {
-            if (arr1[i] != arr2[i]) return false;
+            if (arr1[i] != arr2[i])
+                return false;
         }
 
         // Check if the extra elements in the longer sequence are all 1's
         if (size1 > size2) {
             for (std::size_t i = size2; i < size1; ++i) {
-                if (arr1[i] != 1) return false;
+                if (arr1[i] != 1)
+                    return false;
             }
         } else if (size2 > size1) {
             for (std::size_t i = size1; i < size2; ++i) {
-                if (arr2[i] != 1) return false;
+                if (arr2[i] != 1)
+                    return false;
             }
         }
 
@@ -233,8 +247,7 @@ template <typename Sequence1, typename Sequence2>
 inline constexpr bool implicit_convertible_shapes_v = implicit_convertible_shapes<Sequence1, Sequence2>::value;
 
 // Helper to determine if two sequences representing tensor strides can be implicitly converted
-template <typename Sequence1, typename Sequence2>
-struct implicit_convertible_strides {
+template <typename Sequence1, typename Sequence2> struct implicit_convertible_strides {
     static constexpr bool helper() {
         constexpr auto arr1 = make_array(Sequence1{});
         constexpr auto arr2 = make_array(Sequence2{});
@@ -244,7 +257,8 @@ struct implicit_convertible_strides {
 
         // Check if the common elements are the same
         for (std::size_t i = 0; i < min_size; ++i) {
-            if (arr1[i] != arr2[i]) return false;
+            if (arr1[i] != arr2[i])
+                return false;
         }
 
         return true;

@@ -28,7 +28,7 @@ auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<
                               std::size_t pad_value) -> std::vector<size_t> {
     std::vector<size_t> result(permutation.size(), pad_value);
     for (std::size_t i = 0; i < vec.size(); ++i) {
-        result[permutation[i]] = vec[i];
+        result[i] = vec[permutation[i]];
     }
     return result;
 }
@@ -190,7 +190,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
             throw std::invalid_argument("Index permutation must be less than the number of dimensions");
         }
     }
-    constexpr std::size_t last_stride = this->strides_[shape_.size() - 1];
+    std::size_t last_stride = this->strides_[shape_.size() - 1];
     return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference, MemorySpace>(
         this->data(), apply_permutation_vector(shape_, index_permutation, 1),
         apply_permutation_vector(strides_, index_permutation, last_stride));

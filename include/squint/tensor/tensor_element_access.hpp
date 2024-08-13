@@ -82,7 +82,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <std::size_t... Is>
 [[nodiscard]] constexpr auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::compute_offset_impl(
     const index_type &indices, std::index_sequence<Is...> /*unused*/) const -> std::size_t {
-    return ((indices[Is] * std::get<Is>(make_array(Strides{}))) + ...);
+    return ((indices[Is] * std::get<Is>(make_array(Strides{}))) + ... + 0);
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,

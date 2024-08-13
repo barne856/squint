@@ -97,7 +97,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::eye(c
     if constexpr (fixed_shape<Shape>) {
         constexpr auto dims = make_array(Shape{});
         static_assert(dims.size() == 2 && dims[0] == dims[1], "Eye tensor must be square");
-        tensor t;
+        tensor t{};
         for (size_t i = 0; i < dims[0]; ++i) {
             t(i, i) = T(1);
         }
@@ -126,7 +126,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag(
     if constexpr (fixed_shape<Shape>) {
         constexpr auto dims = make_array(Shape{});
         static_assert(dims.size() == 2 && dims[0] == dims[1], "Diagonal tensor must be square");
-        tensor t;
+        tensor t{};
         for (size_t i = 0; i < dims[0]; ++i) {
             t(i, i) = value;
         }
@@ -140,6 +140,35 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag(
         tensor t(shape, l);
         for (size_t i = 0; i < shape[0]; ++i) {
             t(i, i) = value;
+        }
+        return t;
+    }
+}
+
+// arange
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::arange(T start, T step,
+                                                                                  const std::vector<size_t> &shape,
+                                                                                  layout l)
+    requires(OwnershipType == ownership_type::owner)
+{
+    if constexpr (fixed_shape<Shape>) {
+        tensor t;
+        // fill the tensor with the values
+        T value = start;
+        for (auto &elem : t) {
+            elem = value;
+            value += step;
+        }
+        return t;
+    } else {
+        tensor t(shape, l);
+        // fill the tensor with the values
+        T value = start;
+        for (auto &elem : t) {
+            elem = value;
+            value += step;
         }
         return t;
     }
