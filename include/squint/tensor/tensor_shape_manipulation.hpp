@@ -19,13 +19,13 @@
 namespace squint {
 
 // helper all_less_than to check if all elements of a std::vector are less than a given value
-auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool {
+inline auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool {
     return std::all_of(vec.begin(), vec.end(), [value](size_t x) { return x < value; });
 }
 
 // helper to apply index permutation to a std::vector
-auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<size_t> &permutation,
-                              std::size_t pad_value) -> std::vector<size_t> {
+inline auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<size_t> &permutation,
+                                     std::size_t pad_value) -> std::vector<size_t> {
     std::vector<size_t> result(permutation.size(), pad_value);
     for (std::size_t i = 0; i < vec.size(); ++i) {
         result[i] = vec[permutation[i]];

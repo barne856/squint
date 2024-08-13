@@ -4,8 +4,6 @@
 #include "squint/tensor/tensor.hpp"
 #include "squint/util/sequence_utils.hpp"
 
-#include <iostream>
-
 namespace squint {
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
