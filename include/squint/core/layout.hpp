@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <utility>
+#include <vector>
 
 namespace squint {
 
@@ -61,6 +62,7 @@ struct strides{
 // alias for compile time shape
 template <std::size_t... Dims> using seq = std::index_sequence<Dims...>;
 template <std::size_t... Dims> using shape = seq<Dims...>;
+using dynamic = std::vector<std::size_t>;
 
 } // namespace squint
 

@@ -71,18 +71,6 @@ template <tensorial Tensor1, tensorial Tensor2> inline void blas_compatible(cons
     using type2 = blas_type_t<typename Tensor2::value_type>;
     static_assert(std::is_same_v<type1, type2>,
                   "Tensors must have the same underlying arithmetic type for BLAS operations");
-    if constexpr (fixed_tensor<Tensor1>) {
-        static_assert(fixed_contiguous_tensor<Tensor1>, "Tensors must be contiguous for BLAS operations");
-    }
-    if constexpr (fixed_tensor<Tensor2>) {
-        static_assert(fixed_contiguous_tensor<Tensor2>, "Tensors must be contiguous for BLAS operations");
-    }
-    if constexpr (resulting_error_checking<Tensor1::error_checking(), Tensor2::error_checking()>::value ==
-                  error_checking::enabled) {
-        if (!t1.is_contiguous() || !t2.is_contiguous()) {
-            throw std::runtime_error("Tensors must be contiguous for BLAS operations");
-        }
-    }
 }
 
 // helper to check if two shapes are implicitly convertible
@@ -91,9 +79,8 @@ inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
         static_assert(implicit_convertible_shapes_v<typename Tensor1::shape_type, typename Tensor2::shape_type>,
                       "Shapes must be compatible for element-wise operations");
-    }
-    if constexpr (Tensor1::error_checking() == error_checking::enabled ||
-                  Tensor2::error_checking() == error_checking::enabled) {
+    } else if constexpr (Tensor1::error_checking() == error_checking::enabled ||
+                         Tensor2::error_checking() == error_checking::enabled) {
         if (!implicit_convertible_shapes_vector(t1.shape(), t2.shape())) {
             throw std::runtime_error("Shapes must be compatible for element-wise operations");
         }
@@ -106,21 +93,73 @@ inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
         constexpr auto shape1 = make_array(typename Tensor1::shape_type{});
         constexpr auto shape2 = make_array(typename Tensor2::shape_type{});
-        constexpr std::size_t m = shape1[0];
-        constexpr std::size_t n = shape1[1];
-        constexpr std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
-        static_assert(implicit_convertible_shapes_v<typename Tensor1::shape_type, shape<m, n>> &&
-                          implicit_convertible_shapes_v<typename Tensor2::shape_type, shape<n, p>>,
-                      "Incompatible shapes for matrix multiplication");
-    }
-    if constexpr (resulting_error_checking<Tensor1::error_checking(), Tensor2::error_checking()>::value ==
-                  error_checking::enabled) {
-        std::size_t m = t1.shape()[0];
-        std::size_t n = t1.shape()[1];
-        std::size_t p = t2.shape().size() == 1 ? 1 : t2.shape()[1];
-        if (!implicit_convertible_shapes_vector(t1.shape(), {m, n}) ||
-            !implicit_convertible_shapes_vector(t2.shape(), {n, p})) {
-            throw std::runtime_error("Incompatible shapes for matrix multiplication");
+        static_assert(shape1.size() == 1 || shape1.size() == 2, "Invalid shape for tensor 1");
+        static_assert(shape2.size() == 1 || shape2.size() == 2, "Invalid shape for tensor 2");
+        constexpr auto stride1 = make_array(typename Tensor1::strides_type{});
+        constexpr auto stride2 = make_array(typename Tensor2::strides_type{});
+        // both strides must start or end with 1
+        static_assert((stride1[0] == 1 || stride1[shape1.size() - 1] == 1) &&
+                          (stride2[0] == 1 || stride2[shape2.size() - 1] == 1),
+                      "Invalid strides for matrix multiplication");
+
+        if constexpr (shape1.size() == 1) {
+            // Vector-matrix multiplication
+            constexpr std::size_t m = shape1[0];
+            constexpr std::size_t n = shape2[0];
+            constexpr std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
+            static_assert(m == p, "Incompatible shapes for vector-matrix multiplication");
+            static_assert(implicit_convertible_shapes_v<typename Tensor1::shape_type, shape<m>> &&
+                              implicit_convertible_shapes_v<typename Tensor2::shape_type, shape<n, p>>,
+                          "Incompatible shapes for vector-matrix multiplication");
+        } else {
+            // Matrix-matrix multiplication
+            constexpr std::size_t m = shape1[0];
+            constexpr std::size_t n = shape1[1];
+            constexpr std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
+            static_assert(shape1[1] == shape2[0], "Incompatible shapes for matrix multiplication");
+            static_assert(implicit_convertible_shapes_v<typename Tensor1::shape_type, shape<m, n>> &&
+                              implicit_convertible_shapes_v<typename Tensor2::shape_type, shape<n, p>>,
+                          "Incompatible shapes for matrix multiplication");
+        }
+    } else if constexpr (resulting_error_checking<Tensor1::error_checking(), Tensor2::error_checking()>::value ==
+                         error_checking::enabled) {
+        auto shape1 = t1.shape();
+        auto shape2 = t2.shape();
+
+        if (shape1.size() != 1 && shape1.size() != 2) {
+            throw std::runtime_error("Invalid shape for tensor 1");
+        }
+        if (shape2.size() != 1 && shape2.size() != 2) {
+            throw std::runtime_error("Invalid shape for tensor 2");
+        }
+
+        auto stride1 = t1.strides();
+        auto stride2 = t2.strides();
+
+        // both strides must start or end with 1
+        if ((stride1[0] != 1 && stride1[shape1.size() - 1] != 1) ||
+            (stride2[0] != 1 && stride2[shape2.size() - 1] != 1)) {
+            throw std::runtime_error("Invalid strides for matrix multiplication");
+        }
+
+        if (shape1.size() == 1) {
+            // Vector-matrix multiplication
+            std::size_t m = shape1[0];
+            std::size_t n = shape2[0];
+            std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
+            if (m != p || !implicit_convertible_shapes_vector(t1.shape(), {m}) ||
+                !implicit_convertible_shapes_vector(t2.shape(), {n, p})) {
+                throw std::runtime_error("Incompatible shapes for vector-matrix multiplication");
+            }
+        } else {
+            // Matrix-matrix multiplication
+            std::size_t m = shape1[0];
+            std::size_t n = shape1[1];
+            std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
+            if (shape1[1] != shape2[0] || !implicit_convertible_shapes_vector(t1.shape(), {m, n}) ||
+                !implicit_convertible_shapes_vector(t2.shape(), {n, p})) {
+                throw std::runtime_error("Incompatible shapes for matrix multiplication");
+            }
         }
     }
 }

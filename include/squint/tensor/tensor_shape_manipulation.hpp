@@ -236,10 +236,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
     } else {
         if (shape_.size() == 1 || shape_.size() == 2) {
             return permute(std::vector<size_t>{1, 0});
-        } else {
-            throw std::invalid_argument(
-                "You must provide an index permutation for tensors with more than 2 dimensions");
         }
+        throw std::invalid_argument("You must provide an index permutation for tensors with more than 2 dimensions");
     }
 }
 
@@ -256,10 +254,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
     } else {
         if (shape_.size() == 1 || shape_.size() == 2) {
             return permute(std::vector<size_t>{1, 0});
-        } else {
-            throw std::invalid_argument(
-                "You must provide an index permutation for tensors with more than 2 dimensions");
         }
+        throw std::invalid_argument("You must provide an index permutation for tensors with more than 2 dimensions");
     }
 }
 
