@@ -4,6 +4,7 @@
 #include "squint/tensor/flat_iterator.hpp"
 #include "squint/tensor/subview_iterator.hpp"
 #include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_op_compatibility.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <algorithm>
@@ -13,19 +14,6 @@
 #include <vector>
 
 namespace squint {
-
-// Helper function to check if tensor dimensions are divisible by subview dimensions
-template <fixed_tensor T, typename SubviewShape> constexpr auto dimensions_divisible() -> bool {
-    constexpr auto shape_arr = make_array(typename T::shape_type{});
-    constexpr auto subview_arr = make_array(SubviewShape{});
-    std::size_t min_length = shape_arr.size() < subview_arr.size() ? shape_arr.size() : subview_arr.size();
-    for (std::size_t i = 0; i < min_length; ++i) {
-        if (shape_arr[i] % subview_arr[i] != 0) {
-            return false;
-        }
-    }
-    return true;
-}
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
@@ -228,7 +216,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
-    static_assert(dimensions_divisible<tensor, SubviewShape>(),
+    static_assert(subview_compatible<tensor, SubviewShape>(),
                   "Subview dimensions must evenly divide tensor dimensions");
     constexpr auto end_indices = make_array(Shape{});
     auto subview_shape = make_array(Shape{});
@@ -271,7 +259,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
-    static_assert(dimensions_divisible<tensor, SubviewShape>(),
+    static_assert(subview_compatible<tensor, SubviewShape>(),
                   "Subview dimensions must evenly divide tensor dimensions");
     constexpr auto end_indices = make_array(Shape{});
     auto subview_shape = make_array(Shape{});

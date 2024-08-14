@@ -4,7 +4,7 @@
 #include "squint/quantity/constants.hpp"
 #include "squint/quantity/dimension.hpp"
 #include "squint/quantity/dimension_types.hpp"
-#include "squint/quantity/math.hpp"
+#include "squint/quantity/quantity_math.hpp"
 #include "squint/quantity/quantity.hpp"
 #include "squint/quantity/quantity_ops.hpp"
 #include "squint/quantity/quantity_types.hpp"

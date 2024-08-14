@@ -304,6 +304,17 @@ class tensor {
     template <dimensionless_scalar U> auto operator*=(const U &s) -> tensor &;
     template <dimensionless_scalar U> auto operator/=(const U &s) -> tensor &;
 
+    // util methods
+    [[nodiscard]] auto is_contiguous() const -> bool {
+        if constexpr (fixed_shape<Strides>) {
+            return (implicit_convertible_strides_v<Strides, strides::row_major<Shape>> ||
+                    implicit_convertible_strides_v<Strides, strides::column_major<Shape>>);
+        } else {
+            return strides() == compute_strides(layout::row_major) ||
+                   strides() == compute_strides(layout::column_major);
+        }
+    }
+
   private:
     template <std::size_t... Is>
     [[nodiscard]] constexpr auto compute_offset_impl(const index_type &indices,

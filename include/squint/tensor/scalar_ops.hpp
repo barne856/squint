@@ -4,7 +4,6 @@
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
-#include "squint/util/sequence_utils.hpp"
 
 namespace squint {
 
@@ -33,11 +32,23 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &t,
                const U &s) -> tensor<decltype(std::declval<T>() * std::declval<U>()), Shape, Strides, ErrorChecking,
                                      ownership_type::owner, MemorySpace> {
-    tensor<decltype(std::declval<T>() * std::declval<U>()), Shape, Strides, ErrorChecking, ownership_type::owner,
-           MemorySpace>
-        result(t);
-    result *= s;
-    return result;
+    using result_type = tensor<decltype(std::declval<T>() * std::declval<U>()), Shape, Strides, ErrorChecking,
+                               ownership_type::owner, MemorySpace>;
+    if constexpr (fixed_shape<Shape>) {
+        result_type result;
+        auto result_it = result.begin();
+        for (auto it = t.begin(); it != t.end(); ++it, ++result_it) {
+            *result_it = *it * s;
+        }
+        return result;
+    } else {
+        result_type result(t.shape());
+        auto result_it = result.begin();
+        for (auto it = t.begin(); it != t.end(); ++it, ++result_it) {
+            *result_it = *it * s;
+        }
+        return result;
+    }
 }
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
@@ -53,11 +64,23 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 auto operator/(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &t,
                const U &s) -> tensor<decltype(std::declval<T>() / std::declval<U>()), Shape, Strides, ErrorChecking,
                                      ownership_type::owner, MemorySpace> {
-    tensor<decltype(std::declval<T>() / std::declval<U>()), Shape, Strides, ErrorChecking, ownership_type::owner,
-           MemorySpace>
-        result(t);
-    result /= s;
-    return result;
+    using result_type = tensor<decltype(std::declval<T>() / std::declval<U>()), Shape, Strides, ErrorChecking,
+                               ownership_type::owner, MemorySpace>;
+    if constexpr (fixed_shape<Shape>) {
+        result_type result;
+        auto result_it = result.begin();
+        for (auto it = t.begin(); it != t.end(); ++it, ++result_it) {
+            *result_it = *it / s;
+        }
+        return result;
+    } else {
+        result_type result(t.shape());
+        auto result_it = result.begin();
+        for (auto it = t.begin(); it != t.end(); ++it, ++result_it) {
+            *result_it = *it / s;
+        }
+        return result;
+    }
 }
 
 } // namespace squint

@@ -2,6 +2,7 @@
 #define SQUINT_CORE_CONCEPTS_HPP
 
 #include "squint/core/error_checking.hpp"
+#include "squint/core/layout.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/util/sequence_utils.hpp"
 
@@ -222,6 +223,18 @@ concept error_checking_enabled = (T::error_checking() == error_checking::enabled
  */
 template <typename T>
 concept host_tensor = (T::memory_space() == memory_space::host);
+
+/**
+ * @concept fixed_contiguous_tensor
+ * @brief Concept for fixed and contiguous tensors.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept fixed_contiguous_tensor =
+    fixed_tensor<T> &&
+    (implicit_convertible_strides_v<typename T::strides_type, strides::row_major<typename T::shape_type>> ||
+     implicit_convertible_strides_v<typename T::strides_type, strides::column_major<typename T::shape_type>>);
 
 } // namespace squint
 

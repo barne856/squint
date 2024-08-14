@@ -13,6 +13,8 @@
 
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_iteration.hpp"
+#include "squint/tensor/tensor_op_compatibility.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -58,7 +60,7 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
     requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
 {
     using OtherShape = typename std::common_type_t<OtherTensor...>::shape_type;
-    static_assert(dimensions_divisible<tensor, OtherShape>(), "Incompatible tensor shapes");
+    static_assert(subview_compatible<tensor, OtherShape>(), "Incompatible tensor shapes");
     auto blocks = subviews<OtherShape>().begin();
     ((*blocks++ = ts), ...);
 }

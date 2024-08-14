@@ -2,7 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/quantity/constants.hpp"
-#include "squint/quantity/math.hpp"
+#include "squint/quantity/quantity_math.hpp"
 #include "squint/quantity/quantity_types.hpp"
 #include "squint/quantity/unit_types.hpp"
 
