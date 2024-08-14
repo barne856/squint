@@ -143,7 +143,7 @@ class tensor {
 
     // Static accessors
     static constexpr auto error_checking() -> error_checking { return ErrorChecking; };
-    static constexpr auto ownership_type() -> ownership_type { return OwnershipType; };
+    static constexpr auto ownership() -> ownership_type { return OwnershipType; };
     static constexpr auto memory_space() -> memory_space { return MemorySpace; };
 
     // Element access
@@ -213,9 +213,9 @@ class tensor {
         requires(OwnershipType == ownership_type::owner);
     auto flatten() const
         requires(OwnershipType == ownership_type::owner);
-    void reshape(std::vector<size_t> new_shape, layout l = layout::column_major)
+    auto reshape(std::vector<size_t> new_shape, layout l = layout::column_major)
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
-    void reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
+    auto reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     template <valid_index_permutation IndexPermutation>
     auto permute()

@@ -77,7 +77,7 @@ concept tensorial = requires(T t) {
     { t.strides() } -> std::convertible_to<typename T::index_type>;
     { t.data() } -> std::convertible_to<const typename T::value_type *>;
     { T::error_checking() } -> std::same_as<error_checking>;
-    { T::ownership_type() } -> std::same_as<ownership_type>;
+    { T::ownership() } -> std::same_as<ownership_type>;
     { T::memory_space() } -> std::same_as<memory_space>;
     { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;
 };
@@ -204,7 +204,7 @@ concept const_tensor = std::is_const_v<std::remove_reference_t<T>>;
  * @tparam T The type to check.
  */
 template <typename T>
-concept owning_tensor = tensorial<T> && (T::ownership_type() == ownership_type::owner);
+concept owning_tensor = tensorial<T> && (T::ownership() == ownership_type::owner);
 
 /**
  * @concept error_checking_enabled

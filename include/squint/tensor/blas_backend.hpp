@@ -9,7 +9,7 @@
 #include <lapacke.h>
 #define BLAS_INT int
 #elif defined(SQUINT_BLAS_BACKEND_NONE)
-#include "blas_backend_none.hpp"
+#include "squint/tensor/blas_backend_none.hpp"
 #define BLAS_INT int
 #define cblas_sgemm gemm<float>
 #define cblas_dgemm gemm<double>

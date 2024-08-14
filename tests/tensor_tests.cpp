@@ -280,7 +280,7 @@ TEST_CASE("Tensor Static Accessors") {
 
     SUBCASE("error_checking()") { CHECK(TensorType::error_checking() == squint::error_checking::disabled); }
 
-    SUBCASE("ownership_type()") { CHECK(TensorType::ownership_type() == squint::ownership_type::owner); }
+    SUBCASE("ownership()") { CHECK(TensorType::ownership() == squint::ownership_type::owner); }
 
     SUBCASE("memory_space()") { CHECK(TensorType::memory_space() == squint::memory_space::host); }
 }

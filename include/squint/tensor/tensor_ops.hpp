@@ -5,7 +5,6 @@
 #include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
 #include "squint/tensor/blas_backend.hpp"
-#include "squint/tensor/blas_backend_none.hpp"
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 #include "squint/util/sequence_utils.hpp"
@@ -84,7 +83,7 @@ auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
     // Compute leading dimensions
     BLAS_INT lda = static_cast<BLAS_INT>((op_a == CBLAS_TRANSPOSE::CblasNoTrans) ? t1.shape()[0] : t1.strides()[0]);
     BLAS_INT ldb = static_cast<BLAS_INT>((op_b == CBLAS_TRANSPOSE::CblasNoTrans) ? t2.shape()[0] : t2.strides()[0]);
-    BLAS_INT ldc = m;
+    BLAS_INT ldc = 2;
 
     // print debug info
     std::cout << "m: " << m << ", n: " << n << ", k: " << k << std::endl;
