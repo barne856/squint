@@ -100,6 +100,26 @@ TEST_CASE("Tensor Construction and Basic Operations") {
             }
         }
     }
+
+    SUBCASE("Construct Owning Tensor from a view"){
+        squint::tensor<float, squint::shape<4, 4>> t{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        squint::tensor<float, squint::shape<2, 4>> t2(t.subview<squint::shape<2, 4>, squint::seq<2, 1>>({0, 0}));
+        CHECK(t2(0, 0) == 1);
+        CHECK(t2(1, 0) == 3);
+        CHECK(t2(0, 1) == 5);
+        CHECK(t2(1, 1) == 7);
+        CHECK(t2(0, 2) == 9);
+        CHECK(t2(1, 2) == 11);
+        CHECK(t2(0, 3) == 13);
+        CHECK(t2(1, 3) == 15);
+    }
+
+    SUBCASE("Construct Tensor from tensor of compatible shape"){
+        squint::tensor<float, squint::shape<2, 1>> t1{1, 2};
+        squint::tensor<float, squint::shape<2>> t2(t1);
+        CHECK(t2(0) == 1);
+        CHECK(t2(1) == 2);
+    }
 }
 
 TEST_CASE("Tensor Element Access") {

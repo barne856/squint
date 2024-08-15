@@ -2,6 +2,7 @@
 #define SQUINT_TENSOR_BLAS_BACKEND_HPP
 
 #ifdef SQUINT_BLAS_BACKEND_MKL
+#define MKL_DIRECT_CALL_JIT
 #include <mkl.h>
 #define BLAS_INT MKL_INT
 #elif defined(SQUINT_BLAS_BACKEND_OPENBLAS)
