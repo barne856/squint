@@ -25,6 +25,8 @@ jobs:
             compiler: gcc
           - os: ubuntu-latest
             compiler: msvc
+          - os: windows-latest
+            blas: MKL
 
     runs-on: ${{ matrix.os }}
 
@@ -62,9 +64,6 @@ jobs:
         choco install cmake ninja
         if ("${{ matrix.compiler }}" -eq "clang") {
           choco install llvm --version=16.0.0
-        }
-        if ("${{ matrix.blas }}" -eq "MKL") {
-          choco install intel-oneapi-mkl
         }
 
     - name: Configure CMake
