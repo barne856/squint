@@ -47,7 +47,7 @@ jobs:
           sudo apt-get install -y clang-tidy-16
         fi
         if [ "${{ matrix.blas }}" = "OpenBLAS" ]; then
-          sudo apt-get install -y libopenblas-dev
+          sudo apt-get install -y gfortran
         elif [ "${{ matrix.blas }}" = "MKL" ]; then
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
@@ -63,9 +63,7 @@ jobs:
         if ("${{ matrix.compiler }}" -eq "clang") {
           choco install llvm --version=16.0.0
         }
-        if ("${{ matrix.blas }}" -eq "OpenBLAS") {
-          choco install openblas
-        } elseif ("${{ matrix.blas }}" -eq "MKL") {
+        if ("${{ matrix.blas }}" -eq "MKL") {
           choco install intel-oneapi-mkl
         }
 
