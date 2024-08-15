@@ -1,5 +1,4 @@
 ops tests
- - mult with step size view
  - type decuction for quantities
 
 tensor_ops (/, tensor_contration)

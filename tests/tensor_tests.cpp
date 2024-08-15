@@ -498,8 +498,10 @@ TEST_CASE("Tensor Iteration Methods") {
     SUBCASE("rows()") {
         std::vector<std::vector<float>> row_values;
         for (auto row : t.rows()) {
-            std::vector<float> row_data(row.size());
-            std::copy(row.begin(), row.end(), row_data.begin());
+            std::vector<float> row_data{};
+            for (const auto &val : row) {
+                row_data.push_back(val);
+            }
             row_values.push_back(row_data);
         }
         CHECK(row_values == std::vector<std::vector<float>>{{1, 2, 3}, {4, 5, 6}});
@@ -748,8 +750,10 @@ TEST_CASE("Dynamic Tensor Operations") {
         SUBCASE("rows()") {
             std::vector<std::vector<float>> row_values;
             for (auto row : t.rows()) {
-                std::vector<float> row_data(row.size());
-                std::copy(row.begin(), row.end(), row_data.begin());
+                std::vector<float> row_data{};
+                for (const auto &val : row) {
+                    row_data.push_back(val);
+                }
                 row_values.push_back(row_data);
             }
             CHECK(row_values == std::vector<std::vector<float>>{{0, 1, 2}, {3, 4, 5}});
