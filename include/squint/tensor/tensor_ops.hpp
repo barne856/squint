@@ -48,24 +48,6 @@ template <typename Sequence1, typename Sequence2> struct matrix_multiply_sequenc
 template <typename Sequence1, typename Sequence2>
 using matrix_multiply_sequence_t = typename matrix_multiply_sequence<Sequence1, Sequence2>::type;
 
-// Function to compute matrix multiplication result for dynamic shapes
-template <tensorial Tensor1, tensorial Tensor2>
-auto matrix_multiply_shapes(const Tensor1 &t1, const Tensor2 &t2) -> std::vector<std::size_t> {
-    auto shape1 = t1.shape();
-    auto shape2 = t2.shape();
-
-    if (shape1.size() == 1) {
-        // Vector-matrix multiplication
-        std::size_t m = 1;
-        std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
-        return {m, p};
-    }
-    // Matrix-matrix multiplication
-    std::size_t m = shape1[0];
-    std::size_t p = shape2.size() == 1 ? 1 : shape2[1];
-    return {m, p};
-}
-
 template <tensorial Tensor1> auto compute_leading_dimension(CBLAS_TRANSPOSE op, const Tensor1 &t) -> BLAS_INT {
     if (op == CBLAS_TRANSPOSE::CblasNoTrans) {
         if (t.rank() == 1) {
@@ -94,9 +76,9 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
     using result_shape_type = matrix_multiply_sequence_t<typename Tensor1::shape_type, typename Tensor2::shape_type>;
 
     // Compute dimensions
-    BLAS_INT m = static_cast<BLAS_INT>(t1.shape()[0]);
-    BLAS_INT n = static_cast<BLAS_INT>(t2.rank() == 1 ? 1 : t2.shape()[1]);
-    BLAS_INT k = static_cast<BLAS_INT>(t1.rank() == 1 ? 1 : t1.shape()[1]);
+    auto m = static_cast<BLAS_INT>(t1.shape()[0]);
+    auto n = static_cast<BLAS_INT>(t2.rank() == 1 ? 1 : t2.shape()[1]);
+    auto k = static_cast<BLAS_INT>(t1.rank() == 1 ? 1 : t1.shape()[1]);
 
     // Determine transpose operations
     CBLAS_TRANSPOSE op_a = (t1.strides()[0] == 1) ? CBLAS_TRANSPOSE::CblasNoTrans : CBLAS_TRANSPOSE::CblasTrans;
@@ -136,7 +118,7 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
         using strides_type = std::vector<std::size_t>;
         using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
                                    ownership_type::owner, memory_space::host>;
-        result_type result(matrix_multiply_shapes(t1, t2), layout::column_major);
+        result_type result({static_cast<std::size_t>(m), static_cast<std::size_t>(n)}, layout::column_major);
         if constexpr (std::is_same_v<blas_type, float>) {
             // NOLINTBEGIN
             cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,

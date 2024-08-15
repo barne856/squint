@@ -1,19 +1,19 @@
 /**
  * @file flat_iterator.hpp
  * @brief Defines the flat_iterator class for linear traversal of multi-dimensional tensors.
- * 
+ *
  * This file contains the implementation of the flat_iterator class, which provides
  * a way to iterate over all elements of a tensor in a linear fashion, regardless of
  * its dimensionality. The iterator supports both fixed and dynamic tensor types and
  * satisfies the requirements of a random access iterator.
- * 
+ *
  * Key features:
  * - Linear traversal of multi-dimensional tensors
  * - Support for both fixed and dynamic tensor types
  * - Random access iterator capabilities
  * - Arithmetic operations for iterator manipulation
  * - Comparison operations between iterators
- * 
+ *
  */
 
 #ifndef SQUINT_FLAT_ITERATOR_HPP
@@ -22,6 +22,7 @@
 #include "squint/core/concepts.hpp"
 #include "squint/util/sequence_utils.hpp"
 #include <algorithm>
+#include <iterator>
 #include <numeric>
 #include <type_traits>
 
@@ -29,18 +30,17 @@ namespace squint {
 
 /**
  * @brief A flat iterator for linear traversal of tensor elements.
- * 
+ *
  * This class provides a way to iterate over all elements of a tensor in a linear
  * fashion, regardless of its dimensionality. It satisfies the requirements of a
  * random access iterator.
- * 
+ *
  * @tparam TensorType The type of the tensor being iterated.
  */
-template <typename TensorType>
-class flat_iterator {
+template <typename TensorType> class flat_iterator {
   public:
-    using index_type = typename TensorType::index_type;  ///< Type used for indexing.
-    using value_type = typename TensorType::value_type;  ///< Type of the tensor elements.
+    using index_type = typename TensorType::index_type; ///< Type used for indexing.
+    using value_type = typename TensorType::value_type; ///< Type of the tensor elements.
     /// @brief Iterator category (random access iterator).
     using iterator_category = std::random_access_iterator_tag;
     /// @brief Difference type for the iterator.
@@ -52,7 +52,7 @@ class flat_iterator {
 
     /**
      * @brief Construct a new flat iterator object.
-     * 
+     *
      * @param tensor Pointer to the tensor being iterated.
      * @param indices Starting indices of the iterator.
      */
@@ -68,7 +68,7 @@ class flat_iterator {
 
     /**
      * @brief Dereference operator.
-     * 
+     *
      * @return reference A reference to the current element.
      */
     auto operator*() const -> reference {
@@ -78,14 +78,14 @@ class flat_iterator {
 
     /**
      * @brief Arrow operator.
-     * 
+     *
      * @return pointer A pointer to the current element.
      */
     auto operator->() const -> pointer { return &(operator*()); }
 
     /**
      * @brief Pre-increment operator.
-     * 
+     *
      * @return flat_iterator& Reference to the incremented iterator.
      */
     auto operator++() -> flat_iterator & {
@@ -101,7 +101,7 @@ class flat_iterator {
 
     /**
      * @brief Post-increment operator.
-     * 
+     *
      * @return flat_iterator Copy of the iterator before incrementing.
      */
     auto operator++(int) -> flat_iterator {
@@ -112,7 +112,7 @@ class flat_iterator {
 
     /**
      * @brief Pre-decrement operator.
-     * 
+     *
      * @return flat_iterator& Reference to the decremented iterator.
      */
     auto operator--() -> flat_iterator & {
@@ -128,7 +128,7 @@ class flat_iterator {
 
     /**
      * @brief Post-decrement operator.
-     * 
+     *
      * @return flat_iterator Copy of the iterator before decrementing.
      */
     auto operator--(int) -> flat_iterator {
@@ -139,7 +139,7 @@ class flat_iterator {
 
     /**
      * @brief Compound addition assignment operator.
-     * 
+     *
      * @param n Number of positions to advance the iterator.
      * @return flat_iterator& Reference to the advanced iterator.
      */
@@ -155,7 +155,7 @@ class flat_iterator {
 
     /**
      * @brief Compound subtraction assignment operator.
-     * 
+     *
      * @param n Number of positions to move the iterator backwards.
      * @return flat_iterator& Reference to the moved iterator.
      */
@@ -163,7 +163,7 @@ class flat_iterator {
 
     /**
      * @brief Addition operator.
-     * 
+     *
      * @param n Number of positions to advance the iterator.
      * @return flat_iterator New iterator advanced by n positions.
      */
@@ -175,7 +175,7 @@ class flat_iterator {
 
     /**
      * @brief Subtraction operator.
-     * 
+     *
      * @param n Number of positions to move the iterator backwards.
      * @return flat_iterator New iterator moved backwards by n positions.
      */
@@ -187,7 +187,7 @@ class flat_iterator {
 
     /**
      * @brief Difference operator between two iterators.
-     * 
+     *
      * @param other Another iterator to compute the difference with.
      * @return difference_type The number of elements between the two iterators.
      */
@@ -199,7 +199,7 @@ class flat_iterator {
 
     /**
      * @brief Subscript operator.
-     * 
+     *
      * @param n Offset from the current position.
      * @return reference Reference to the element at the offset position.
      */
@@ -207,7 +207,7 @@ class flat_iterator {
 
     /**
      * @brief Equality comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if the iterators are equal, false otherwise.
      */
@@ -217,7 +217,7 @@ class flat_iterator {
 
     /**
      * @brief Inequality comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if the iterators are not equal, false otherwise.
      */
@@ -225,7 +225,7 @@ class flat_iterator {
 
     /**
      * @brief Less than comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if this iterator is less than the other, false otherwise.
      */
@@ -236,7 +236,7 @@ class flat_iterator {
 
     /**
      * @brief Greater than comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if this iterator is greater than the other, false otherwise.
      */
@@ -244,7 +244,7 @@ class flat_iterator {
 
     /**
      * @brief Less than or equal to comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if this iterator is less than or equal to the other, false otherwise.
      */
@@ -252,7 +252,7 @@ class flat_iterator {
 
     /**
      * @brief Greater than or equal to comparison operator.
-     * 
+     *
      * @param other Another iterator to compare with.
      * @return true if this iterator is greater than or equal to the other, false otherwise.
      */
@@ -260,19 +260,18 @@ class flat_iterator {
 
     /**
      * @brief Friend function for addition of an integer and an iterator.
-     * 
+     *
      * @param n Number of positions to advance the iterator.
      * @param it The iterator to advance.
      * @return flat_iterator New iterator advanced by n positions.
      */
     friend auto operator+(difference_type n, const flat_iterator &it) -> flat_iterator { return it + n; }
 
-    private:
-    
-    TensorType *tensor_;  ///< Pointer to the tensor being iterated.
-    index_type current_indices_;  ///< Current position of the iterator.
-    index_type shape_;            ///< Shape of the tensor.
-    index_type strides_;          ///< Strides of the tensor.
+  private:
+    TensorType *tensor_;         ///< Pointer to the tensor being iterated.
+    index_type current_indices_; ///< Current position of the iterator.
+    index_type shape_;           ///< Shape of the tensor.
+    index_type strides_;         ///< Strides of the tensor.
 };
 
 } // namespace squint

@@ -26,9 +26,13 @@ inline auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool 
 // helper to apply index permutation to a std::vector
 inline auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<size_t> &permutation,
                                      std::size_t pad_value) -> std::vector<size_t> {
-    std::vector<size_t> result(permutation.size(), pad_value);
+    std::vector<size_t> padded_shape(permutation.size(), pad_value);
     for (std::size_t i = 0; i < vec.size(); ++i) {
-        result[i] = vec[permutation[i]];
+        padded_shape[i] = vec[i];
+    }
+    std::vector<size_t> result(permutation.size());
+    for (std::size_t i = 0; i < permutation.size(); ++i) {
+        result[i] = padded_shape[permutation[i]];
     }
     return result;
 }

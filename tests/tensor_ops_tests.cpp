@@ -184,30 +184,42 @@ TEST_CASE("Matrix multiplication") {
         SUBCASE("Outer product of vectors") {
             tensor<float, dynamic, dynamic> a({3}, std::vector<float>{1, 2, 3});
             tensor<float, dynamic, dynamic> b({3}, std::vector<float>{4, 5, 6});
-            // auto c = a * b.transpose();
-            // CHECK(c == tensor<float, dynamic, dynamic>({3, 3}, std::vector<float>{4, 8, 12, 5, 10, 15, 6, 12, 18}));
+            auto c = a * b.transpose();
+            CHECK(c == tensor<float, dynamic, dynamic>({3, 3}, std::vector<float>{4, 8, 12, 5, 10, 15, 6, 12, 18}));
         }
 
         SUBCASE("Vector times matrix") {
             tensor<float, dynamic, dynamic> a({2}, std::vector<float>{1, 2});
             tensor<float, dynamic, dynamic> b({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
-            // auto c = a * b;
-            // CHECK(c == tensor<float, dynamic, dynamic>({1, 3}, std::vector<float>{9, 12, 15}));
+            auto c = a.transpose() * b;
+            CHECK(c == tensor<float, dynamic, dynamic>({1, 3}, std::vector<float>{9, 12, 15}));
         }
 
         SUBCASE("Matrix times vector") {
             tensor<float, dynamic, dynamic> a({3, 3}, std::vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
             tensor<float, dynamic, dynamic> b({3}, std::vector<float>{1, 2, 3});
-            // auto c = a * b;
-            // CHECK(c == tensor<float, dynamic, dynamic>({2}, std::vector<float>{30, 36, 42}));
+            auto c = a * b;
+            CHECK(c == tensor<float, dynamic, dynamic>({2}, std::vector<float>{30, 36, 42}));
         }
 
         SUBCASE("Matrix times matrix") {
             tensor<float, dynamic, dynamic> a({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
             tensor<float, dynamic, dynamic> b({3, 2}, std::vector<float>{1, 4, 2, 5, 3, 6});
-            // auto c = a * b;
-            // CHECK(c == tensor<float, dynamic, dynamic>({2, 2}, std::vector<float>{15, 36, 29, 71}));
+            auto c = a * b;
+            CHECK(c == tensor<float, dynamic, dynamic>({2, 2}, std::vector<float>{15, 36, 29, 71}));
         }
+    }
+
+    SUBCASE("Multiply matrix views") {
+        // Subview row x column
+        tensor<float, shape<2, 3>> a({1, 4, 2, 5, 3, 6});
+        tensor<float, shape<2, 3>> b({1, 4, 2, 5, 3, 6});
+        auto c = a.subview<1, 2>(0, 0) * b.subview<2>(0, 0);
+        CHECK(c == tensor<float, shape<1, 1>>({9}));
+
+        // Subview row x column with uncommon strides
+        auto d = a.subview<shape<1, 2>, seq<1, 2>>({0, 0}) * b.subview<2>(0, 0);
+        CHECK(d == tensor<float, shape<1, 1>>({13}));
     }
 }
 

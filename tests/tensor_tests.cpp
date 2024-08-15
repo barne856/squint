@@ -2,8 +2,8 @@
 #include <utility>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "squint/tensor.hpp"
 #include "squint/core/layout.hpp"
+#include "squint/tensor.hpp"
 #include <array>
 #include <stdexcept>
 #include <vector>

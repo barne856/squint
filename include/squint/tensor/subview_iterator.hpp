@@ -189,7 +189,8 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
      */
     auto operator*() const {
         if constexpr (fixed_tensor<TensorType>) {
-            return this->tensor_->template subview<SubviewShape, repeat_sequence_t<SubviewShape::size(), 1>>(this->get_offset());
+            return this->tensor_->template subview<SubviewShape, repeat_sequence_t<SubviewShape::size(), 1>>(
+                this->get_offset());
         } else {
             std::vector<std::size_t> subview_shape = this->subview_shape_;
             while (subview_shape.back() == 1) {
@@ -259,11 +260,11 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
     friend auto operator+(difference_type n, const subview_iterator &it) -> subview_iterator { return it + n; }
 
   private:
-    TensorType *tensor_;                                ///< Pointer to the tensor being iterated.
-    index_type current_indices_;                        ///< Current position of the iterator.
-    index_type subview_shape_;                          ///< Shape of the subview.
-    index_type tensor_shape_;                           ///< Shape of the entire tensor.
-    
+    TensorType *tensor_;         ///< Pointer to the tensor being iterated.
+    index_type current_indices_; ///< Current position of the iterator.
+    index_type subview_shape_;   ///< Shape of the subview.
+    index_type tensor_shape_;    ///< Shape of the entire tensor.
+
     /**
      * @brief Increments the iterator to the next position.
      */
