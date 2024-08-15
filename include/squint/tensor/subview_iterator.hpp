@@ -72,14 +72,9 @@ template <typename Iterator> class iterator_range {
  * @tparam SubviewShape The shape of the subview being iterated.
  */
 template <typename TensorType, typename SubviewShape> class subview_iterator {
-    TensorType *tensor_;                                ///< Pointer to the tensor being iterated.
+  public:
     using value_type = typename TensorType::value_type; ///< Type of the tensor elements.
     using index_type = typename TensorType::index_type; ///< Type used for indexing.
-    index_type current_indices_;                        ///< Current position of the iterator.
-    index_type subview_shape_;                          ///< Shape of the subview.
-    index_type tensor_shape_;                           ///< Shape of the entire tensor.
-
-  public:
     /// @brief Iterator category (random access iterator).
     using iterator_category = std::random_access_iterator_tag;
     /// @brief Difference type for the iterator.
@@ -264,6 +259,11 @@ template <typename TensorType, typename SubviewShape> class subview_iterator {
     friend auto operator+(difference_type n, const subview_iterator &it) -> subview_iterator { return it + n; }
 
   private:
+    TensorType *tensor_;                                ///< Pointer to the tensor being iterated.
+    index_type current_indices_;                        ///< Current position of the iterator.
+    index_type subview_shape_;                          ///< Shape of the subview.
+    index_type tensor_shape_;                           ///< Shape of the entire tensor.
+    
     /**
      * @brief Increments the iterator to the next position.
      */

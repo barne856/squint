@@ -38,14 +38,9 @@ namespace squint {
  */
 template <typename TensorType>
 class flat_iterator {
-    TensorType *tensor_;  ///< Pointer to the tensor being iterated.
+  public:
     using index_type = typename TensorType::index_type;  ///< Type used for indexing.
     using value_type = typename TensorType::value_type;  ///< Type of the tensor elements.
-    index_type current_indices_;  ///< Current position of the iterator.
-    index_type shape_;            ///< Shape of the tensor.
-    index_type strides_;          ///< Strides of the tensor.
-
-  public:
     /// @brief Iterator category (random access iterator).
     using iterator_category = std::random_access_iterator_tag;
     /// @brief Difference type for the iterator.
@@ -271,6 +266,13 @@ class flat_iterator {
      * @return flat_iterator New iterator advanced by n positions.
      */
     friend auto operator+(difference_type n, const flat_iterator &it) -> flat_iterator { return it + n; }
+
+    private:
+    
+    TensorType *tensor_;  ///< Pointer to the tensor being iterated.
+    index_type current_indices_;  ///< Current position of the iterator.
+    index_type shape_;            ///< Shape of the tensor.
+    index_type strides_;          ///< Strides of the tensor.
 };
 
 } // namespace squint
