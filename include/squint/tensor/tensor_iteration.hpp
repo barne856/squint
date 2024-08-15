@@ -1,6 +1,9 @@
 #ifndef SQUINT_TENSOR_TENSOR_ITERATION_HPP
 #define SQUINT_TENSOR_TENSOR_ITERATION_HPP
 
+#include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
+#include "squint/core/memory.hpp"
 #include "squint/tensor/flat_iterator.hpp"
 #include "squint/tensor/subview_iterator.hpp"
 #include "squint/tensor/tensor.hpp"
@@ -12,6 +15,7 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
+#include <cstddef>
 
 namespace squint {
 

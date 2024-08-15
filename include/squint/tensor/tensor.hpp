@@ -27,9 +27,11 @@
 #include "squint/core/memory.hpp"
 #include "squint/tensor/flat_iterator.hpp"
 #include "squint/tensor/subview_iterator.hpp"
+#include "squint/util/sequence_utils.hpp"
 
 #include <array>
 #include <cstddef>
+#include <type_traits>
 #include <variant>
 #include <vector>
 

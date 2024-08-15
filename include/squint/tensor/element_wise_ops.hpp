@@ -1,12 +1,16 @@
 #ifndef SQUINT_TENSOR_ELEMENT_WISE_OPS_HPP
 #define SQUINT_TENSOR_ELEMENT_WISE_OPS_HPP
 
+#include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 
 #include <functional>
+#include <type_traits>
+#include <vector>
+#include <cstddef>
 
 namespace squint {
 

@@ -45,7 +45,7 @@ struct unit : quantity<T, D, ErrorChecking> {
     [[nodiscard]] constexpr auto unit_value() const -> T { return (this->base_quantity_type::value() / scale) - offset; }
 
     // Convert from base unit to this unit
-    static constexpr auto convert_to(const base_quantity_type &q) -> T { return q.value() / scale - offset; }
+    static constexpr auto convert_to(const base_quantity_type &q) -> T { return (q.value() / scale) - offset; }
 
     // Convert from this unit to base unit
     static constexpr auto convert_from(T value) -> base_quantity_type { return base_quantity_type((value + offset) * scale); }

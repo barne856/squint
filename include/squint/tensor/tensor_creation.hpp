@@ -12,9 +12,17 @@
 #define SQUINT_TENSOR_TENSOR_CREATION_HPP
 
 #include "squint/tensor/tensor.hpp"
+#include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
+#include "squint/core/layout.hpp"
+#include "squint/core/memory.hpp"
+
+#include <cstddef>
 #include <algorithm>
 #include <random>
 #include <stdexcept>
+#include <vector>
+
 
 namespace squint {
 

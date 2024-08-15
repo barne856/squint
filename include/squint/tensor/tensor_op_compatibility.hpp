@@ -3,8 +3,12 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
-#include "squint/tensor/tensor.hpp"
 #include "squint/util/sequence_utils.hpp"
+
+#include <algorithm>
+#include <cstddef>
+#include <stdexcept>
+#include <vector>
 
 namespace squint {
 // helper to check if two shapes are implicitly convertible with vectors

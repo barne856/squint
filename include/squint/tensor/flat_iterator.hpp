@@ -25,6 +25,7 @@
 #include <iterator>
 #include <numeric>
 #include <type_traits>
+#include <cstddef>
 
 namespace squint {
 

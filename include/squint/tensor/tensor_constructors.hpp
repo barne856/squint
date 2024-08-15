@@ -13,10 +13,18 @@
 
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_iteration.hpp"
+#include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
+#include "squint/core/layout.hpp"
+#include "squint/core/memory.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <cstddef>
+#include <array>
+#include <functional>
+#include <utility>
 
 namespace squint {
 

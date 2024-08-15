@@ -1,9 +1,12 @@
 #ifndef SQUINT_TENSOR_SCALAR_OPS_HPP
 #define SQUINT_TENSOR_SCALAR_OPS_HPP
 
+#include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
+
+#include <cstddef>
 
 namespace squint {
 
