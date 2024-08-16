@@ -9,6 +9,7 @@
 #include <concepts>
 #include <ratio>
 #include <type_traits>
+#include <cstddef>
 #include <vector>
 
 namespace squint {

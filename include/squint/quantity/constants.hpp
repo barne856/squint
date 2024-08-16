@@ -13,6 +13,7 @@
 #ifndef SQUINT_QUANTITY_CONSTANTS_HPP
 #define SQUINT_QUANTITY_CONSTANTS_HPP
 
+#include "squint/core/concepts.hpp"
 #include "squint/quantity/dimension_types.hpp"
 #include "squint/quantity/quantity_types.hpp"
 

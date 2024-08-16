@@ -1,6 +1,7 @@
 #ifndef SQUINT_TENSOR_HPP
 #define SQUINT_TENSOR_HPP
 
+// NOLINTBEGIN
 #include "squint/tensor/element_wise_ops.hpp"
 #include "squint/tensor/scalar_ops.hpp"
 #include "squint/tensor/tensor_accessors.hpp"
@@ -15,5 +16,6 @@
 #include "squint/tensor/tensor_shape_manipulation.hpp"
 #include "squint/tensor/tensor_types.hpp"
 #include "squint/tensor/tensor_view_operations.hpp"
+// NOLINTEND
 
 #endif // SQUINT_TENSOR_HPP
