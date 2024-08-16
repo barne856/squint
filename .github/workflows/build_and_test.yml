@@ -12,14 +12,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         compiler: [gcc, clang, msvc]
-        blas: [OpenBLAS, MKL]
+        blas: [NONE]
         include:
           - compiler: gcc
             cc: gcc-12
             cxx: g++-12
           - compiler: clang
-            cc: clang-18
-            cxx: clang++-18
+            cc: clang-19
+            cxx: clang++-19
         exclude:
           - os: windows-latest
             compiler: gcc
@@ -47,8 +47,8 @@ jobs:
         elif [ "${{ matrix.compiler }}" = "clang" ]; then
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 18
-          sudo apt-get install -y clang-tidy-18
+          sudo ./llvm.sh 19
+          sudo apt-get install -y clang-tidy-19
         fi
         if [ "${{ matrix.blas }}" = "OpenBLAS" ]; then
           sudo apt-get install -y gfortran
@@ -98,7 +98,7 @@ jobs:
       if: matrix.compiler == 'clang' && runner.os == 'Linux'
       run: |
         find ./include/squint -name '*.cpp' -or -name '*.hpp' | \
-        xargs -P $(nproc) clang-tidy-18 -p build > clang_tidy_output.txt
+        xargs -P $(nproc) clang-tidy-19 -p build > clang_tidy_output.txt
         if [ -s clang_tidy_output.txt ]; then
           echo "Clang-Tidy found issues:"
           cat clang_tidy_output.txt
