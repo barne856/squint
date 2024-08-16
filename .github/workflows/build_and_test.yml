@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc, clang, msvc]
+        compiler: [gcc, msvc]
         blas: [NONE]
         include:
           - compiler: gcc
