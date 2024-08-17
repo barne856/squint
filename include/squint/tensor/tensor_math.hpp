@@ -6,6 +6,7 @@
 #include "squint/tensor/tensor_op_compatibility.hpp"
 #include <cstddef>
 #include <iostream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
