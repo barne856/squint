@@ -16,7 +16,11 @@
 #define SQUINT_QUANTITY_QUANTITY_OPS_HPP
 
 #include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
+#include "squint/quantity/dimension_types.hpp"
 #include "squint/quantity/quantity.hpp"
+
+#include <exception>
 #include <iostream>
 
 namespace squint {

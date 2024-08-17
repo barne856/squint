@@ -11,6 +11,7 @@
 #define SQUINT_CORE_LAYOUT_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -23,7 +24,7 @@ namespace squint {
  * is arranged in memory. It affects the performance of certain operations
  * and the compatibility with external libraries.
  */
-enum class layout {
+enum class layout : uint8_t {
     row_major,   /**< Row-major layout: elements of a row are contiguous in memory */
     column_major /**< Column-major layout: elements of a column are contiguous in memory */
 };

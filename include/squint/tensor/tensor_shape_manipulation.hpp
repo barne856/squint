@@ -12,6 +12,7 @@
 #define SQUINT_TENSOR_TENSOR_SHAPE_MANIPULATIONS_HPP
 
 #include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
@@ -24,6 +25,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace squint {
 

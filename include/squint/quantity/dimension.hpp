@@ -16,6 +16,8 @@
 
 #include "squint/core/concepts.hpp"
 
+#include <ratio>
+
 namespace squint {
 
 /**

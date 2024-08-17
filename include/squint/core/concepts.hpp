@@ -23,7 +23,7 @@ namespace squint {
  * @tparam T The type to check against the rational concept.
  */
 template <class T>
-concept rational = std::is_same<T, std::ratio<T::num, T::den>>::value;
+concept rational = std::is_same_v<T, std::ratio<T::num, T::den>>;
 
 /**
  * @concept dimensional

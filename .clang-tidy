@@ -1,3 +1,6 @@
 Checks: '-*,bugprone-*,cppcoreguidelines-*,modernize-*,performance-*,readability-*,clang-analyzer-*,misc-*,clang-analyzer-*,-readability-identifier-length,-bugprone-easily-swappable-parameters'
 HeaderFilterRegex: '.*'
 FormatStyle: file
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '50'

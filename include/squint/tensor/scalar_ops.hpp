@@ -6,8 +6,6 @@
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
 
-#include <cstddef>
-
 namespace squint {
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,

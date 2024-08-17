@@ -3,6 +3,7 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
+#include "squint/core/layout.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <algorithm>
@@ -70,7 +71,8 @@ template <scalar S> struct blas_type {
 template <scalar S> using blas_type_t = typename blas_type<S>::type;
 
 // helper to check if tensors are blas compatible, i.e. have the same underlying arithmetic type
-template <tensorial Tensor1, tensorial Tensor2> inline void blas_compatible(const Tensor1 &t1, const Tensor2 &t2) {
+template <tensorial Tensor1, tensorial Tensor2>
+inline void blas_compatible(const Tensor1 & /*t1*/, const Tensor2 & /*t2*/) {
     using type1 = blas_type_t<typename Tensor1::value_type>;
     using type2 = blas_type_t<typename Tensor2::value_type>;
     static_assert(std::is_same_v<type1, type2>,

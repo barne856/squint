@@ -42,7 +42,7 @@ template <floating_point T> struct math_constants {
     static constexpr auto ln2 = constant_quantity_t<T, dimensions::unity>(std::numbers::ln2_v<T>);
 
     /// @brief The golden ratio.
-    static constexpr auto phi = constant_quantity_t<T, dimensions::unity>(T(1.618033988749895));
+    static constexpr auto phi = constant_quantity_t<T, dimensions::unity>(std::numbers::phi_v<T>);
 };
 
 /**

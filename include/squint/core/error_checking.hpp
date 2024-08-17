@@ -10,6 +10,8 @@
 #ifndef SQUINT_CORE_ERROR_CHECKING_HPP
 #define SQUINT_CORE_ERROR_CHECKING_HPP
 
+#include <cstdint>
+
 namespace squint {
 
 /**
@@ -18,7 +20,7 @@ namespace squint {
  * This enum class is used as a template parameter to control whether error
  * checking is enabled or disabled for tensor and quantity operations.
  */
-enum class error_checking {
+enum class error_checking : uint8_t {
     enabled, /**< Error checking is enabled */
     disabled /**< Error checking is disabled */
 };

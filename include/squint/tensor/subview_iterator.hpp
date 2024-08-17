@@ -22,6 +22,8 @@
 #include "squint/util/sequence_utils.hpp"
 #include <cstddef>
 #include <iterator>
+#include <type_traits>
+#include <vector>
 
 namespace squint {
 

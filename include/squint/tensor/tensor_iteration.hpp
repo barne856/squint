@@ -16,6 +16,7 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
+#include <utility>
 
 namespace squint {
 
@@ -133,7 +134,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         col_shape.pop_back();
         std::vector<size_t> col_strides = this->strides();
         col_strides.pop_back();
-        std::size_t N = col_strides.size();
+        const std::size_t N = col_strides.size();
         return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
                       MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
     }
@@ -159,7 +160,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         col_shape.pop_back();
         std::vector<size_t> col_strides = this->strides();
         col_strides.pop_back();
-        std::size_t N = col_strides.size();
+        const std::size_t N = col_strides.size();
         return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
                       MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
     }

@@ -31,7 +31,9 @@
 
 #include <array>
 #include <cstddef>
+#include <initializer_list>
 #include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -93,10 +95,14 @@ class tensor {
     using index_type =
         std::conditional_t<fixed_shape<Shape>, std::array<std::size_t, _rank()>, std::vector<std::size_t>>;
 
+    ~tensor() = default;
+
     // Constructors
     tensor()
         requires(OwnershipType == ownership_type::owner)
     = default;
+    tensor(const tensor &other) = default;
+    tensor(tensor &&other) noexcept = default;
     // Fixed shape constructors
     tensor(std::initializer_list<T> init)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
@@ -134,6 +140,7 @@ class tensor {
     auto operator=(const tensor<U, OtherShape, OtherStrides, ErrorChecking, OtherOwnershipType, MemorySpace> &other)
         -> tensor &;
     auto operator=(const tensor &other) -> tensor &;
+    auto operator=(tensor &&other) noexcept -> tensor & = default;
 
     // Accessors
     [[nodiscard]] constexpr auto rank() const -> std::size_t;

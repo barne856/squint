@@ -4,6 +4,7 @@
 #include "squint/tensor/tensor.hpp"
 
 #include <cstddef>
+#include <utility>
 
 namespace squint {
 

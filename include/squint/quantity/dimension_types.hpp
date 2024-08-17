@@ -11,7 +11,10 @@
 #ifndef SQUINT_QUANTITY_DIMENSION_TYPES_HPP
 #define SQUINT_QUANTITY_DIMENSION_TYPES_HPP
 
+#include "squint/core/concepts.hpp"
 #include "squint/quantity/dimension.hpp"
+
+#include <ratio>
 
 namespace squint {
 

@@ -9,7 +9,10 @@
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 #include "squint/util/sequence_utils.hpp"
+#include <cstddef>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace squint {
 
