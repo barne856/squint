@@ -1,3 +1,10 @@
+/**
+ * @file element_wise_ops.hpp
+ * @brief Element-wise operations for tensor objects.
+ *
+ * This file contains implementations of element-wise operations on tensors,
+ * including addition, subtraction, equality comparison, and negation.
+ */
 #ifndef SQUINT_TENSOR_ELEMENT_WISE_OPS_HPP
 #define SQUINT_TENSOR_ELEMENT_WISE_OPS_HPP
 
@@ -14,6 +21,12 @@
 
 namespace squint {
 
+// Element-wise addition assignment
+/**
+ * @brief Element-wise addition assignment operator.
+ * @param other The tensor to add to this tensor.
+ * @return Reference to the modified tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
@@ -25,6 +38,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return *this;
 }
 
+// Element-wise subtraction assignment
+/**
+ * @brief Element-wise subtraction assignment operator.
+ * @param other The tensor to subtract from this tensor.
+ * @return Reference to the modified tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
@@ -36,6 +55,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return *this;
 }
 
+// Element-wise equality comparison
+/**
+ * @brief Element-wise equality comparison operator.
+ * @param other The tensor to compare with this tensor.
+ * @return True if all elements are equal, false otherwise.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
@@ -47,6 +72,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return std::equal(begin(), end(), other.begin());
 }
 
+// Element-wise inequality comparison
+/**
+ * @brief Element-wise inequality comparison operator.
+ * @param other The tensor to compare with this tensor.
+ * @return True if any elements are not equal, false otherwise.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
@@ -58,6 +89,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return !std::equal(begin(), end(), other.begin());
 }
 
+// Unary negation
+/**
+ * @brief Unary negation operator.
+ * @return A new tensor with all elements negated.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator-() const -> tensor {
@@ -66,6 +102,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return result;
 }
 
+// Element-wise addition
+/**
+ * @brief Element-wise addition operator.
+ * @param lhs The left-hand side tensor.
+ * @param rhs The right-hand side tensor.
+ * @return A new tensor containing the element-wise sum.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace, typename U, typename OtherShape, typename OtherStrides,
           enum error_checking OtherErrorChecking, enum ownership_type OtherOwnershipType>
@@ -85,6 +128,13 @@ auto operator+(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
     return result;
 }
 
+// Element-wise subtraction
+/**
+ * @brief Element-wise subtraction operator.
+ * @param lhs The left-hand side tensor.
+ * @param rhs The right-hand side tensor.
+ * @return A new tensor containing the element-wise difference.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace, typename U, typename OtherShape, typename OtherStrides,
           enum error_checking OtherErrorChecking, enum ownership_type OtherOwnershipType>

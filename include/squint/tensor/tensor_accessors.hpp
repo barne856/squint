@@ -7,7 +7,6 @@
  * These methods provide essential information about the tensor's structure and contents.
  *
  */
-
 #ifndef SQUINT_TENSOR_TENSOR_ACCESSORS_HPP
 #define SQUINT_TENSOR_TENSOR_ACCESSORS_HPP
 
@@ -21,6 +20,11 @@
 
 namespace squint {
 
+// Rank accessor
+/**
+ * @brief Returns the rank (number of dimensions) of the tensor.
+ * @return The rank of the tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
@@ -32,6 +36,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rank() con
     }
 }
 
+// Shape accessor
+/**
+ * @brief Returns the shape of the tensor.
+ * @return A reference to the tensor's shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
@@ -44,6 +53,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::shape() co
     }
 }
 
+// Strides accessor
+/**
+ * @brief Returns the strides of the tensor.
+ * @return A reference to the tensor's strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
@@ -56,6 +70,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::strides() 
     }
 }
 
+// Size accessor
+/**
+ * @brief Returns the total number of elements in the tensor.
+ * @return The total number of elements.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
@@ -69,6 +88,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::size() con
     }
 }
 
+// Const data pointer accessor
+/**
+ * @brief Returns a const pointer to the underlying data of the tensor.
+ * @return A const pointer to the tensor's data.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
@@ -80,6 +104,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::data() con
     }
 }
 
+// Non-const data pointer accessor
+/**
+ * @brief Returns a non-const pointer to the underlying data of the tensor.
+ * @return A pointer to the tensor's data.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::data() -> T * {

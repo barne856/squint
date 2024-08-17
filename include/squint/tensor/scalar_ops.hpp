@@ -1,3 +1,10 @@
+/**
+ * @file scalar_ops.hpp
+ * @brief Scalar operations for tensor objects.
+ *
+ * This file contains implementations of scalar operations on tensors,
+ * including multiplication and division by scalars.
+ */
 #ifndef SQUINT_TENSOR_SCALAR_OPS_HPP
 #define SQUINT_TENSOR_SCALAR_OPS_HPP
 
@@ -8,6 +15,12 @@
 
 namespace squint {
 
+// Scalar multiplication assignment
+/**
+ * @brief Scalar multiplication assignment operator.
+ * @param s The scalar to multiply the tensor by.
+ * @return Reference to the modified tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <dimensionless_scalar U>
@@ -18,6 +31,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return *this;
 }
 
+// Scalar division assignment
+/**
+ * @brief Scalar division assignment operator.
+ * @param s The scalar to divide the tensor by.
+ * @return Reference to the modified tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <dimensionless_scalar U>
@@ -28,6 +47,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return *this;
 }
 
+// Tensor-scalar multiplication
+/**
+ * @brief Tensor-scalar multiplication operator.
+ * @param t The tensor to be multiplied.
+ * @param s The scalar to multiply by.
+ * @return A new tensor containing the result of the multiplication.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace, scalar U>
 auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &t,
@@ -52,6 +78,13 @@ auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
     }
 }
 
+// Scalar-tensor multiplication
+/**
+ * @brief Scalar-tensor multiplication operator.
+ * @param s The scalar to multiply by.
+ * @param t The tensor to be multiplied.
+ * @return A new tensor containing the result of the multiplication.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace, scalar U>
 auto operator*(const U &s, const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &t)
@@ -60,6 +93,13 @@ auto operator*(const U &s, const tensor<T, Shape, Strides, ErrorChecking, Owners
     return t * s;
 }
 
+// Tensor-scalar division
+/**
+ * @brief Tensor-scalar division operator.
+ * @param t The tensor to be divided.
+ * @param s The scalar to divide by.
+ * @return A new tensor containing the result of the division.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace, scalar U>
 auto operator/(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &t,

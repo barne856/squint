@@ -1,3 +1,10 @@
+/**
+ * @file tensor_assignment.hpp
+ * @brief Implementation of tensor class assignment operators.
+ *
+ * This file contains the implementations of assignment operators for the tensor class,
+ * including assignment from other tensors and copy assignment.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 #define SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 
@@ -10,6 +17,14 @@
 #include <stdexcept>
 
 namespace squint {
+
+// Assignment operator from another tensor
+/**
+ * @brief Assigns the contents of another tensor to this tensor.
+ * @param other The tensor to assign from.
+ * @return Reference to the modified tensor.
+ * @throws std::runtime_error if tensors have different sizes (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides, ownership_type OtherOwnershipType>
@@ -29,7 +44,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return *this;
 }
 
-// Copy Assignment Operator
+// Copy assignment operator
+/**
+ * @brief Copies the contents of another tensor of the same type to this tensor.
+ * @param other The tensor to copy from.
+ * @return Reference to the modified tensor.
+ * @throws std::runtime_error if tensors have different sizes (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator=(const tensor &other) -> tensor & {

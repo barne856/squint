@@ -1,3 +1,10 @@
+/**
+ * @file tensor_types.hpp
+ * @brief Type aliases for creating tensors with specific types and dimensions.
+ *
+ * This file contains type aliases for creating tensors with specific types and dimensions.
+ * These aliases simplify the creation of tensor objects with specific data types and shapes.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_TYPES_HPP
 #define SQUINT_TENSOR_TENSOR_TYPES_HPP
 

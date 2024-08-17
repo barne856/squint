@@ -22,6 +22,13 @@
 
 namespace squint {
 
+// Element access using index_type
+/**
+ * @brief Accesses an element using an index_type.
+ * @param indices The indices of the element to access.
+ * @return A const reference to the element at the specified indices.
+ * @throws std::out_of_range if indices are out of bounds (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::access_element(
@@ -32,6 +39,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::acces
     return data()[compute_offset(indices)];
 }
 
+// Const element access using variadic indices
+/**
+ * @brief Accesses an element using variadic indices.
+ * @param indices The indices of the element to access.
+ * @return A const reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
@@ -40,6 +53,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return access_element({static_cast<std::size_t>(indices)...});
 }
 
+// Non-const element access using variadic indices
+/**
+ * @brief Accesses an element using variadic indices.
+ * @param indices The indices of the element to access.
+ * @return A reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
@@ -47,6 +66,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return const_cast<T &>(std::as_const(*this)(indices...));
 }
 
+// Const element access using index_type and operator[]
+/**
+ * @brief Accesses an element using index_type and operator[].
+ * @param indices The indices of the element to access.
+ * @return A const reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](const index_type &indices) const
@@ -54,6 +79,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return access_element(indices);
 }
 
+// Non-const element access using index_type and operator[]
+/**
+ * @brief Accesses an element using index_type and operator[].
+ * @param indices The indices of the element to access.
+ * @return A reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](const index_type &indices)
@@ -64,6 +95,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 #ifndef _MSC_VER
 // MSVC does not support the multidimensional subscript operator yet
 
+// Const element access using variadic indices and operator[]
+/**
+ * @brief Accesses an element using variadic indices and operator[].
+ * @param indices The indices of the element to access.
+ * @return A const reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
@@ -72,6 +109,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     return access_element({static_cast<std::size_t>(indices)...});
 }
 
+// Non-const element access using variadic indices and operator[]
+/**
+ * @brief Accesses an element using variadic indices and operator[].
+ * @param indices The indices of the element to access.
+ * @return A reference to the element at the specified indices.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
@@ -83,6 +126,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 
 // Private helper methods
 
+// Compute offset implementation for fixed shape
+/**
+ * @brief Computes the offset for fixed shape tensors.
+ * @param indices The indices to compute the offset for.
+ * @return The computed offset.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <std::size_t... Is>
@@ -91,6 +140,12 @@ template <std::size_t... Is>
     return ((indices[Is] * std::get<Is>(make_array(Strides{}))) + ... + 0);
 }
 
+// Compute offset for both fixed and dynamic shape
+/**
+ * @brief Computes the offset for both fixed and dynamic shape tensors.
+ * @param indices The indices to compute the offset for.
+ * @return The computed offset.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::compute_offset(
@@ -106,6 +161,12 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
     }
 }
 
+// Check bounds for index validity
+/**
+ * @brief Checks if the given indices are within bounds.
+ * @param indices The indices to check.
+ * @throws std::out_of_range if indices are invalid or out of bounds.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 constexpr auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::check_bounds(

@@ -1,3 +1,10 @@
+/**
+ * @file tensor_math.hpp
+ * @brief Mathematical operations for tensor objects.
+ *
+ * This file contains implementations of mathematical operations on tensors,
+ * including solving linear systems of equations.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_MATH_HPP
 #define SQUINT_TENSOR_TENSOR_MATH_HPP
 
@@ -11,6 +18,13 @@
 
 namespace squint {
 
+/**
+ * @brief Solves a system of linear equations.
+ * @param A The matrix of coefficients.
+ * @param B The right-hand side of the equations.
+ * @return The pivot indices.
+ * @throws std::runtime_error if the system is singular or an error occurs during the solution.
+ */
 template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
     blas_compatible(A, B);
     solve_compatible(A, B);

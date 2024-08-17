@@ -31,6 +31,13 @@
 
 namespace squint {
 
+// Initializer list constructor for fixed shape tensors
+/**
+ * @brief Constructs a tensor from an initializer list.
+ * @param init The initializer list containing the tensor elements.
+ * @throws std::invalid_argument if the initializer list size doesn't match the tensor size (when error checking is
+ * enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std::initializer_list<T> init)
@@ -44,6 +51,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std
     std::copy(init.begin(), init.end(), data_.begin());
 }
 
+// Single value constructor for fixed shape tensors
+/**
+ * @brief Constructs a tensor filled with a single value.
+ * @param value The value to fill the tensor with.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(const T &value)
@@ -52,6 +64,12 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
     std::fill(data_.begin(), data_.end(), value);
 }
 
+// Array constructor for fixed shape tensors
+/**
+ * @brief Constructs a tensor from a std::array.
+ * @param elements The array containing the tensor elements.
+ * @throws std::invalid_argument if the array size doesn't match the tensor size (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(const std::array<T, _size()> &elements)
@@ -64,6 +82,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
     }
 }
 
+// Constructor from other fixed tensors
+/**
+ * @brief Constructs a tensor from other fixed tensors.
+ * @param ts The tensors to construct from.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <fixed_tensor... OtherTensor>
@@ -76,6 +99,12 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
     ((*blocks++ = ts), ...);
 }
 
+// Constructor for dynamic shape tensors with explicit shape and strides
+/**
+ * @brief Constructs a dynamic shape tensor with given shape and strides.
+ * @param shape The shape of the tensor.
+ * @param strides The strides of the tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(Shape shape, Strides strides)
@@ -84,6 +113,12 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(Sha
     data_.resize(std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>()));
 }
 
+// Constructor for dynamic shape tensors with shape and layout
+/**
+ * @brief Constructs a dynamic shape tensor with given shape and layout.
+ * @param shape The shape of the tensor.
+ * @param l The layout of the tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(Shape shape, layout l)
@@ -92,6 +127,14 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(Sha
     data_.resize(std::accumulate(shape_.begin(), shape_.end(), 1ULL, std::multiplies<>()));
 }
 
+// Constructor for dynamic shape tensors with shape, elements, and layout
+/**
+ * @brief Constructs a dynamic shape tensor with given shape, elements, and layout.
+ * @param shape The shape of the tensor.
+ * @param elements The elements of the tensor.
+ * @param l The layout of the tensor.
+ * @throws std::invalid_argument if the elements size doesn't match the tensor size (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std::vector<size_t> shape,
@@ -106,6 +149,13 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std
     }
 }
 
+// Constructor for dynamic shape tensors with shape, single value, and layout
+/**
+ * @brief Constructs a dynamic shape tensor filled with a single value.
+ * @param shape The shape of the tensor.
+ * @param value The value to fill the tensor with.
+ * @param l The layout of the tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std::vector<size_t> shape, const T &value,
@@ -116,8 +166,12 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(std
     data_.resize(total_size, value);
 }
 
-// construct from another tensor of a different shape (allows for implicit conversion to tensor of same shape with
-// trailing 1's removed) allows implicit conversion for compatible tensors of various shape of the same ownership type
+/**
+ * @brief Constructs a tensor from another tensor of a different shape.
+ * @param other The tensor to construct from.
+ *
+ * This constructor allows for implicit conversion to a tensor of the same shape with trailing 1's removed.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides>
@@ -140,8 +194,13 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     }
 }
 
-// Allows implicit conversion for compatible tensors of various shape from reference ownership type to owner ownership
-// type
+/**
+ * @brief Constructs a tensor from another tensor of a different shape.
+ * @param other The tensor to construct from.
+ *
+ * This constructor allows implicit conversion for compatible tensors of various shape from reference ownership type to
+ * owner ownership type
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename U, typename OtherShape, typename OtherStrides>
@@ -168,12 +227,26 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     }
 }
 
+/**
+ * @brief Constructs a tensor from another tensor of a different shape.
+ * @param data The pointer to the data.
+ * @param shape The shape of the tensor.
+ * @param strides The strides of the tensor.
+ *
+ * This constructor constructs a tensor with reference ownership type from a pointer to data and a shape and strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *data, Shape shape, Strides strides)
     requires(dynamic_shape<Shape> && OwnershipType == ownership_type::reference)
     : data_(data), shape_(std::move(shape)), strides_(std::move(strides)) {}
 
+/**
+ * @brief Constructs a tensor from a pointer to data.
+ * @param data The pointer to the data.
+ *
+ * This constructor constructs a tensor with reference ownership type from a pointer to data.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *data)

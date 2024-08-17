@@ -1,3 +1,10 @@
+/**
+ * @file tensor_iteration.hpp
+ * @brief Implementation of tensor class iteration methods.
+ *
+ * This file contains the implementations of various iteration methods for the tensor class,
+ * including methods to iterate over rows, columns, and subviews of the tensor.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_ITERATION_HPP
 #define SQUINT_TENSOR_TENSOR_ITERATION_HPP
 
@@ -20,6 +27,11 @@
 
 namespace squint {
 
+// Row iteration
+/**
+ * @brief Returns an iterator range over the rows of the tensor.
+ * @return An iterator range of row subviews.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows() {
@@ -33,6 +45,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows(
     }
 }
 
+// Const row iteration
+/**
+ * @brief Returns a const iterator range over the rows of the tensor.
+ * @return A const iterator range of row subviews.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows() const {
@@ -46,6 +63,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows(
     }
 }
 
+// Column iteration
+/**
+ * @brief Returns an iterator range over the columns of the tensor.
+ * @return An iterator range of column subviews.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols() {
@@ -59,6 +81,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols(
     }
 }
 
+// Const column iteration
+/**
+ * @brief Returns a const iterator range over the columns of the tensor.
+ * @return A const iterator range of column subviews.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols() const {
@@ -72,6 +99,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols(
     }
 }
 
+// Single row access
+/**
+ * @brief Returns a view of a single row of the tensor.
+ * @param index The index of the row to access.
+ * @return A tensor view of the specified row.
+ * @throws std::out_of_range if the index is out of bounds (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index) {
@@ -93,6 +127,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
     }
 }
 
+// Const single row access
+/**
+ * @brief Returns a const view of a single row of the tensor.
+ * @param index The index of the row to access.
+ * @return A const tensor view of the specified row.
+ * @throws std::out_of_range if the index is out of bounds (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index) const {
@@ -114,6 +155,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
     }
 }
 
+// Single column access
+/**
+ * @brief Returns a view of a single column of the tensor.
+ * @param index The index of the column to access.
+ * @return A tensor view of the specified column.
+ * @throws std::out_of_range if the index is out of bounds (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index) {
@@ -140,6 +188,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
     }
 }
 
+// Const single column access
+/**
+ * @brief Returns a const view of a single column of the tensor.
+ * @param index The index of the column to access.
+ * @return A const tensor view of the specified column.
+ * @throws std::out_of_range if the index is out of bounds (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index) const {
@@ -166,6 +221,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
     }
 }
 
+/**
+ * @brief Returns a flat iterator to the beginning of the tensor.
+ * @return An iterator to the beginning of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() -> flat_iterator<tensor> {
@@ -176,12 +237,24 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin
     return flat_iterator<tensor>(this, start_indices);
 }
 
+/**
+ * @brief Returns a flat iterator to the end of the tensor.
+ * @return An iterator to the end of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() -> flat_iterator<tensor> {
     return flat_iterator<tensor>(this, this->shape());
 }
 
+/**
+ * @brief Returns a const flat iterator to the beginning of the tensor.
+ * @return A const iterator to the beginning of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() const
@@ -193,12 +266,24 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin
     return flat_iterator<const tensor>(this, start_indices);
 }
 
+/**
+ * @brief Returns a const flat iterator to the end of the tensor.
+ * @return A const iterator to the end of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() const -> flat_iterator<const tensor> {
     return flat_iterator<const tensor>(this, this->shape());
 }
 
+/**
+ * @brief Returns a const flat iterator to the beginning of the tensor.
+ * @return A const iterator to the beginning of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cbegin() const
@@ -206,12 +291,24 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cbegi
     return begin();
 }
 
+/**
+ * @brief Returns a const flat iterator to the end of the tensor.
+ * @return A const iterator to the end of the tensor.
+ *
+ * The iterator will iterate over the tensor in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cend() const -> flat_iterator<const tensor> {
     return end();
 }
 
+/**
+ * @brief Returns a iterator of sub tensors at the beginning of the tensor.
+ * @return An iterator to the beginning of the subviews.
+ *
+ * The iterator will iterate over the subviews in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <fixed_shape SubviewShape>
@@ -245,6 +342,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     return iterator_range(begin, end);
 }
 
+/**
+ * @brief Returns a const iterator of sub tensors at the beginning of the tensor.
+ * @return A const iterator to the beginning of the subviews.
+ *
+ * The iterator will iterate over the subviews in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <std::size_t... Dims>
@@ -255,6 +358,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     return subviews<std::index_sequence<Dims...>>();
 }
 
+/**
+ * @brief Returns a const iterator of sub tensors at the beginning of the tensor.
+ * @return A const iterator to the beginning of the subviews.
+ *
+ * The iterator will iterate over the subviews in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <fixed_shape SubviewShape>
@@ -289,6 +398,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     return iterator_range(begin, end);
 }
 
+/**
+ * @brief Returns a const iterator of sub tensors at the beginning of the tensor.
+ * @return A const iterator to the beginning of the subviews.
+ *
+ * The iterator will iterate over the subviews in column-major order regarless of memory layout.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <std::size_t... Dims>
@@ -299,6 +414,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     return subviews<std::index_sequence<Dims...>>();
 }
 
+/**
+ * @brief Returns an iterator range over the subviews of the tensor.
+ * @param subview_shape The shape of the subviews.
+ * @return An iterator range of subviews.
+ * @throws std::invalid_argument if the subview dimensions are greater than the tensor rank or do not evenly divide the
+ * tensor dimensions (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(
@@ -333,6 +455,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
     return iterator_range(begin, end);
 }
 
+/**
+ * @brief Returns a const iterator range over the subviews of the tensor.
+ * @param subview_shape The shape of the subviews.
+ * @return A const iterator range of subviews.
+ * @throws std::invalid_argument if the subview dimensions are greater than the tensor rank or do not evenly divide the
+ * tensor dimensions (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(

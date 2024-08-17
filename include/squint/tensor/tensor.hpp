@@ -333,20 +333,24 @@ class tensor {
     [[nodiscard]] auto compute_strides(layout l) const -> std::vector<std::size_t>
         requires dynamic_shape<Shape>
     {
+        return compute_strides(l, shape());
+    }
+    [[nodiscard]] static auto compute_strides(layout l, const std::vector<std::size_t> &shape) {
+        auto rank = shape.size();
         if (l == layout::row_major) {
             // Compute row-major strides runtime
-            std::vector<std::size_t> row_major_strides(rank());
-            row_major_strides[rank() - 1] = 1;
-            for (std::size_t i = rank() - 1; i > 0; --i) {
-                row_major_strides[i - 1] = row_major_strides[i] * shape_[i];
+            std::vector<std::size_t> row_major_strides(rank);
+            row_major_strides[rank - 1] = 1;
+            for (std::size_t i = rank - 1; i > 0; --i) {
+                row_major_strides[i - 1] = row_major_strides[i] * shape[i];
             }
             return row_major_strides;
         }
         // Compute column-major strides runtime
-        std::vector<std::size_t> column_major_strides(rank());
+        std::vector<std::size_t> column_major_strides(rank);
         column_major_strides[0] = 1;
-        for (std::size_t i = 1; i < rank(); ++i) {
-            column_major_strides[i] = column_major_strides[i - 1] * shape_[i - 1];
+        for (std::size_t i = 1; i < rank; ++i) {
+            column_major_strides[i] = column_major_strides[i - 1] * shape[i - 1];
         }
         return column_major_strides;
     }

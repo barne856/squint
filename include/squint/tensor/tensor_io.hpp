@@ -1,3 +1,11 @@
+/**
+ * @file tensor_io.hpp
+ * @brief Input/output operations for tensor objects.
+ *
+ * This file contains implementations of output operations for tensors,
+ * including streaming output from streams.
+ */
+
 #ifndef SQUINT_TENSOR_TENSOR_IO_HPP
 #define SQUINT_TENSOR_TENSOR_IO_HPP
 
@@ -13,10 +21,14 @@
 
 namespace squint {
 
-constexpr int SCALAR_WIDTH = 6;
-constexpr int SCALAR_PRECISION = 4;
+constexpr int SCALAR_WIDTH = 6;     //< Width of scalar output
+constexpr int SCALAR_PRECISION = 4; //< Precision of scalar output
 
-// Helper function to print a 2D slice of a tensor
+/**
+ * @brief Prints a 2D slice of a tensor to an output stream.
+ * @param os The output stream to write to.
+ * @param t The tensor to print.
+ */
 template <typename TensorType> void print_2d_slice(std::ostream &os, const TensorType &t) {
     const auto &shape = t.shape();
     const auto rows = shape[0];
@@ -34,7 +46,11 @@ template <typename TensorType> void print_2d_slice(std::ostream &os, const Tenso
     }
 }
 
-// Helper function to print a 1D slice of a tensor as column vector
+/**
+ * @brief Prints a 1D slice of a tensor as a column vector to an output stream.
+ * @param os The output stream to write to.
+ * @param t The tensor to print.
+ */
 template <typename TensorType> void print_1d_slice(std::ostream &os, const TensorType &t) {
     const auto &shape = t.shape();
     const auto size = shape[0];
@@ -46,7 +62,12 @@ template <typename TensorType> void print_1d_slice(std::ostream &os, const Tenso
     }
 }
 
-// Overloaded stream output operator for tensor
+/**
+ * @brief Outputs a tensor to an output stream.
+ * @param os The output stream to write to.
+ * @param t The tensor to output.
+ * @return Reference to the output stream.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto operator<<(std::ostream &os,

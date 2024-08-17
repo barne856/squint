@@ -26,6 +26,13 @@ namespace squint {
 
 // Subview operations
 
+/**
+ * @brief Creates a subview of the tensor with fixed shape.
+ * @tparam SubviewShape The shape of the subview.
+ * @tparam StepSizes The step sizes for each dimension.
+ * @param start_indices The starting indices for the subview.
+ * @return A tensor representing the subview.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename SubviewShape, typename StepSizes>
@@ -41,6 +48,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
         data() + compute_offset(start_indices));
 }
 
+/**
+ * @brief Creates a const subview of the tensor with fixed shape.
+ * @tparam SubviewShape The shape of the subview.
+ * @tparam StepSizes The step sizes for each dimension.
+ * @param start_indices The starting indices for the subview.
+ * @return A const tensor representing the subview.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename SubviewShape, typename StepSizes>
@@ -57,6 +71,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
         data() + compute_offset(start_indices));
 }
 
+/**
+ * @brief Creates a subview of the tensor with fixed shape using variadic indices.
+ * @tparam Dims The dimensions of the subview.
+ * @tparam Indices The types of the indices.
+ * @param start_indices The starting indices for the subview.
+ * @return A tensor representing the subview.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <std::size_t... Dims, typename... Indices>
@@ -69,6 +90,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
         {static_cast<std::size_t>(start_indices)...});
 }
 
+/**
+ * @brief Creates a const subview of the tensor with fixed shape using variadic indices.
+ * @tparam Dims The dimensions of the subview.
+ * @tparam Indices The types of the indices.
+ * @param start_indices The starting indices for the subview.
+ * @return A const tensor representing the subview.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <std::size_t... Dims, typename... Indices>
@@ -81,6 +109,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
         {static_cast<std::size_t>(start_indices)...});
 }
 
+/**
+ * @brief Creates a subview of the tensor with dynamic shape.
+ * @param subview_shape The shape of the subview.
+ * @param start_indices The starting indices for the subview.
+ * @return A tensor representing the subview.
+ * @throws std::invalid_argument if the subview dimensions are invalid.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
@@ -98,6 +133,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
                   MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
 }
 
+/**
+ * @brief Creates a const subview of the tensor with dynamic shape.
+ * @param subview_shape The shape of the subview.
+ * @param start_indices The starting indices for the subview.
+ * @return A const tensor representing the subview.
+ * @throws std::invalid_argument if the subview dimensions are invalid.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(
@@ -115,6 +157,14 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
                   MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
 }
 
+/**
+ * @brief Creates a subview of the tensor with dynamic shape and custom step sizes.
+ * @param subview_shape The shape of the subview.
+ * @param start_indices The starting indices for the subview.
+ * @param step_sizes The step sizes for each dimension.
+ * @return A tensor representing the subview.
+ * @throws std::invalid_argument if the subview dimensions are invalid.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
@@ -136,6 +186,14 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
                   MemorySpace>(data() + compute_offset(start_indices), subview_shape, subview_strides);
 }
 
+/**
+ * @brief Creates a const subview of the tensor with dynamic shape and custom step sizes.
+ * @param subview_shape The shape of the subview.
+ * @param start_indices The starting indices for the subview.
+ * @param step_sizes The step sizes for each dimension.
+ * @return A const tensor representing the subview.
+ * @throws std::invalid_argument if the subview dimensions are invalid.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
@@ -159,6 +217,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 
 // View operations
 
+/**
+ * @brief Creates a view of the entire tensor.
+ * @return A tensor view of the entire tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::view() {
@@ -170,6 +232,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::view(
     }
 }
 
+/**
+ * @brief Creates a const view of the entire tensor.
+ * @return A const tensor view of the entire tensor.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::view() const {
@@ -181,6 +247,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::view(
     }
 }
 
+/**
+ * @brief Creates a diagonal view of the tensor.
+ * @return A tensor view of the diagonal elements.
+ * @throws std::invalid_argument if the tensor is not square (for dynamic shapes).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag_view() {
@@ -204,6 +275,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag_
     }
 }
 
+/**
+ * @brief Creates a const diagonal view of the tensor.
+ * @return A const tensor view of the diagonal elements.
+ * @throws std::invalid_argument if the tensor is not square (for dynamic shapes).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag_view() const {

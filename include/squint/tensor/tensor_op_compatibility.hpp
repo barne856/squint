@@ -1,3 +1,10 @@
+/**
+ * @file tensor_op_compatibility.hpp
+ * @brief Helper functions for checking tensor compatibility.
+ *
+ * This file contains helper functions for checking tensor compatibility
+ * for various tensor operations, including element-wise operations and matrix multiplication.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_OP_COMPATIBILITY_HPP
 #define SQUINT_TENSOR_TENSOR_OP_COMPATIBILITY_HPP
 
@@ -14,7 +21,13 @@
 #include <vector>
 
 namespace squint {
-// helper to check if two shapes are implicitly convertible with vectors
+
+/**
+ * @brief Helper function to check if two shapes are implicitly convertible.
+ * @tparam Shape1 The first shape type.
+ * @tparam Shape2 The second shape type.
+ * @return True if the shapes are implicitly convertible, false otherwise.
+ */
 inline auto implicit_convertible_shapes_vector(std::vector<std::size_t> shape1,
                                                std::vector<std::size_t> shape2) -> bool {
     auto size1 = shape1.size();
@@ -43,7 +56,12 @@ inline auto implicit_convertible_shapes_vector(std::vector<std::size_t> shape1,
     return true;
 }
 
-// Helper function to check if tensor dimensions are divisible by subview dimensions
+/**
+ * @brief Helper function to check if a tensor is compatible with a subview shape.
+ * @tparam T The tensor type.
+ * @tparam SubviewShape The subview shape type.
+ * @return True if the tensor is compatible with the subview shape, false otherwise.
+ */
 template <fixed_tensor T, typename SubviewShape> constexpr auto subview_compatible() -> bool {
     constexpr auto shape_arr = make_array(typename T::shape_type{});
     constexpr auto subview_arr = make_array(SubviewShape{});
@@ -56,7 +74,10 @@ template <fixed_tensor T, typename SubviewShape> constexpr auto subview_compatib
     return true;
 }
 
-// helper to get underlying arithmetic type of a scalar
+/**
+ * @brief Helper struct to get the underlying arithmetic type of a scalar.
+ * @tparam S The scalar type.
+ */
 template <scalar S> struct blas_type {
     // helper to get the underlying arithmetic type of a scalar
     static auto helper() {
@@ -72,7 +93,13 @@ template <scalar S> struct blas_type {
 // alias for the underlying arithmetic type of a tensor
 template <scalar S> using blas_type_t = typename blas_type<S>::type;
 
-// helper to check if tensors are blas compatible, i.e. have the same underlying arithmetic type
+/**
+ * @brief Checks if tensors are BLAS compatible (same underlying arithmetic type).
+ * @tparam Tensor1 First tensor type.
+ * @tparam Tensor2 Second tensor type.
+ * @param t1 First tensor.
+ * @param t2 Second tensor.
+ */
 template <tensorial Tensor1, tensorial Tensor2>
 inline void blas_compatible(const Tensor1 & /*t1*/, const Tensor2 & /*t2*/) {
     using type1 = blas_type_t<typename Tensor1::value_type>;
@@ -81,7 +108,14 @@ inline void blas_compatible(const Tensor1 & /*t1*/, const Tensor2 & /*t2*/) {
                   "Tensors must have the same underlying arithmetic type for BLAS operations");
 }
 
-// helper to check if two shapes are implicitly convertible
+/**
+ * @brief Checks if two tensors are compatible for element-wise operations.
+ * @tparam Tensor1 First tensor type.
+ * @tparam Tensor2 Second tensor type.
+ * @param t1 First tensor.
+ * @param t2 Second tensor.
+ * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
+ */
 template <tensorial Tensor1, tensorial Tensor2>
 inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
@@ -95,7 +129,14 @@ inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     }
 }
 
-// helper to check if two shapes are compatible for matrix multiplication
+/**
+ * @brief Checks if two tensors are compatible for matrix multiplication.
+ * @tparam Tensor1 First tensor type.
+ * @tparam Tensor2 Second tensor type.
+ * @param t1 First tensor.
+ * @param t2 Second tensor.
+ * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
+ */
 template <tensorial Tensor1, tensorial Tensor2>
 inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
@@ -172,6 +213,11 @@ inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     }
 }
 
+/**
+ * @brief Helper struct to determine the resulting shape of matrix multiplication.
+ * @tparam Sequence1 Shape of the first tensor.
+ * @tparam Sequence2 Shape of the second tensor.
+ */
 template <typename Sequence1, typename Sequence2> struct matrix_multiply_sequence {
     static_assert(fixed_shape<Sequence1> || dynamic_shape<Sequence1>,
                   "Sequence1 must satisfy fixed_shape or dynamic_shape concept");
@@ -207,6 +253,13 @@ template <typename Sequence1, typename Sequence2> struct matrix_multiply_sequenc
 template <typename Sequence1, typename Sequence2>
 using matrix_multiply_sequence_t = typename matrix_multiply_sequence<Sequence1, Sequence2>::type;
 
+/**
+ * @brief Computes the leading dimension for BLAS operations.
+ * @tparam Tensor1 Tensor type.
+ * @param op Transpose operation.
+ * @param t Tensor.
+ * @return Leading dimension for BLAS operations.
+ */
 template <tensorial Tensor1> auto compute_leading_dimension_blas(CBLAS_TRANSPOSE op, const Tensor1 &t) -> BLAS_INT {
     if (op == CBLAS_TRANSPOSE::CblasNoTrans) {
         if (t.rank() == 1) {
@@ -220,6 +273,13 @@ template <tensorial Tensor1> auto compute_leading_dimension_blas(CBLAS_TRANSPOSE
     return static_cast<BLAS_INT>(t.strides()[0]);
 }
 
+/**
+ * @brief Computes the leading dimension for LAPACK operations.
+ * @tparam Tensor1 Tensor type.
+ * @param layout Matrix layout (row-major or column-major).
+ * @param t Tensor.
+ * @return Leading dimension for LAPACK operations.
+ */
 template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, const Tensor1 &t) -> BLAS_INT {
     auto N = t.shape().size();
     auto num_rows = t.shape()[0];
@@ -233,6 +293,14 @@ template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, c
     return static_cast<BLAS_INT>(num_rows * row_stride);
 }
 
+/**
+ * @brief Checks if two tensors are compatible for solve operations.
+ * @tparam T1 First tensor type.
+ * @tparam T2 Second tensor type.
+ * @param A First tensor.
+ * @param B Second tensor.
+ * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
+ */
 template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T2 &B) {
     using error_type = resulting_error_checking<T1::error_checking(), T2::error_checking()>;
     // check for rank and contiguous independently

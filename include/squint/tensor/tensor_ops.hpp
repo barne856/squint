@@ -1,3 +1,10 @@
+/**
+ * @file tensor_ops.hpp
+ * @brief Tensor operations for tensor objects.
+ *
+ * This file contains implementations of tensor operations on tensors,
+ * including matrix-matrix multiplication.
+ */
 #ifndef SQUINT_TENSOR_TENSOR_OPS_HPP
 #define SQUINT_TENSOR_TENSOR_OPS_HPP
 
@@ -15,7 +22,12 @@
 
 namespace squint {
 
-// General Matrix-Matrix Multiplication
+/**
+ * @brief General matrix-matrix multiplication operator.
+ * @param t1 The first tensor to multiply.
+ * @param t2 The second tensor to multiply.
+ * @return A new tensor containing the result of the multiplication.
+ */
 template <tensorial Tensor1, tensorial Tensor2>
 auto operator*(const Tensor1 &t1, const Tensor2 &t2)
     requires(host_tensor<Tensor1> && host_tensor<Tensor2>)

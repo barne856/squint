@@ -25,6 +25,13 @@
 
 namespace squint {
 
+// Zeros tensor creation
+/**
+ * @brief Creates a tensor filled with zeros.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A tensor filled with zeros.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::zeros(const std::vector<size_t> &shape,
@@ -38,6 +45,13 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::zeros
     }
 }
 
+// Ones tensor creation
+/**
+ * @brief Creates a tensor filled with ones.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A tensor filled with ones.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::ones(const std::vector<size_t> &shape,
@@ -55,6 +69,14 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::ones(
     }
 }
 
+// Full tensor creation
+/**
+ * @brief Creates a tensor filled with a specific value.
+ * @param value The value to fill the tensor with.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A tensor filled with the specified value.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::full(const T &value,
@@ -73,6 +95,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::full(
     }
 }
 
+// Random tensor creation
+/**
+ * @brief Creates a tensor filled with random values.
+ * @param min The minimum value for the random distribution.
+ * @param max The maximum value for the random distribution.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A tensor filled with random values.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::random(T min, T max,
@@ -95,6 +126,14 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rando
     }
 }
 
+// Identity tensor creation
+/**
+ * @brief Creates an identity tensor (2D square tensor with ones on the main diagonal).
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return An identity tensor.
+ * @throws std::invalid_argument if the tensor is not square (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::eye(const std::vector<size_t> &shape,
@@ -123,6 +162,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::eye(c
     }
 }
 
+// Diagonal tensor creation
+/**
+ * @brief Creates a diagonal tensor with a specific value on the main diagonal.
+ * @param value The value to put on the main diagonal.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A diagonal tensor.
+ * @throws std::invalid_argument if the tensor is not square (when error checking is enabled).
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag(const T &value,
@@ -152,7 +200,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::diag(
     }
 }
 
-// arange
+// Arange tensor creation
+/**
+ * @brief Creates a tensor with evenly spaced values.
+ * @param start The starting value.
+ * @param step The step between values.
+ * @param shape The shape of the tensor (for dynamic shape tensors).
+ * @param l The layout of the tensor (for dynamic shape tensors).
+ * @return A tensor with evenly spaced values.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::arange(T start, T step,

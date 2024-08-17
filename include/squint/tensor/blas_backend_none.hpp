@@ -1,3 +1,12 @@
+/**
+ * @file blas_backend_none.hpp
+ * @brief Fallback implementations for BLAS and LAPACK functions.
+ *
+ * This file provides basic implementations of key BLAS and LAPACK functions
+ * for use when no hardware-specific BLAS library is available. These implementations
+ * are not optimized for performance but provide the necessary functionality.
+ */
+
 // NOLINTBEGIN
 #ifndef SQUINT_TENSOR_BLAS_BACKEND_NONE_HPP
 #define SQUINT_TENSOR_BLAS_BACKEND_NONE_HPP
@@ -7,6 +16,7 @@
 #include <vector>
 
 namespace squint {
+
 // BLAS and LAPACK constants
 constexpr int LAPACK_ROW_MAJOR = 101;
 constexpr int LAPACK_COL_MAJOR = 102;
@@ -15,17 +25,41 @@ enum class CBLAS_ORDER { CblasRowMajor = 101, CblasColMajor = 102 };
 enum class CBLAS_TRANSPOSE { CblasNoTrans = 111, CblasTrans = 112, CblasConjTrans = 113 };
 
 // Helper functions
+
+/**
+ * @brief Swaps two rows in a matrix.
+ * @param matrix Pointer to the matrix.
+ * @param row1 Index of the first row to swap.
+ * @param row2 Index of the second row to swap.
+ * @param n Number of columns in the matrix.
+ * @param lda Leading dimension of the matrix.
+ */
 template <typename T> void swap_row(T *matrix, int row1, int row2, int n, int lda) {
     for (int j = 0; j < n; ++j) {
         std::swap(matrix[row1 * lda + j], matrix[row2 * lda + j]);
     }
 }
 
+/**
+ * @brief Accesses an element in a matrix, considering its layout.
+ * @param matrix Pointer to the matrix.
+ * @param i Row index.
+ * @param j Column index.
+ * @param lda Leading dimension of the matrix.
+ * @param matrix_layout Layout of the matrix (row-major or column-major).
+ * @return Reference to the matrix element.
+ */
 template <typename T> auto matrix_element(T *matrix, int i, int j, int lda, int matrix_layout) -> T & {
     return (matrix_layout == LAPACK_ROW_MAJOR) ? matrix[i * lda + j] : matrix[j * lda + i];
 }
 
 // Main LAPACK fallback implementations
+
+/**
+ * @brief General matrix multiplication (GEMM) implementation.
+ *
+ * Computes C = alpha * op(A) * op(B) + beta * C, where op(X) is either X or X^T.
+ */
 template <typename T>
 void gemm(CBLAS_ORDER order, CBLAS_TRANSPOSE trans_a, CBLAS_TRANSPOSE trans_b, int m, int n, int k, T alpha, const T *a,
           int lda, const T *b, int ldb, T beta, T *c, int ldc) {
@@ -49,6 +83,11 @@ void gemm(CBLAS_ORDER order, CBLAS_TRANSPOSE trans_a, CBLAS_TRANSPOSE trans_b, i
     }
 }
 
+/**
+ * @brief LU factorization of a general M-by-N matrix (GETRF).
+ *
+ * Computes an LU factorization of a general M-by-N matrix A using partial pivoting with row interchanges.
+ */
 template <typename T> auto getrf(int matrix_layout, int m, int n, T *a, int lda, int *ipiv) -> int {
     if (matrix_layout != LAPACK_ROW_MAJOR && matrix_layout != LAPACK_COL_MAJOR) {
         throw std::invalid_argument("Invalid matrix layout");
@@ -100,6 +139,11 @@ template <typename T> auto getrf(int matrix_layout, int m, int n, T *a, int lda,
     return 0; // Success
 }
 
+/**
+ * @brief Compute the inverse of a matrix using the LU factorization (GETRI).
+ *
+ * Computes the inverse of a matrix using the LU factorization computed by GETRF.
+ */
 template <typename T> int getri(int matrix_layout, int n, T *a, int lda, const int *ipiv) {
     if (matrix_layout != LAPACK_ROW_MAJOR && matrix_layout != LAPACK_COL_MAJOR) {
         throw std::invalid_argument("Invalid matrix layout");
@@ -151,6 +195,11 @@ template <typename T> int getri(int matrix_layout, int n, T *a, int lda, const i
     return 0; // Success
 }
 
+/**
+ * @brief Solve a system of linear equations (GESV).
+ *
+ * Computes the solution to a real system of linear equations A * X = B.
+ */
 template <typename T> auto gesv(int matrix_layout, int n, int nrhs, T *a, int lda, int *ipiv, T *b, int ldb) -> int {
     // Perform LU decomposition
     int info = getrf(matrix_layout, n, n, a, lda, ipiv);
@@ -195,6 +244,12 @@ template <typename T> auto gesv(int matrix_layout, int n, int nrhs, T *a, int ld
     return 0;
 }
 
+/**
+ * @brief Solve overdetermined or underdetermined linear systems (GELS).
+ *
+ * Solves overdetermined or underdetermined real linear systems involving an M-by-N matrix A, or its transpose,
+ * using a QR or LQ factorization of A.
+ */
 template <typename T>
 auto gels(int matrix_layout, char trans, int m, int n, int nrhs, T *a, int lda, T *b, int ldb) -> int {
     bool is_row_major = (matrix_layout == LAPACK_ROW_MAJOR);
@@ -371,6 +426,7 @@ auto gels(int matrix_layout, char trans, int m, int n, int nrhs, T *a, int lda, 
 
     return 0;
 }
+
 } // namespace squint
 
 #endif // SQUINT_TENSOR_BLAS_BACKEND_NONE_HPP

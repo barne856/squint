@@ -452,14 +452,15 @@ TEST_CASE("Tensor Shape Manipulation") {
     SUBCASE("Dynamic shape reshape") {
         squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
             {2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
-        t.reshape({3, 2});
-        CHECK(t.shape() == std::vector<std::size_t>{3, 2});
-        CHECK(t(0, 0) == 1);
-        CHECK(t(1, 0) == 4);
-        CHECK(t(2, 0) == 2);
-        CHECK(t(0, 1) == 5);
-        CHECK(t(1, 1) == 3);
-        CHECK(t(2, 1) == 6);
+        auto reshaped = t.reshape({3, 2});
+        CHECK(reshaped.shape() == std::vector<std::size_t>{3, 2});
+        CHECK(reshaped.strides() == std::vector<std::size_t>{1, 3});
+        CHECK(reshaped(0, 0) == 1);
+        CHECK(reshaped(1, 0) == 4);
+        CHECK(reshaped(2, 0) == 2);
+        CHECK(reshaped(0, 1) == 5);
+        CHECK(reshaped(1, 1) == 3);
+        CHECK(reshaped(2, 1) == 6);
     }
 
     SUBCASE("Flatten") {
@@ -649,10 +650,10 @@ TEST_CASE("Dynamic Tensor Operations") {
             *it = val;
         }
 
-        t.reshape({4, 6});
-        CHECK(t.rank() == 2);
-        CHECK(t.shape() == std::vector<std::size_t>{4, 6});
-        CHECK(t.size() == 24);
+        auto reshaped = t.reshape({4, 6});
+        CHECK(reshaped.rank() == 2);
+        CHECK(reshaped.shape() == std::vector<std::size_t>{4, 6});
+        CHECK(reshaped.size() == 24);
 
         // Check values after reshape
         val = 0;

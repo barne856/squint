@@ -30,12 +30,23 @@
 
 namespace squint {
 
-// helper all_less_than to check if all elements of a std::vector are less than a given value
+/**
+ * @brief Checks if all elements of a std::vector are less than a given value.
+ * @param vec The vector to check.
+ * @param value The value to compare against.
+ * @return True if all elements are less than the value, false otherwise.
+ */
 inline auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool {
     return std::ranges::all_of(vec, [value](size_t x) { return x < value; });
 }
 
-// helper to apply index permutation to a std::vector
+/**
+ * @brief Applies an index permutation to a std::vector.
+ * @param vec The vector to permute.
+ * @param permutation The index permutation.
+ * @param pad_value The value to use for padding.
+ * @return The permuted vector.
+ */
 inline auto apply_permutation_vector(const std::vector<size_t> &vec, const std::vector<size_t> &permutation,
                                      std::size_t pad_value) -> std::vector<size_t> {
     std::vector<size_t> padded_shape(permutation.size(), pad_value);
@@ -49,6 +60,13 @@ inline auto apply_permutation_vector(const std::vector<size_t> &vec, const std::
     return result;
 }
 
+/**
+ * @brief Applies an index permutation to a std::index_sequence.
+ * @tparam N The number of elements in the index sequence.
+ * @tparam IndexPermutation The index permutation.
+ * @tparam PadValue The value to use for padding.
+ * @return The permuted index sequence.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <size_t... NewDims>
@@ -66,6 +84,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
     return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
 }
 
+/**
+ * @brief Reshapes the tensor to a new shape.
+ * @tparam NewDims The new dimensions of the tensor.
+ * @return A new tensor with the new shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <size_t... NewDims>
@@ -83,6 +106,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
     return tensor<const T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
 }
 
+/**
+ * @brief Flattens the tensor into a 1D tensor.
+ * @return A new tensor with the flattened shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten()
@@ -103,6 +130,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatt
     }
 }
 
+/**
+ * @brief Flattens the tensor into a 1D tensor.
+ * @return A new tensor with the flattened shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() const
@@ -124,6 +155,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatt
     }
 }
 
+/**
+ * @brief Reshapes the tensor to a new shape.
+ * @param new_shape The new shape of the tensor.
+ * @param l The layout of the tensor.
+ * @return A new tensor with the new shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape(std::vector<size_t> new_shape,
@@ -137,10 +174,16 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
         }
     }
 
-    shape_ = std::move(new_shape);
-    strides_ = compute_strides(l);
+    return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference, MemorySpace>(
+        this->data(), new_shape, compute_strides(l, new_shape));
 }
 
+/**
+ * @brief Reshapes the tensor to a new shape.
+ * @param new_shape The new shape of the tensor.
+ * @param l The layout of the tensor.
+ * @return A new tensor with the new shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape(std::vector<size_t> new_shape,
@@ -156,9 +199,14 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
 
     // For const version, we can't modify the tensor itself, so we return a new view
     return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                  MemorySpace>(this->data(), new_shape, compute_strides(l));
+                  MemorySpace>(this->data(), new_shape, compute_strides(l, new_shape));
 }
 
+/**
+ * @brief Applies an index permutation to a tensor.
+ * @tparam IndexPermutation The index permutation.
+ * @return A new tensor with the permuted shape and strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <valid_index_permutation IndexPermutation>
@@ -173,6 +221,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                   MemorySpace>(this->data());
 }
 
+/**
+ * @brief Applies an index permutation to a tensor.
+ * @tparam IndexPermutation The index permutation.
+ * @return A new tensor with the permuted shape and strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <valid_index_permutation IndexPermutation>
@@ -186,6 +239,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                   MemorySpace>(this->data());
 }
 
+/**
+ * @brief Applies an index permutation to a tensor.
+ * @param index_permutation The index permutation.
+ * @return A new tensor with the permuted shape and strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute(
@@ -212,6 +270,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
         apply_permutation_vector(strides_, index_permutation, last_stride));
 }
 
+/**
+ * @brief Applies an index permutation to a tensor.
+ * @param index_permutation The index permutation.
+ * @return A new tensor with the permuted shape and strides.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permute(
@@ -238,7 +301,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                                apply_permutation_vector(strides_, index_permutation, last_stride));
 }
 
-// Convenience method to apply transpose to a 1D or 2D tensor
+/**
+ * @brief Transposes a 1D or 2D tensor.
+ * @return A new tensor with the transposed shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose() {
@@ -257,6 +323,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::trans
     }
 }
 
+/**
+ * @brief Transposes a 1D or 2D tensor.
+ * @return A new tensor with the transposed shape.
+ */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::transpose() const {

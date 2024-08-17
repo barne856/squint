@@ -1,3 +1,13 @@
+/**
+ * @file blas_backend.hpp
+ * @brief Defines the backend for BLAS and LAPACK operations.
+ *
+ * This file provides the backend for BLAS and LAPACK operations in the Squint library.
+ * The backend is selected at compile time by defining one of the following macros:
+ * - SQUINT_BLAS_BACKEND_MKL: Use Intel MKL as the backend.
+ * - SQUINT_BLAS_BACKEND_OPENBLAS: Use OpenBLAS as the backend.
+ * - SQUINT_BLAS_BACKEND_NONE: Use a fallback backend that provides basic implementations.
+ */
 #ifndef SQUINT_TENSOR_BLAS_BACKEND_HPP
 #define SQUINT_TENSOR_BLAS_BACKEND_HPP
 // NOLINTBEGIN
