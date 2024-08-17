@@ -102,7 +102,7 @@ jobs:
       run: ctest --output-on-failure
 
     - name: Run Clang-Tidy
-      if: matrix.compiler == 'clang' && runner.os == 'Linux'
+      if: matrix.compiler == 'clang' && runner.os == 'Linux' && matrix.blas == 'NONE'
       run: |
         find ./include/squint -name '*.cpp' -or -name '*.hpp' | \
         xargs -P $(nproc) clang-tidy-18 -p build > clang_tidy_output.txt

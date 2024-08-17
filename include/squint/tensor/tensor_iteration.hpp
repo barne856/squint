@@ -15,8 +15,8 @@
 #include <cstddef>
 #include <functional>
 #include <stdexcept>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace squint {
 
