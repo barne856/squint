@@ -97,7 +97,7 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
         using strides_type = strides::column_major<result_shape_type>;
         using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
                                    ownership_type::owner, memory_space::host>;
-        result_type result;
+        result_type result{};
         if constexpr (std::is_same_v<blas_type, float>) {
             // NOLINTBEGIN
             cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
