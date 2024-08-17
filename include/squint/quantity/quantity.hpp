@@ -205,9 +205,8 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      * @return Reference to this quantity
      */
     template <typename U>
-    constexpr auto operator*=(const U &scalar) -> quantity &
-        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>)
-    {
+    constexpr auto operator*=(const U &scalar)
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>) {
         check_overflow_multiply(value_, scalar);
         value_ *= scalar;
         return *this;
@@ -220,9 +219,8 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
      * @return Reference to this quantity
      */
     template <typename U>
-    constexpr auto operator/=(const U &scalar) -> quantity &
-        requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>)
-    {
+    constexpr auto operator/=(const U &scalar)
+        -> quantity &requires(arithmetic<U> || std::is_same_v<typename U::dimension_type, dimensions::unity>) {
         check_division_by_zero(scalar);
         check_underflow_divide(value_, scalar);
         value_ /= scalar;

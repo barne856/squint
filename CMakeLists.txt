@@ -107,7 +107,7 @@ if(SQUINT_BUILD_TESTS)
   add_squint_test(math_tests)
   add_squint_test(tensor_tests)
   add_squint_test(tensor_ops_tests)
-  # add_squint_test(tensor_math_tests)
+  add_squint_test(tensor_math_tests)
   # add_squint_test(geometry_tests)
 endif()
 

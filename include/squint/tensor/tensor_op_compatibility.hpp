@@ -4,10 +4,12 @@
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
+#include "squint/tensor/blas_backend.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <mkl_cblas.h>
 #include <stdexcept>
 #include <vector>
 
@@ -168,6 +170,67 @@ inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
             }
         }
     }
+}
+
+template <typename Sequence1, typename Sequence2> struct matrix_multiply_sequence {
+    static_assert(fixed_shape<Sequence1> || dynamic_shape<Sequence1>,
+                  "Sequence1 must satisfy fixed_shape or dynamic_shape concept");
+    static_assert(fixed_shape<Sequence2> || dynamic_shape<Sequence2>,
+                  "Sequence2 must satisfy fixed_shape or dynamic_shape concept");
+
+    template <typename S1, typename S2> static auto helper() {
+        if constexpr (fixed_shape<S1> && fixed_shape<S2>) {
+            constexpr auto arr1 = make_array(S1{});
+            constexpr auto arr2 = make_array(S2{});
+
+            if constexpr (arr1.size() == 1) {
+                // Vector-matrix multiplication
+                constexpr std::size_t m = arr1[0];
+                constexpr std::size_t p = arr2.size() == 1 ? 1 : arr2[1];
+                static_assert(m == p, "Dimensions must match for vector-matrix multiplication");
+                return std::index_sequence<m, p>{};
+            } else {
+                // Matrix-matrix multiplication
+                static_assert(arr1[1] == arr2[0], "Inner dimensions must match for matrix multiplication");
+                constexpr std::size_t m = arr1[0];
+                constexpr std::size_t p = arr2.size() == 1 ? 1 : arr2[1];
+                return std::index_sequence<m, p>{};
+            }
+        } else {
+            return std::vector<std::size_t>{}; // Placeholder, actual computation done at runtime
+        }
+    }
+
+    using type = decltype(helper<Sequence1, Sequence2>());
+};
+
+template <typename Sequence1, typename Sequence2>
+using matrix_multiply_sequence_t = typename matrix_multiply_sequence<Sequence1, Sequence2>::type;
+
+template <tensorial Tensor1> auto compute_leading_dimension_blas(CBLAS_TRANSPOSE op, const Tensor1 &t) -> BLAS_INT {
+    if (op == CBLAS_TRANSPOSE::CblasNoTrans) {
+        if (t.rank() == 1) {
+            return static_cast<BLAS_INT>(t.shape()[0] * t.strides().back());
+        }
+        return static_cast<BLAS_INT>(t.strides().back());
+    }
+    if (t.rank() == 1) {
+        return static_cast<BLAS_INT>(t.shape()[0] * t.strides()[0]);
+    }
+    return static_cast<BLAS_INT>(t.strides()[0]);
+}
+
+template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, const Tensor1 &t) -> BLAS_INT {
+    auto N = t.shape().size();
+    auto num_rows = t.shape()[0];
+    auto num_cols = N == 1 ? 1 : t.shape()[1];
+    auto col_stride = N == 1 ? t.strides()[0] : t.strides()[1];
+    auto row_stride = t.strides()[0];
+
+    if (layout == LAPACK_ROW_MAJOR) {
+        return static_cast<BLAS_INT>(num_cols * col_stride);
+    } // ColumnMajor
+    return static_cast<BLAS_INT>(num_rows * row_stride);
 }
 
 } // namespace squint
