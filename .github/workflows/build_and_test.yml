@@ -105,7 +105,7 @@ jobs:
       if: matrix.compiler == 'clang' && runner.os == 'Linux' && matrix.blas == 'NONE'
       run: |
         find ./include/squint -name '*.cpp' -or -name '*.hpp' | \
-        xargs -P $(nproc) clang-tidy-19 -p build > clang_tidy_output.txt
+        xargs -P $(nproc) -I {} bash -c 'clang-tidy-19 -p build {}' > clang_tidy_output.txt
         if [ -s clang_tidy_output.txt ]; then
           echo "Clang-Tidy found issues:"
           cat clang_tidy_output.txt

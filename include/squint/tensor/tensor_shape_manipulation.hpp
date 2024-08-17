@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
