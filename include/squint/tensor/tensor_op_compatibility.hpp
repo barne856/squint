@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <mkl_cblas.h>
 #include <stdexcept>
 #include <vector>
 
