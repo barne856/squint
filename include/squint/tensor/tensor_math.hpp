@@ -4,8 +4,7 @@
 #include "squint/core/concepts.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
-#include <cstddef>
-#include <iostream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -28,13 +27,6 @@ template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
     // Determine leading dimensions
     BLAS_INT lda = compute_leading_dimension_lapack(layout, A);
     BLAS_INT ldb = compute_leading_dimension_lapack(layout, B);
-
-    // print debug info
-    std::cout << "layout: " << layout << std::endl;
-    std::cout << "lda: " << lda << std::endl;
-    std::cout << "ldb: " << ldb << std::endl;
-    std::cout << "n: " << n << std::endl;
-    std::cout << "nrhs: " << nrhs << std::endl;
 
     int info = 0;
     std::vector<BLAS_INT> ipiv(n);

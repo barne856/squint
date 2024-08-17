@@ -31,7 +31,7 @@ namespace squint {
 
 // helper all_less_than to check if all elements of a std::vector are less than a given value
 inline auto all_less_than(const std::vector<size_t> &vec, size_t value) -> bool {
-    return std::all_of(vec.begin(), vec.end(), [value](size_t x) { return x < value; });
+    return std::ranges::all_of(vec, [value](size_t x) { return x < value; });
 }
 
 // helper to apply index permutation to a std::vector
@@ -197,7 +197,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                 "Index permutation must have at least the same number of elements as the shape");
         }
         auto non_const_permutation = index_permutation;
-        if (!(std::unique(non_const_permutation.begin(), non_const_permutation.end()) == non_const_permutation.end())) {
+        if (!(std::ranges::is_sorted_until(non_const_permutation, std::ranges::greater{}) ==
+              std::ranges::end(non_const_permutation))) {
             throw std::invalid_argument("Index permutation must not contain duplicates");
         }
         if (!all_less_than(index_permutation, shape_.size())) {
@@ -222,7 +223,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                 "Index permutation must have at least the same number of elements as the shape");
         }
         auto non_const_permutation = index_permutation;
-        if (!(std::unique(non_const_permutation.begin(), non_const_permutation.end()) == non_const_permutation.end())) {
+        if (!(std::ranges::is_sorted_until(non_const_permutation, std::ranges::greater{}) ==
+              std::ranges::end(non_const_permutation))) {
             throw std::invalid_argument("Index permutation must not contain duplicates");
         }
         if (!all_less_than(index_permutation, shape_.size())) {

@@ -84,12 +84,12 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
     if constexpr (fixed_shape<Shape>) {
         using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
         return tensor<T, RowShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            this->data() + index * std::get<0>(make_array(Strides{})));
+            this->data() + (index * std::get<0>(make_array(Strides{}))));
     } else {
         std::vector<size_t> row_shape = this->shape();
         row_shape[0] = 1;
         return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                      MemorySpace>(this->data() + index * this->strides()[0], row_shape, this->strides());
+                      MemorySpace>(this->data() + (index * this->strides()[0]), row_shape, this->strides());
     }
 }
 
@@ -110,7 +110,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
         std::vector<size_t> row_shape = this->shape();
         row_shape[0] = 1;
         return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                      MemorySpace>(this->data() + index * this->strides()[0], row_shape, this->strides());
+                      MemorySpace>(this->data() + (index * this->strides()[0]), row_shape, this->strides());
     }
 }
 
@@ -136,7 +136,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         col_strides.pop_back();
         const std::size_t N = col_strides.size();
         return tensor<T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                      MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
+                      MemorySpace>(this->data() + (index * this->strides()[N]), col_shape, col_strides);
     }
 }
 
@@ -162,7 +162,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         col_strides.pop_back();
         const std::size_t N = col_strides.size();
         return tensor<const T, std::vector<size_t>, std::vector<size_t>, ErrorChecking, ownership_type::reference,
-                      MemorySpace>(this->data() + index * this->strides()[N], col_shape, col_strides);
+                      MemorySpace>(this->data() + (index * this->strides()[N]), col_shape, col_strides);
     }
 }
 

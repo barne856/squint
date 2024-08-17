@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <ratio>
+#include <concepts>
 
 namespace squint {
 

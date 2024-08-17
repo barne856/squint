@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <vector>
+#include <utility>
 
 namespace squint {
 // helper to check if two shapes are implicitly convertible with vectors

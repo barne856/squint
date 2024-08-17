@@ -176,7 +176,7 @@ template <typename Sequence> using reverse_sequence_t = typename reverse_sequenc
 // Helper to make repeating index sequences of a single value and length N
 template <std::size_t N, std::size_t Value> struct repeat_sequence {
     template <std::size_t... Ns>
-    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<(Value + Ns * 0)...>;
+    static auto helper(std::index_sequence<Ns...>) -> std::index_sequence<(Value + (Ns * 0))...>;
 
     using type = decltype(helper(std::make_index_sequence<N>{}));
 };
