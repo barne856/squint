@@ -60,6 +60,49 @@ template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
     return ipiv;
 }
 
+/**
+ * @brief Solves a general system of linear equations (overdetermined or underdetermined).
+ * @param A The matrix of coefficients.
+ * @param B The right-hand side of the equations.
+ * @return The pivot indices.
+ * @throws std::runtime_error if an error occurs during the solution.
+ */
+template <tensorial T1, tensorial T2> auto solve_general(T1 &A, T2 &B) {
+    blas_compatible(A, B);
+    solve_general_compatible(A, B);
+    static_assert(dimensionless_scalar<typename T1::value_type>);
+    using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
+
+    // Compute dimensions
+    auto m = static_cast<BLAS_INT>(A.shape()[0]);
+    auto n = static_cast<BLAS_INT>(A.shape()[1]);
+    auto nrhs = static_cast<BLAS_INT>(B.rank() == 1 ? 1 : B.shape()[1]);
+
+    // Determine matrix layout
+    int layout = (A.strides()[0] == 1) ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+
+    // Determine leading dimensions
+    BLAS_INT lda = compute_leading_dimension_lapack(layout, A);
+    BLAS_INT ldb = compute_leading_dimension_lapack(layout, B);
+
+    int info = 0;
+    // NOLINTBEGIN
+    if constexpr (std::is_same_v<blas_type, float>) {
+        info = LAPACKE_sgels(layout, 'N', m, n, nrhs, reinterpret_cast<float *>((A.data())), lda,
+                             reinterpret_cast<float *>((B.data())), ldb);
+    }
+    if constexpr (std::is_same_v<blas_type, double>) {
+        info = LAPACKE_dgels(layout, 'N', m, n, nrhs, reinterpret_cast<double *>((A.data())), lda,
+                             reinterpret_cast<double *>((B.data())), ldb);
+    }
+    // NOLINTEND
+    if (info != 0) {
+        throw std::runtime_error("LAPACKE_gels error code: " + std::to_string(info));
+    }
+
+    return info;
+}
+
 } // namespace squint
 
 #endif // SQUINT_TENSOR_TENSOR_MATH_HPP
