@@ -10,12 +10,6 @@
 #include <vector>
 
 namespace squint {
-template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T2 &B) {
-    // must have compatible shapes
-    // must have compatible layouts
-    // is contiguous
-    // rank() <= 2 for A and B
-}
 
 template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
     blas_compatible(A, B);

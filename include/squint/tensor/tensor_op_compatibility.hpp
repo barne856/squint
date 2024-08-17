@@ -233,6 +233,73 @@ template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, c
     return static_cast<BLAS_INT>(num_rows * row_stride);
 }
 
+template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T2 &B) {
+    using error_type = resulting_error_checking<T1::error_checking(), T2::error_checking()>;
+    // check for rank and contiguous independently
+    if constexpr (fixed_tensor<T1>) {
+        static_assert(fixed_contiguous_tensor<T1>, "A must be contiguous");
+        static_assert(make_array(typename T1::shape_type{}).size() <= 2, "rank() <= 2 for A");
+    } else if (error_type::value == error_checking::enabled) {
+        if (!A.is_contiguous()) {
+            throw std::runtime_error("A must be contiguous");
+        }
+        if (A.rank() > 2) {
+            throw std::runtime_error("rank() <= 2 for A");
+        }
+    }
+    if constexpr (fixed_tensor<T2>) {
+        static_assert(fixed_contiguous_tensor<T2>, "B must be contiguous");
+        static_assert(make_array(typename T2::shape_type{}).size() <= 2, "rank() <= 2 for B");
+    } else if (error_type::value == error_checking::enabled) {
+        if (!B.is_contiguous()) {
+            throw std::runtime_error("B must be contiguous");
+        }
+        if (B.rank() > 2) {
+            throw std::runtime_error("rank() <= 2 for B");
+        }
+    }
+    // check for compatible shapes and strides
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        // check shapes at compile time
+        static_assert(make_array(typename T1::shape_type{})[0] == make_array(typename T1::shape_type{})[1],
+                      "A must be square");
+        static_assert(make_array(typename T1::shape_type{})[0] == make_array(typename T2::shape_type{})[0],
+                      "A and B must have the same number of rows");
+
+        // check strides at compile time
+        if constexpr (make_array(typename T2::shape_type{}).size() == 1) {
+            static_assert(make_array(typename T1::strides_type{})[0] == 1 ||
+                              make_array(typename T1::strides_type{})[1] == 1,
+                          "A must be either row-major or column-major");
+        } else {
+            static_assert(
+                (make_array(typename T1::strides_type{})[0] == 1 && make_array(typename T2::strides_type{})[0] == 1) ||
+                    (make_array(typename T1::strides_type{})[1] == 1 &&
+                     make_array(typename T2::strides_type{})[1] == 1),
+                "A and B must have the same layout (both row-major or both column-major)");
+        }
+    } else if (error_type::value == error_checking::enabled) {
+        // check shapes at runtime
+        if (A.shape()[0] != A.shape()[1]) {
+            throw std::runtime_error("A must be square");
+        }
+        if (A.shape()[0] != B.shape()[0]) {
+            throw std::runtime_error("A and B must have the same number of rows");
+        }
+
+        // check strides at runtime
+        if (B.rank() == 1) {
+            if (A.strides()[0] != 1 && A.strides()[1] != 1) {
+                throw std::runtime_error("A must be either row-major or column-major");
+            }
+        } else {
+            if ((A.strides()[0] == 1 && B.strides()[0] != 1) || (A.strides()[1] == 1 && B.strides()[1] != 1)) {
+                throw std::runtime_error("A and B must have the same layout (both row-major or both column-major)");
+            }
+        }
+    }
+}
+
 } // namespace squint
 
 #endif // SQUINT_TENSOR_TENSOR_OP_COMPATIBILITY_HPP
