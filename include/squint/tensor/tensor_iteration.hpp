@@ -105,7 +105,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
     if constexpr (fixed_shape<Shape>) {
         using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
         return tensor<const T, RowShape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            this->data() + index * std::get<0>(make_array(Strides{})));
+            this->data() + (index * std::get<0>(make_array(Strides{}))));
     } else {
         std::vector<size_t> row_shape = this->shape();
         row_shape[0] = 1;
@@ -128,7 +128,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         using ColStrides = init_sequence_t<Strides>;
         constexpr std::size_t N = ColStrides::size();
         return tensor<T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            this->data() + index * std::get<N>(make_array(Strides{})));
+            this->data() + (index * std::get<N>(make_array(Strides{}))));
     } else {
         std::vector<size_t> col_shape = this->shape();
         col_shape.pop_back();
@@ -154,7 +154,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
         using ColStrides = init_sequence_t<Strides>;
         constexpr std::size_t N = ColStrides::size();
         return tensor<const T, ColShape, ColStrides, ErrorChecking, ownership_type::reference, MemorySpace>(
-            this->data() + index * std::get<N>(make_array(Strides{})));
+            this->data() + (index * std::get<N>(make_array(Strides{}))));
     } else {
         std::vector<size_t> col_shape = this->shape();
         col_shape.pop_back();

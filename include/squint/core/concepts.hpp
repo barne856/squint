@@ -1,3 +1,12 @@
+/**
+ * @file concepts.hpp
+ * @brief Defines concepts for tensors and quantities.
+ *
+ * This file provides concepts for tensor-like types and quantities. These
+ * concepts are used to constrain template parameters in the library.
+ *
+ */
+
 #ifndef SQUINT_CORE_CONCEPTS_HPP
 #define SQUINT_CORE_CONCEPTS_HPP
 

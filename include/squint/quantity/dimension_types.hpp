@@ -14,6 +14,7 @@
 #include "squint/core/concepts.hpp"
 #include "squint/quantity/dimension.hpp"
 
+#include <concepts>
 #include <ratio>
 
 namespace squint {
