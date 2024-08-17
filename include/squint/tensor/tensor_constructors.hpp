@@ -11,19 +11,19 @@
 #ifndef SQUINT_TENSOR_TENSOR_CONSTRUCTORS_HPP
 #define SQUINT_TENSOR_TENSOR_CONSTRUCTORS_HPP
 
-#include "squint/tensor/tensor.hpp"
-#include "squint/tensor/tensor_iteration.hpp"
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/layout.hpp"
 #include "squint/core/memory.hpp"
+#include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_iteration.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 
 #include <algorithm>
-#include <stdexcept>
-#include <cstddef>
 #include <array>
+#include <cstddef>
 #include <functional>
+#include <stdexcept>
 #include <utility>
 
 namespace squint {
@@ -125,7 +125,10 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     if constexpr (OwnershipType == ownership_type::owner) {
         // for owner ownership, only shape must be convertible
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
-        std::copy(other.begin(), other.end(), begin());
+        auto other_begin = other.begin();
+        for (auto &element : *this) {
+            element = *other_begin++;
+        }
     } else {
         // for reference ownership, both strides and shape must be convertible
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
@@ -149,10 +152,16 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
         shape_ = other.shape();
         strides_ = other.strides();
         data_.resize(other.size());
-        std::copy(other.begin(), other.end(), begin());
+        auto other_begin = other.begin();
+        for (auto &element : *this) {
+            element = *other_begin++;
+        }
     } else {
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
-        std::copy(other.begin(), other.end(), begin());
+        auto other_begin = other.begin();
+        for (auto &element : *this) {
+            element = *other_begin++;
+        }
     }
 }
 

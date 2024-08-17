@@ -21,7 +21,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             throw std::runtime_error("Cannot assign tensor with different size");
         }
     }
-    std::copy(other.begin(), other.end(), begin());
+    auto other_begin = other.begin();
+    for (auto &element : *this) {
+        element = *other_begin++;
+    }
     return *this;
 }
 
@@ -34,7 +37,10 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             throw std::runtime_error("Cannot assign tensor with different size");
         }
     }
-    std::copy(other.begin(), other.end(), begin());
+    auto other_begin = other.begin();
+    for (auto &element : *this) {
+        element = *other_begin++;
+    }
     return *this;
 }
 } // namespace squint
