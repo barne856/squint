@@ -39,7 +39,7 @@ using dim_inv_t = dim_div_t<
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>,
     U>;
 
-/** @} */  // end of dimension_arithmetic group
+/** @} */ // end of dimension_arithmetic group
 
 /**
  * @brief Namespace containing common dimension definitions.
@@ -75,7 +75,7 @@ using N =
 using J =
     dimension<std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<1>>;
 
-/** @} */  // end of base_dimensions group
+/** @} */ // end of base_dimensions group
 
 /**
  * @defgroup derived_dimensions Derived Dimensions
@@ -108,7 +108,7 @@ using capacitance_dim = dim_div_t<charge_dim, voltage_dim>;
 using flow_dim = dim_div_t<volume_dim, T>;
 using viscosity_dim = dim_mult_t<pressure_dim, T>;
 
-/** @} */  // end of derived_dimensions group
+/** @} */ // end of derived_dimensions group
 
 } // namespace dimensions
 

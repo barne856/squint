@@ -11,10 +11,10 @@
 #ifndef SQUINT_TENSOR_TENSOR_ELEMENT_ACCESS_HPP
 #define SQUINT_TENSOR_TENSOR_ELEMENT_ACCESS_HPP
 
-#include "squint/tensor/tensor.hpp"
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
+#include "squint/tensor/tensor.hpp"
 
 #include <cstddef>
 #include <stdexcept>

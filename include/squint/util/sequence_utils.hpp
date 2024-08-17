@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -184,7 +185,7 @@ template <std::size_t N, std::size_t Value> struct repeat_sequence {
 template <std::size_t N, std::size_t Value> using repeat_sequence_t = typename repeat_sequence<N, Value>::type;
 
 // checks if a sequence has no duplicates
-template <typename Sequence> constexpr bool is_unique() {
+template <typename Sequence> constexpr auto is_unique() -> bool {
     auto arr = make_array(Sequence{});
     return static_cast<bool>(std::unique(arr.begin(), arr.end()) == arr.end());
 }
@@ -210,7 +211,7 @@ using apply_permutation_t = typename apply_permutation<Sequence, IndexPermutatio
 
 // Helper to determine if two sequences representing tensor shapes can be implicitly converted
 template <typename Sequence1, typename Sequence2> struct implicit_convertible_shapes {
-    static constexpr bool helper() {
+    static constexpr auto helper() -> bool {
         constexpr auto arr1 = make_array(Sequence1{});
         constexpr auto arr2 = make_array(Sequence2{});
         constexpr std::size_t size1 = arr1.size();
@@ -219,20 +220,23 @@ template <typename Sequence1, typename Sequence2> struct implicit_convertible_sh
 
         // Check if the common elements are the same
         for (std::size_t i = 0; i < min_size; ++i) {
-            if (arr1[i] != arr2[i])
+            if (arr1[i] != arr2[i]) {
                 return false;
+            }
         }
 
         // Check if the extra elements in the longer sequence are all 1's
         if (size1 > size2) {
             for (std::size_t i = size2; i < size1; ++i) {
-                if (arr1[i] != 1)
+                if (arr1[i] != 1) {
                     return false;
+                }
             }
         } else if (size2 > size1) {
             for (std::size_t i = size1; i < size2; ++i) {
-                if (arr2[i] != 1)
+                if (arr2[i] != 1) {
                     return false;
+                }
             }
         }
 
@@ -248,7 +252,7 @@ inline constexpr bool implicit_convertible_shapes_v = implicit_convertible_shape
 
 // Helper to determine if two sequences representing tensor strides can be implicitly converted
 template <typename Sequence1, typename Sequence2> struct implicit_convertible_strides {
-    static constexpr bool helper() {
+    static constexpr auto helper() -> bool {
         constexpr auto arr1 = make_array(Sequence1{});
         constexpr auto arr2 = make_array(Sequence2{});
         constexpr std::size_t size1 = arr1.size();
@@ -257,8 +261,9 @@ template <typename Sequence1, typename Sequence2> struct implicit_convertible_st
 
         // Check if the common elements are the same
         for (std::size_t i = 0; i < min_size; ++i) {
-            if (arr1[i] != arr2[i])
+            if (arr1[i] != arr2[i]) {
                 return false;
+            }
         }
 
         return true;

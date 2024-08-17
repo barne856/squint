@@ -1,9 +1,9 @@
 #ifndef SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 #define SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 
-#include "squint/tensor/tensor.hpp"
 #include "squint/core/concepts.hpp"
 #include "squint/core/memory.hpp"
+#include "squint/tensor/tensor.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <stdexcept>

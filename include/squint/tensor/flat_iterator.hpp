@@ -22,10 +22,10 @@
 #include "squint/core/concepts.hpp"
 #include "squint/util/sequence_utils.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <numeric>
 #include <type_traits>
-#include <cstddef>
 
 namespace squint {
 

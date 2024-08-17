@@ -3,6 +3,8 @@
 
 #include "squint/tensor/tensor.hpp"
 
+#include <cstddef>
+
 namespace squint {
 
 /**

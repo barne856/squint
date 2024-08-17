@@ -24,8 +24,8 @@ namespace squint {
  * and the compatibility with external libraries.
  */
 enum class layout {
-    row_major,    /**< Row-major layout: elements of a row are contiguous in memory */
-    column_major  /**< Column-major layout: elements of a column are contiguous in memory */
+    row_major,   /**< Row-major layout: elements of a row are contiguous in memory */
+    column_major /**< Column-major layout: elements of a column are contiguous in memory */
 };
 
 // Helper to compute the product of a range of values in a parameter pack
@@ -54,9 +54,12 @@ struct compute_strides<Layout, std::index_sequence<Is...>, std::index_sequence<D
 };
 
 // alias for compile time strides
-struct strides{
-    template <typename Shape> using row_major = typename compute_strides<layout::row_major, std::make_index_sequence<Shape::size()>, Shape>::type;
-    template <typename Shape> using column_major = typename compute_strides<layout::column_major, std::make_index_sequence<Shape::size()>, Shape>::type;
+struct strides {
+    template <typename Shape>
+    using row_major = typename compute_strides<layout::row_major, std::make_index_sequence<Shape::size()>, Shape>::type;
+    template <typename Shape>
+    using column_major =
+        typename compute_strides<layout::column_major, std::make_index_sequence<Shape::size()>, Shape>::type;
 };
 
 // alias for compile time shape

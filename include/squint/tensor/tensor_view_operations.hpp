@@ -11,9 +11,15 @@
 #ifndef SQUINT_TENSOR_TENSOR_VIEW_OPERATIONS_HPP
 #define SQUINT_TENSOR_TENSOR_VIEW_OPERATIONS_HPP
 
+#include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
+#include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
 #include "squint/util/sequence_utils.hpp"
+
+#include <cstddef>
 #include <stdexcept>
+#include <vector>
 
 namespace squint {
 
@@ -93,8 +99,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subvi
 
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(const index_type &subview_shape,
-                                                                                   const index_type &start_indices) const
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subview(
+    const index_type &subview_shape, const index_type &start_indices) const
     requires dynamic_shape<Shape>
 {
     if constexpr (ErrorChecking == error_checking::enabled) {

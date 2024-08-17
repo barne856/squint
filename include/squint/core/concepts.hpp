@@ -7,9 +7,9 @@
 #include "squint/util/sequence_utils.hpp"
 
 #include <concepts>
+#include <cstddef>
 #include <ratio>
 #include <type_traits>
-#include <cstddef>
 #include <vector>
 
 namespace squint {

@@ -19,8 +19,8 @@ namespace squint {
  * checking is enabled or disabled for tensor and quantity operations.
  */
 enum class error_checking {
-    enabled,  /**< Error checking is enabled */
-    disabled  /**< Error checking is disabled */
+    enabled, /**< Error checking is enabled */
+    disabled /**< Error checking is disabled */
 };
 
 /**
@@ -33,8 +33,7 @@ enum class error_checking {
  * @tparam ErrorChecking1 The first error checking policy.
  * @tparam ErrorChecking2 The second error checking policy.
  */
-template <error_checking ErrorChecking1, error_checking ErrorChecking2>
-struct resulting_error_checking {
+template <error_checking ErrorChecking1, error_checking ErrorChecking2> struct resulting_error_checking {
     /**
      * @brief The resulting error checking policy.
      *

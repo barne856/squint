@@ -11,10 +11,19 @@
 #ifndef SQUINT_TENSOR_TENSOR_SHAPE_MANIPULATIONS_HPP
 #define SQUINT_TENSOR_TENSOR_SHAPE_MANIPULATIONS_HPP
 
+#include "squint/core/concepts.hpp"
+#include "squint/core/layout.hpp"
+#include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
+#include "squint/util/sequence_utils.hpp"
+
 #include <algorithm>
+#include <cstddef>
+#include <functional>
 #include <numeric>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 namespace squint {
 
@@ -186,8 +195,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                 "Index permutation must have at least the same number of elements as the shape");
         }
         auto non_const_permutation = index_permutation;
-        if (!static_cast<bool>(std::unique(non_const_permutation.begin(), non_const_permutation.end()) ==
-                               non_const_permutation.end())) {
+        if (!(std::unique(non_const_permutation.begin(), non_const_permutation.end()) == non_const_permutation.end())) {
             throw std::invalid_argument("Index permutation must not contain duplicates");
         }
         if (!all_less_than(index_permutation, shape_.size())) {
@@ -212,8 +220,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::permu
                 "Index permutation must have at least the same number of elements as the shape");
         }
         auto non_const_permutation = index_permutation;
-        if (!static_cast<bool>(std::unique(non_const_permutation.begin(), non_const_permutation.end()) ==
-                               non_const_permutation.end())) {
+        if (!(std::unique(non_const_permutation.begin(), non_const_permutation.end()) == non_const_permutation.end())) {
             throw std::invalid_argument("Index permutation must not contain duplicates");
         }
         if (!all_less_than(index_permutation, shape_.size())) {

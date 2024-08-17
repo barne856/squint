@@ -1,10 +1,6 @@
 #ifndef SQUINT_GEOMETRY_PROJECTIONS_HPP
 #define SQUINT_GEOMETRY_PROJECTIONS_HPP
 
-namespace squint {
-
-
-
-} // namespace squint
+namespace squint {} // namespace squint
 
 #endif // SQUINT_GEOMETRY_PROJECTIONS_HPP

@@ -20,8 +20,8 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/util/sequence_utils.hpp"
-#include <iterator>
 #include <cstddef>
+#include <iterator>
 
 namespace squint {
 

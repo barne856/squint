@@ -16,7 +16,6 @@
 
 #include "squint/core/concepts.hpp"
 
-
 namespace squint {
 
 /**

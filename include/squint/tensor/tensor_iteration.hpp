@@ -12,10 +12,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <stdexcept>
 #include <vector>
-#include <cstddef>
 
 namespace squint {
 
