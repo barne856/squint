@@ -122,8 +122,7 @@ template <tensorial T> auto constexpr check_blas_layout(const T &t) -> void {
  * @param t1 First tensor.
  * @param t2 Second tensor.
  */
-template <tensorial Tensor1, tensorial Tensor2>
-constexpr void blas_compatible(const Tensor1 &t1, const Tensor2 &t2) {
+template <tensorial Tensor1, tensorial Tensor2> constexpr void blas_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     using type1 = blas_type_t<typename Tensor1::value_type>;
     using type2 = blas_type_t<typename Tensor2::value_type>;
     static_assert(std::is_same_v<type1, type2>,
@@ -180,8 +179,7 @@ template <tensorial T1, tensorial T2> constexpr void layouts_compatible(const T1
  * @param t2 Second tensor.
  * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
  */
-template <tensorial Tensor1, tensorial Tensor2>
-void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
+template <tensorial Tensor1, tensorial Tensor2> void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
         constexpr auto shape1 = make_array(typename Tensor1::shape_type{});
         constexpr auto shape2 = make_array(typename Tensor2::shape_type{});
