@@ -10,6 +10,8 @@
 #ifndef SQUINT_CORE_LAYOUT_HPP
 #define SQUINT_CORE_LAYOUT_HPP
 
+#include "squint/util/sequence_utils.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -37,14 +39,15 @@ enum class layout : uint8_t {
  * all dimensions in the range [Begin, End) and the dimensions in Dims.
  *
  */
-template <std::size_t Begin, std::size_t End, std::size_t... Dims> struct product_range {
-    static constexpr std::size_t value = 1;
-};
+template <std::size_t Start, std::size_t End, typename Sequence> struct product_range;
 
-// Base case for product_range
-template <std::size_t Begin, std::size_t End, std::size_t First, std::size_t... Rest>
-struct product_range<Begin, End, First, Rest...> {
-    static constexpr std::size_t value = (Begin < End ? First : 1) * product_range<Begin + 1, End, Rest...>::value;
+template <std::size_t Start, std::size_t End, std::size_t... Dims>
+struct product_range<Start, End, std::index_sequence<Dims...>> {
+    template <std::size_t... Is> static constexpr auto compute(std::index_sequence<Is...> /*unused*/) -> std::size_t {
+        return product(std::index_sequence<std::get<Start + Is>(make_array(std::index_sequence<Dims...>{}))...>{});
+    }
+
+    static constexpr std::size_t value = compute(std::make_index_sequence<End - Start>{});
 };
 
 /**
@@ -55,12 +58,18 @@ struct product_range<Begin, End, First, Rest...> {
  * all dimensions before the index Idx in Dims.
  *
  */
+template <std::size_t Idx, layout Layout, typename Shape> struct compute_single_stride;
+// NOLINTBEGIN
+template <std::size_t Idx, layout Layout, std::size_t... Dims>
+struct compute_single_stride<Idx, Layout, std::index_sequence<Dims...>> {
+    using reversed_shape = reverse_sequence_t<std::index_sequence<Dims...>>;
 
-template <std::size_t Idx, layout Layout, std::size_t... Dims> struct compute_single_stride {
-    static constexpr std::size_t value = Layout == layout::row_major
-                                             ? product_range<Idx + 1, sizeof...(Dims), Dims...>::value
-                                             : product_range<0, Idx, Dims...>::value;
+    static constexpr std::size_t value =
+        Layout == layout::row_major
+            ? (Idx == sizeof...(Dims) - 1 ? 1 : product_range<0, sizeof...(Dims) - Idx - 1, reversed_shape>::value)
+            : product_range<0, Idx, std::index_sequence<Dims...>>::value;
 };
+// NOLINTEND
 
 /**
  * @brief Helper to compute the strides of a tensor shape.
@@ -74,7 +83,7 @@ template <layout Layout, typename Seq, typename Shape> struct compute_strides;
 
 template <layout Layout, std::size_t... Is, std::size_t... Dims>
 struct compute_strides<Layout, std::index_sequence<Is...>, std::index_sequence<Dims...>> {
-    using type = std::index_sequence<compute_single_stride<Is, Layout, Dims...>::value...>;
+    using type = std::index_sequence<compute_single_stride<Is, Layout, std::index_sequence<Dims...>>::value...>;
 };
 
 /**

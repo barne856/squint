@@ -93,6 +93,28 @@ template <scalar S> struct blas_type {
 // alias for the underlying arithmetic type of a tensor
 template <scalar S> using blas_type_t = typename blas_type<S>::type;
 
+template <tensorial T> auto constexpr check_blas_layout(const T &t) -> void {
+    if constexpr (fixed_tensor<T>) {
+        // rank must be <= 2
+        static_assert(make_array(typename T::shape_type{}).size() <= 2, "rank() <= 2 for t1");
+        // if rank == 2, strides must start or end with 1
+        if constexpr (make_array(typename T::shape_type{}).size() == 2) {
+            static_assert(make_array(typename T::strides_type{})[0] == 1 ||
+                              make_array(typename T::strides_type{})[1] == 1,
+                          "t1 must be either row-major or column-major");
+        }
+    } else if constexpr (T::error_checking() == error_checking::enabled) {
+        if (t.rank() > 2) {
+            throw std::runtime_error("rank() <= 2 for t1");
+        }
+        if (t.rank() == 2) {
+            if (t.strides()[0] != 1 && t.strides()[1] != 1) {
+                throw std::runtime_error("t1 must be either row-major or column-major");
+            }
+        }
+    }
+}
+
 /**
  * @brief Checks if tensors are BLAS compatible (same underlying arithmetic type).
  * @tparam Tensor1 First tensor type.
@@ -101,11 +123,13 @@ template <scalar S> using blas_type_t = typename blas_type<S>::type;
  * @param t2 Second tensor.
  */
 template <tensorial Tensor1, tensorial Tensor2>
-inline void blas_compatible(const Tensor1 & /*t1*/, const Tensor2 & /*t2*/) {
+constexpr void blas_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     using type1 = blas_type_t<typename Tensor1::value_type>;
     using type2 = blas_type_t<typename Tensor2::value_type>;
     static_assert(std::is_same_v<type1, type2>,
                   "Tensors must have the same underlying arithmetic type for BLAS operations");
+    check_blas_layout(t1);
+    check_blas_layout(t2);
 }
 
 /**
@@ -117,7 +141,7 @@ inline void blas_compatible(const Tensor1 & /*t1*/, const Tensor2 & /*t2*/) {
  * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
  */
 template <tensorial Tensor1, tensorial Tensor2>
-inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
+constexpr void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
         static_assert(implicit_convertible_shapes_v<typename Tensor1::shape_type, typename Tensor2::shape_type>,
                       "Shapes must be compatible for element-wise operations");
@@ -125,6 +149,25 @@ inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
                          Tensor2::error_checking() == error_checking::enabled) {
         if (!implicit_convertible_shapes_vector(t1.shape(), t2.shape())) {
             throw std::runtime_error("Shapes must be compatible for element-wise operations");
+        }
+    }
+}
+
+template <tensorial T1, tensorial T2> constexpr void layouts_compatible(const T1 &t1, const T2 &t2) {
+    // false if both ranks are 2 and layouts are different
+    // 1D layouts are always compatible
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        constexpr int layout1 = make_array(typename T1::strides_type{})[0] == 1 ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+        constexpr int layout2 = make_array(typename T2::strides_type{})[0] == 1 ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+        static_assert(make_array(typename T1::shape_type{}).size() == 1 ||
+                          make_array(typename T2::shape_type{}).size() == 1 || layout1 == layout2,
+                      "Tensors must have the same layout for LAPACK operations");
+    } else if constexpr (T1::error_checking() == error_checking::enabled ||
+                         T2::error_checking() == error_checking::enabled) {
+        int layout1 = t1.strides()[0] == 1 ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+        int layout2 = t2.strides()[0] == 1 ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+        if (t1.rank() == 2 && t2.rank() == 2 && layout1 != layout2) {
+            throw std::runtime_error("Tensors must have the same layout for LAPACK operations");
         }
     }
 }
@@ -138,18 +181,10 @@ inline void element_wise_compatible(const Tensor1 &t1, const Tensor2 &t2) {
  * @throws std::runtime_error if tensors are incompatible (when error checking is enabled).
  */
 template <tensorial Tensor1, tensorial Tensor2>
-inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
+void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
     if constexpr (fixed_shape<typename Tensor1::shape_type> && fixed_shape<typename Tensor2::shape_type>) {
         constexpr auto shape1 = make_array(typename Tensor1::shape_type{});
         constexpr auto shape2 = make_array(typename Tensor2::shape_type{});
-        static_assert(shape1.size() == 1 || shape1.size() == 2, "Invalid shape for tensor 1");
-        static_assert(shape2.size() == 1 || shape2.size() == 2, "Invalid shape for tensor 2");
-        constexpr auto stride1 = make_array(typename Tensor1::strides_type{});
-        constexpr auto stride2 = make_array(typename Tensor2::strides_type{});
-        // both strides must start or end with 1
-        static_assert((stride1[0] == 1 || stride1[shape1.size() - 1] == 1) &&
-                          (stride2[0] == 1 || stride2[shape2.size() - 1] == 1),
-                      "Invalid strides for matrix multiplication");
 
         if constexpr (shape1.size() == 1) {
             // Vector-matrix multiplication
@@ -174,22 +209,6 @@ inline void matrix_multiply_compatible(const Tensor1 &t1, const Tensor2 &t2) {
                          error_checking::enabled) {
         auto shape1 = t1.shape();
         auto shape2 = t2.shape();
-
-        if (shape1.size() != 1 && shape1.size() != 2) {
-            throw std::runtime_error("Invalid shape for tensor 1");
-        }
-        if (shape2.size() != 1 && shape2.size() != 2) {
-            throw std::runtime_error("Invalid shape for tensor 2");
-        }
-
-        auto stride1 = t1.strides();
-        auto stride2 = t2.strides();
-
-        // both strides must start or end with 1
-        if ((stride1[0] != 1 && stride1[shape1.size() - 1] != 1) ||
-            (stride2[0] != 1 && stride2[shape2.size() - 1] != 1)) {
-            throw std::runtime_error("Invalid strides for matrix multiplication");
-        }
 
         if (shape1.size() == 1) {
             // Vector-matrix multiplication
@@ -293,6 +312,16 @@ template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, c
     return static_cast<BLAS_INT>(num_rows * row_stride);
 }
 
+template <tensorial T1> void check_contiguous(const T1 &t1) {
+    if constexpr (fixed_tensor<T1>) {
+        static_assert(fixed_contiguous_tensor<T1>, "tensor must be contiguous");
+    } else if (T1::error_checking() == error_checking::enabled) {
+        if (!t1.is_contiguous()) {
+            throw std::runtime_error("tensor must be contiguous");
+        }
+    }
+}
+
 /**
  * @brief Checks if two tensors are compatible for solve operations.
  * @tparam T1 First tensor type.
@@ -303,29 +332,9 @@ template <tensorial Tensor1> auto compute_leading_dimension_lapack(int layout, c
  */
 template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T2 &B) {
     using error_type = resulting_error_checking<T1::error_checking(), T2::error_checking()>;
-    // check for rank and contiguous independently
-    if constexpr (fixed_tensor<T1>) {
-        static_assert(fixed_contiguous_tensor<T1>, "A must be contiguous");
-        static_assert(make_array(typename T1::shape_type{}).size() <= 2, "rank() <= 2 for A");
-    } else if (error_type::value == error_checking::enabled) {
-        if (!A.is_contiguous()) {
-            throw std::runtime_error("A must be contiguous");
-        }
-        if (A.rank() > 2) {
-            throw std::runtime_error("rank() <= 2 for A");
-        }
-    }
-    if constexpr (fixed_tensor<T2>) {
-        static_assert(fixed_contiguous_tensor<T2>, "B must be contiguous");
-        static_assert(make_array(typename T2::shape_type{}).size() <= 2, "rank() <= 2 for B");
-    } else if (error_type::value == error_checking::enabled) {
-        if (!B.is_contiguous()) {
-            throw std::runtime_error("B must be contiguous");
-        }
-        if (B.rank() > 2) {
-            throw std::runtime_error("rank() <= 2 for B");
-        }
-    }
+    layouts_compatible(A, B);
+    check_contiguous(A);
+    check_contiguous(B);
     // check for compatible shapes and strides
     if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
         // check shapes at compile time
@@ -333,19 +342,6 @@ template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T
                       "A must be square");
         static_assert(make_array(typename T1::shape_type{})[0] == make_array(typename T2::shape_type{})[0],
                       "A and B must have the same number of rows");
-
-        // check strides at compile time
-        if constexpr (make_array(typename T2::shape_type{}).size() == 1) {
-            static_assert(make_array(typename T1::strides_type{})[0] == 1 ||
-                              make_array(typename T1::strides_type{})[1] == 1,
-                          "A must be either row-major or column-major");
-        } else {
-            static_assert(
-                (make_array(typename T1::strides_type{})[0] == 1 && make_array(typename T2::strides_type{})[0] == 1) ||
-                    (make_array(typename T1::strides_type{})[1] == 1 &&
-                     make_array(typename T2::strides_type{})[1] == 1),
-                "A and B must have the same layout (both row-major or both column-major)");
-        }
     } else if (error_type::value == error_checking::enabled) {
         // check shapes at runtime
         if (A.shape()[0] != A.shape()[1]) {
@@ -353,17 +349,6 @@ template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T
         }
         if (A.shape()[0] != B.shape()[0]) {
             throw std::runtime_error("A and B must have the same number of rows");
-        }
-
-        // check strides at runtime
-        if (B.rank() == 1) {
-            if (A.strides()[0] != 1 && A.strides()[1] != 1) {
-                throw std::runtime_error("A must be either row-major or column-major");
-            }
-        } else {
-            if ((A.strides()[0] == 1 && B.strides()[0] != 1) || (A.strides()[1] == 1 && B.strides()[1] != 1)) {
-                throw std::runtime_error("A and B must have the same layout (both row-major or both column-major)");
-            }
         }
     }
 }
@@ -378,81 +363,28 @@ template <tensorial T1, tensorial T2> auto solve_compatible(const T1 &A, const T
  */
 template <tensorial T1, tensorial T2> auto solve_general_compatible(const T1 &A, const T2 &B) {
     using error_type = resulting_error_checking<T1::error_checking(), T2::error_checking()>;
-
-    // Check for rank and contiguous independently
-    if constexpr (fixed_tensor<T1>) {
-        static_assert(fixed_contiguous_tensor<T1>, "A must be contiguous");
-        static_assert(make_array(typename T1::shape_type{}).size() == 2, "A must be 2-dimensional");
-    } else if (error_type::value == error_checking::enabled) {
-        if (!A.is_contiguous()) {
-            throw std::runtime_error("A must be contiguous");
-        }
-        if (A.rank() != 2) {
-            throw std::runtime_error("A must be 2-dimensional");
-        }
-    }
-
-    if constexpr (fixed_tensor<T2>) {
-        static_assert(fixed_contiguous_tensor<T2>, "B must be contiguous");
-        static_assert(make_array(typename T2::shape_type{}).size() == 1 ||
-                          make_array(typename T2::shape_type{}).size() == 2,
-                      "B must be 1D or 2D");
-    } else if (error_type::value == error_checking::enabled) {
-        if (!B.is_contiguous()) {
-            throw std::runtime_error("B must be contiguous");
-        }
-        if (B.rank() != 1 && B.rank() != 2) {
-            throw std::runtime_error("B must be 1D or 2D");
-        }
-    }
-
-    // Check for compatible shapes and strides
+    layouts_compatible(A, B);
+    // Check for compatible shapes
     if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
         // Check shapes at compile time
-        if constexpr (make_array(typename T2::shape_type{}).size() == 1) {
-            static_assert(
-                make_array(typename T2::shape_type{})[0] >=
-                    std::max(make_array(typename T1::shape_type{})[0], make_array(typename T1::shape_type{})[1]),
-                "B must have enough elements to hold the result");
+        if constexpr (make_array(typename T1::shape_type{}).size() == 1) {
+            static_assert(make_array(typename T2::shape_type{})[0] >= make_array(typename T1::shape_type{})[0],
+                          "B must have enough rows to hold the input");
         } else {
             static_assert(
                 make_array(typename T2::shape_type{})[0] >=
                     std::max(make_array(typename T1::shape_type{})[0], make_array(typename T1::shape_type{})[1]),
                 "B must have enough rows to hold the result");
         }
-
-        // Check strides at compile time
-        if constexpr (make_array(typename T2::shape_type{}).size() == 1) {
-            static_assert(make_array(typename T1::strides_type{})[0] == 1 ||
-                              make_array(typename T1::strides_type{})[1] == 1,
-                          "A must be either row-major or column-major");
-        } else {
-            static_assert(
-                (make_array(typename T1::strides_type{})[0] == 1 && make_array(typename T2::strides_type{})[0] == 1) ||
-                    (make_array(typename T1::strides_type{})[1] == 1 &&
-                     make_array(typename T2::strides_type{})[1] == 1),
-                "A and B must have the same layout (both row-major or both column-major)");
-        }
     } else if (error_type::value == error_checking::enabled) {
         // Check shapes at runtime
-        if (B.rank() == 1) {
-            if (B.shape()[0] < std::max(A.shape()[0], A.shape()[1])) {
-                throw std::runtime_error("B must have enough elements to hold the result");
+        if (A.rank() == 1) {
+            if (B.shape()[0] < A.shape()[0]) {
+                throw std::runtime_error("B must have enough rows to hold the input");
             }
         } else {
             if (B.shape()[0] < std::max(A.shape()[0], A.shape()[1])) {
                 throw std::runtime_error("B must have enough rows to hold the result");
-            }
-        }
-
-        // Check strides at runtime
-        if (B.rank() == 1) {
-            if (A.strides()[0] != 1 && A.strides()[1] != 1) {
-                throw std::runtime_error("A must be either row-major or column-major");
-            }
-        } else {
-            if ((A.strides()[0] == 1 && B.strides()[0] != 1) || (A.strides()[1] == 1 && B.strides()[1] != 1)) {
-                throw std::runtime_error("A and B must have the same layout (both row-major or both column-major)");
             }
         }
     }

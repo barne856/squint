@@ -120,6 +120,21 @@ TEST_CASE("Tensor Construction and Basic Operations") {
         CHECK(t2(0) == 1);
         CHECK(t2(1) == 2);
     }
+
+    SUBCASE("Fixed column and row major constructors") {
+        squint::tensor<float, squint::shape<3, 2>, squint::strides::column_major<squint::shape<3, 2>>> t1{1, 2, 3,
+                                                                                                          4, 5, 6};
+        squint::tensor<float, squint::shape<3, 2>, squint::strides::row_major<squint::shape<3, 2>>> t2{1, 4, 2,
+                                                                                                       5, 3, 6};
+        CHECK(t1 == t2);
+    }
+
+    SUBCASE("Dynamic column and row major constructors") {
+        squint::tensor<float, squint::dynamic, squint::dynamic> t1({3, 2}, std::vector<float>{1, 2, 3, 4, 5, 6});
+        squint::tensor<float, squint::dynamic, squint::dynamic> t2({3, 2}, std::vector<float>{1, 4, 2, 5, 3, 6},
+                                                                   squint::layout::row_major);
+        CHECK(t1 == t2);
+    }
 }
 
 TEST_CASE("Tensor Element Access") {

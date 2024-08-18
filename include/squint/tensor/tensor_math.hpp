@@ -78,6 +78,10 @@ template <tensorial T1, tensorial T2> auto solve_general(T1 &A, T2 &B) {
     auto n = static_cast<BLAS_INT>(A.shape()[1]);
     auto nrhs = static_cast<BLAS_INT>(B.rank() == 1 ? 1 : B.shape()[1]);
 
+    // Determine transpose operations
+    CBLAS_TRANSPOSE op_a = (A.strides()[0] == 1) ? CBLAS_TRANSPOSE::CblasNoTrans : CBLAS_TRANSPOSE::CblasTrans;
+    CBLAS_TRANSPOSE op_b = (B.strides()[0] == 1) ? CBLAS_TRANSPOSE::CblasNoTrans : CBLAS_TRANSPOSE::CblasTrans;
+
     // Determine matrix layout
     int layout = (A.strides()[0] == 1) ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
 

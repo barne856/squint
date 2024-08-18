@@ -211,6 +211,11 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     if constexpr (dynamic_shape<Shape>) {
         static_assert(dynamic_shape<OtherShape>, "Invalid shape conversion");
         static_assert(dynamic_shape<OtherStrides>, "Invalid strides conversion");
+        if (ErrorChecking == error_checking::enabled) {
+            if (!implicit_convertible_shapes_vector(other.shape(), shape())) {
+                throw std::runtime_error("Invalid shape conversion");
+            }
+        }
         shape_ = other.shape();
         strides_ = other.strides();
         data_.resize(other.size());
@@ -239,7 +244,13 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *data, Shape shape, Strides strides)
     requires(dynamic_shape<Shape> && OwnershipType == ownership_type::reference)
-    : data_(data), shape_(std::move(shape)), strides_(std::move(strides)) {}
+    : data_(data), shape_(std::move(shape)), strides_(std::move(strides)) {
+    if (ErrorChecking == error_checking::enabled) {
+        if (!implicit_convertible_shapes_vector(shape, this->shape())) {
+            throw std::runtime_error("Invalid shape conversion");
+        }
+    }
+}
 
 /**
  * @brief Constructs a tensor from a pointer to data.

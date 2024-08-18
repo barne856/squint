@@ -12,6 +12,7 @@
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_op_compatibility.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <stdexcept>
@@ -33,8 +34,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
     if constexpr (fixed_shape<Shape>) {
         static_assert(implicit_convertible_shapes_v<Shape, OtherShape>, "Invalid shape conversion");
     } else if constexpr (ErrorChecking == error_checking::enabled) {
-        if (size() != other.size()) {
-            throw std::runtime_error("Cannot assign tensor with different size");
+        if (!implicit_convertible_shapes_vector(other.shape(), shape())) {
+            throw std::runtime_error("Invalid shape conversion");
         }
     }
     auto other_begin = other.begin();
@@ -55,8 +56,8 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator=(const tensor &other) -> tensor & {
     if constexpr (ErrorChecking == error_checking::enabled) {
-        if (size() != other.size()) {
-            throw std::runtime_error("Cannot assign tensor with different size");
+        if (!implicit_convertible_shapes_vector(other.shape(), shape())) {
+            throw std::runtime_error("Invalid shape conversion");
         }
     }
     auto other_begin = other.begin();
