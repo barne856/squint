@@ -108,7 +108,7 @@ if(SQUINT_BUILD_TESTS)
   add_squint_test(tensor_tests)
   add_squint_test(tensor_ops_tests)
   add_squint_test(tensor_math_tests)
-  # add_squint_test(geometry_tests)
+  add_squint_test(geometry_tests)
 endif()
 
 add_library(SQUINT::SQUINT ALIAS SQUINT)

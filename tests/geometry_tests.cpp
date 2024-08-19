@@ -1,16 +1,18 @@
-#include "squint/quantity.hpp"
+// NOLINTBEGIN
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/geometry.hpp"
-#include <cmath>
+#include "squint/quantity.hpp"
+#include "squint/tensor.hpp"
 
 using namespace squint;
+using namespace squint::geometry;
 
-auto pi = squint::constants::math_constants<float>::pi;
+auto pi = squint::math_constants<float>::pi;
 
 TEST_CASE("Translation") {
     auto matrix = mat4::eye();
-    auto translation = vec3_t<units::length>{{units::length(1.0F), units::length(2.0F), units::length(3.0F)}};
+    auto translation = vec3_t<length>{{length(1.0F), length(2.0F), length(3.0F)}};
 
     SUBCASE("Default unit length") {
         translate(matrix, translation);
@@ -20,7 +22,7 @@ TEST_CASE("Translation") {
     }
 
     SUBCASE("Custom unit length") {
-        auto unit_length = units::length(2.0F);
+        auto unit_length = length(2.0F);
         translate(matrix, translation, unit_length);
         CHECK(matrix(0, 3) == doctest::Approx(0.5F));
         CHECK(matrix(1, 3) == doctest::Approx(1.0F));
@@ -62,12 +64,12 @@ TEST_CASE("Scale") {
 }
 
 TEST_CASE("Orthographic Projection") {
-    auto left = units::length(-1.0F);
-    auto right = units::length(1.0F);
-    auto bottom = units::length(-1.0F);
-    auto top = units::length(1.0F);
-    auto near_plane = units::length(0.1F);
-    auto far_plane = units::length(100.0F);
+    auto left = length(-1.0F);
+    auto right = length(1.0F);
+    auto bottom = length(-1.0F);
+    auto top = length(1.0F);
+    auto near_plane = length(0.1F);
+    auto far_plane = length(100.0F);
 
     SUBCASE("Default unit length") {
         auto result = ortho(left, right, bottom, top, near_plane, far_plane);
@@ -81,7 +83,7 @@ TEST_CASE("Orthographic Projection") {
     }
 
     SUBCASE("Custom unit length") {
-        auto unit_length = units::length(2.0F);
+        auto unit_length = length(2.0F);
         auto result = ortho(left, right, bottom, top, near_plane, far_plane, unit_length);
         CHECK(result(0, 0) == doctest::Approx(1.0F * 2.0F));
         CHECK(result(1, 1) == doctest::Approx(1.0F * 2.0F));
@@ -95,8 +97,8 @@ TEST_CASE("Orthographic Projection") {
 TEST_CASE("Perspective Projection") {
     float fovy = static_cast<float>(pi) / 4.0F; // 45 degrees
     float aspect = 16.0F / 9.0F;
-    auto near_plane = units::length(0.1F);
-    auto far_plane = units::length(100.0F);
+    auto near_plane = length(0.1F);
+    auto far_plane = length(100.0F);
 
     SUBCASE("Default unit length") {
         auto result = perspective(fovy, aspect, near_plane, far_plane);
@@ -108,7 +110,7 @@ TEST_CASE("Perspective Projection") {
     }
 
     SUBCASE("Custom unit length") {
-        auto unit_length = units::length(2.0F);
+        auto unit_length = length(2.0F);
         auto result = perspective(fovy, aspect, near_plane, far_plane, unit_length);
         CHECK(result(0, 0) == doctest::Approx(1.3578979F).epsilon(0.0001F));
         CHECK(result(1, 1) == doctest::Approx(2.4142134F).epsilon(0.0001F));
@@ -117,3 +119,4 @@ TEST_CASE("Perspective Projection") {
         CHECK(result(3, 2) == doctest::Approx(-1.0F));
     }
 }
+// NOLINTEND
