@@ -144,9 +144,9 @@ template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
                     ++X_iter;
                 }
             } else {
-                auto X_iter = X.template subview<make_array(typename T1::shape_type{})[0],
-                                                 make_array(typename T1::shape_type{})[1]>(0, 0)
-                                  .begin();
+                auto X_view = X.template subview<make_array(typename T1::shape_type{})[0],
+                                                 make_array(typename T1::shape_type{})[1]>(0, 0);
+                auto X_iter = X_view.begin();
                 for (const auto &elem : B) {
                     if constexpr (quantitative<typename T1::value_type>) {
                         *X_iter = result_value_type(elem.value());
@@ -176,10 +176,10 @@ template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
                     ++B_copy_iter;
                 }
             } else {
-                auto B_copy_iter =
-                    B_copy
-                        .template subview<make_array(result_shape_type{})[0], make_array(result_shape_type{})[1]>(0, 0)
-                        .begin();
+                auto B_view =
+                    B_copy.template subview<make_array(result_shape_type{})[0], make_array(result_shape_type{})[1]>(0,
+                                                                                                                    0);
+                auto B_copy_iter = B_view.begin();
                 for (auto &elem : X) {
                     if constexpr (quantitative<typename T1::value_type>) {
                         elem = result_value_type((*B_copy_iter).value());
@@ -213,7 +213,8 @@ template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
         if (X.shape()[0] > B.shape()[0]) {
             // copy B into X casting dimension type
             auto start_indices = std::vector<std::size_t>(B.shape().size(), 0);
-            auto X_iter = X.subview(B.shape(), start_indices).begin();
+            auto X_view = X.subview(B.shape(), start_indices);
+            auto X_iter = X_view.begin();
             for (const auto &elem : B) {
                 if constexpr (quantitative<typename T1::value_type>) {
                     *X_iter = result_value_type(elem.value());
@@ -222,12 +223,7 @@ template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
                 }
                 ++X_iter;
             }
-            if (p == 1) {
-                auto X_view = X.subview({n}, {0, 0});
-                solve_general(A_copy, X_view);
-            } else {
-                solve_general(A_copy, X);
-            }
+            solve_general(A_copy, X);
         } else {
             // create mutable copy of B
             tensor<std::remove_const_t<typename T1::value_type>, std::vector<std::size_t>, std::vector<std::size_t>,
@@ -236,7 +232,8 @@ template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
             solve_general(A_copy, B_copy);
             // copy B into X casting dimension type
             auto start_indices = std::vector<std::size_t>(X.shape().size(), 0);
-            auto B_iter = B_copy.subview(X.shape(), start_indices).begin();
+            auto B_view = B_copy.subview(X.shape(), start_indices);
+            auto B_iter = B_view.begin();
             for (auto &elem : X) {
                 if constexpr (quantitative<typename T1::value_type>) {
                     elem = result_value_type((*B_iter).value());
