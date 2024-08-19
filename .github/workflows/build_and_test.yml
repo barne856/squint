@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         compiler: [gcc, clang, msvc]
         blas: [NONE, OpenBLAS, MKL]
         include:
@@ -29,6 +29,8 @@ jobs:
             blas: MKL
           - os: windows-latest
             blas: OpenBLAS
+          - os: windows-latest
+            compiler: clang
 
     runs-on: ${{ matrix.os }}
 
