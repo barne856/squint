@@ -421,6 +421,29 @@ template <tensorial T1, tensorial T2> auto solve_general_compatible(const T1 &A,
     }
 }
 
+/**
+ * @brief Checks if a tensor is compatible for inversion.
+ * @tparam T The tensor type.
+ * @param t The tensor to check.
+ * @throws std::runtime_error if the tensor is not square or not 2D (when error checking is enabled).
+ */
+template <tensorial T> constexpr void inversion_compatible(const T &t) {
+    if constexpr (fixed_tensor<T>) {
+        static_assert(T::shape_type::size() == 2, "Tensor must be 2D for inversion");
+        static_assert(std::get<0>(make_array(typename T::shape_type{})) ==
+                          std::get<1>(make_array(typename T::shape_type{})),
+                      "Tensor must be square for inversion");
+    } else if constexpr (T::error_checking() == error_checking::enabled) {
+        if (t.rank() != 2) {
+            throw std::runtime_error("Tensor must be 2D for inversion");
+        }
+        if (t.shape()[0] != t.shape()[1]) {
+            throw std::runtime_error("Tensor must be square for inversion");
+        }
+    }
+    check_contiguous(t);
+}
+
 } // namespace squint
 
 #endif // SQUINT_TENSOR_TENSOR_OP_COMPATIBILITY_HPP

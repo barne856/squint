@@ -173,4 +173,142 @@ TEST_CASE("solve_general()") {
     }
 }
 
+TEST_CASE("inv()") {
+    SUBCASE("2x2 matrix - column major") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto A_inv = inv(A);
+        CHECK(A_inv(0, 0) == doctest::Approx(-2.0));
+        CHECK(A_inv(0, 1) == doctest::Approx(1.5));
+        CHECK(A_inv(1, 0) == doctest::Approx(1.0));
+        CHECK(A_inv(1, 1) == doctest::Approx(-0.5));
+    }
+
+    SUBCASE("2x2 matrix - row major") {
+        tensor<double, shape<2, 2>, strides::row_major<shape<2, 2>>> A{{1.0, 3.0, 2.0, 4.0}};
+        auto A_inv = inv(A);
+        CHECK(A_inv(0, 0) == doctest::Approx(-2.0));
+        CHECK(A_inv(0, 1) == doctest::Approx(1.5));
+        CHECK(A_inv(1, 0) == doctest::Approx(1.0));
+        CHECK(A_inv(1, 1) == doctest::Approx(-0.5));
+    }
+
+    SUBCASE("3x3 matrix - column major") {
+        tensor<float, shape<3, 3>> A{{1.0f, 2.0f, 3.0f, 0.0f, 1.0f, 4.0f, 5.0f, 6.0f, 0.0f}};
+        auto A_inv = inv(A);
+        CHECK(A_inv(0, 0) == doctest::Approx(-24.0f));
+        CHECK(A_inv(0, 1) == doctest::Approx(20.0f));
+        CHECK(A_inv(0, 2) == doctest::Approx(-5.0f));
+        CHECK(A_inv(1, 0) == doctest::Approx(18.0f));
+        CHECK(A_inv(1, 1) == doctest::Approx(-15.0f));
+        CHECK(A_inv(1, 2) == doctest::Approx(4.0f));
+        CHECK(A_inv(2, 0) == doctest::Approx(5.0f));
+        CHECK(A_inv(2, 1) == doctest::Approx(-4.0f));
+        CHECK(A_inv(2, 2) == doctest::Approx(1.0f));
+    }
+
+    SUBCASE("3x3 matrix - row major") {
+        tensor<float, shape<3, 3>, strides::row_major<shape<3, 3>>> A{
+            {1.0f, 0.0f, 5.0f, 2.0f, 1.0f, 6.0f, 3.0f, 4.0f, 0.0f}};
+        auto A_inv = inv(A);
+        CHECK(A_inv(0, 0) == doctest::Approx(-24.0f));
+        CHECK(A_inv(0, 1) == doctest::Approx(20.0f));
+        CHECK(A_inv(0, 2) == doctest::Approx(-5.0f));
+        CHECK(A_inv(1, 0) == doctest::Approx(18.0f));
+        CHECK(A_inv(1, 1) == doctest::Approx(-15.0f));
+        CHECK(A_inv(1, 2) == doctest::Approx(4.0f));
+        CHECK(A_inv(2, 0) == doctest::Approx(5.0f));
+        CHECK(A_inv(2, 1) == doctest::Approx(-4.0f));
+        CHECK(A_inv(2, 2) == doctest::Approx(1.0f));
+    }
+
+    SUBCASE("Singular matrix - should throw") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 2.0, 4.0}};
+        CHECK_THROWS_AS(inv(A), std::runtime_error);
+    }
+
+    SUBCASE("Identity matrix") {
+        tensor<double, shape<3, 3>> I{{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};
+        auto I_inv = inv(I);
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                CHECK(I_inv(i, j) == doctest::Approx(I(i, j)));
+            }
+        }
+    }
+
+    SUBCASE("Inverting a transpose view") {
+        tensor<double, shape<2, 2>> A{{1, 3, 2, 4}};
+        auto A_T = A.transpose();
+        auto A_T_inv = inv(A_T);
+        CHECK(A_T_inv(0, 0) == doctest::Approx(-2.0));
+        CHECK(A_T_inv(0, 1) == doctest::Approx(1.5));
+        CHECK(A_T_inv(1, 0) == doctest::Approx(1.0));
+        CHECK(A_T_inv(1, 1) == doctest::Approx(-0.5));
+    }
+}
+
+TEST_CASE("pinv()") {
+    SUBCASE("Square invertible matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto A_pinv = pinv(A);
+        auto I = A * A_pinv;
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                if (i == j) {
+                    CHECK(I(i, j) == doctest::Approx(1.0).epsilon(1e-6));
+                } else {
+                    CHECK(I(i, j) == doctest::Approx(0.0).epsilon(1e-6));
+                }
+            }
+        }
+    }
+
+    SUBCASE("Square non-invertible matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 2.0, 4.0}};
+        CHECK_THROWS_AS(pinv(A), std::runtime_error);
+    }
+
+    SUBCASE("Overdetermined system") {
+        tensor<float, shape<3, 2>> A{{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f}};
+        auto A_pinv = pinv(A);
+        auto AAA = A * A_pinv * A;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                CHECK(AAA(i, j) == doctest::Approx(A(i, j)).epsilon(1e-5));
+            }
+        }
+    }
+
+    SUBCASE("Underdetermined system") {
+        tensor<double, shape<2, 3>> A{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        auto A_pinv = pinv(A);
+        auto AAA = A * A_pinv * A;
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                CHECK(AAA(i, j) == doctest::Approx(A(i, j)).epsilon(1e-6));
+            }
+        }
+    }
+
+    SUBCASE("Row-major layout") {
+        tensor<double, shape<2, 3>, strides::row_major<shape<2, 3>>> A{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        auto A_pinv = pinv(A);
+        auto AAA = A * A_pinv * A;
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                CHECK(AAA(i, j) == doctest::Approx(A(i, j)).epsilon(1e-6));
+            }
+        }
+    }
+
+    SUBCASE("1D vector") {
+        tensor<double, shape<3>> v{1.0, 2.0, 3.0};
+        auto v_pinv = pinv(v);
+        auto vvv = v * v_pinv * v;
+        for (int i = 0; i < 3; ++i) {
+            CHECK(vvv(i) == doctest::Approx(v(i)).epsilon(1e-6));
+        }
+    }
+}
+
 // NOLINTEND

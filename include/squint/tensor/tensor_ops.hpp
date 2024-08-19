@@ -68,17 +68,24 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
         result_type result{};
         if constexpr (std::is_same_v<blas_type, float>) {
             // NOLINTBEGIN
-            cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                        reinterpret_cast<float *>(const_cast<typename Tensor1::value_type *>(t1.data())), lda,
-                        reinterpret_cast<float *>(const_cast<typename Tensor2::value_type *>(t2.data())), ldb, beta,
-                        reinterpret_cast<float *>(result.data()), ldc);
+            cblas_sgemm(
+                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                lda,
+                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                ldb, beta, reinterpret_cast<float *>(result.data()), ldc);
             // NOLINTEND
         } else if constexpr (std::is_same_v<blas_type, double>) {
             // NOLINTBEGIN
-            cblas_dgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                        reinterpret_cast<double *>(const_cast<typename Tensor1::value_type *>(t1.data())), lda,
-                        reinterpret_cast<double *>(const_cast<typename Tensor2::value_type *>(t2.data())), ldb, beta,
-                        reinterpret_cast<double *>(result.data()), ldc);
+            cblas_dgemm(
+                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                lda,
+                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                ldb, beta,
+                reinterpret_cast<double *>(
+                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                ldc);
             // NOLINTEND
         }
         return result;
@@ -89,17 +96,27 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
         result_type result({static_cast<std::size_t>(m), static_cast<std::size_t>(n)}, layout::column_major);
         if constexpr (std::is_same_v<blas_type, float>) {
             // NOLINTBEGIN
-            cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                        reinterpret_cast<float *>(const_cast<typename Tensor1::value_type *>(t1.data())), lda,
-                        reinterpret_cast<float *>(const_cast<typename Tensor2::value_type *>(t2.data())), ldb, beta,
-                        reinterpret_cast<float *>(result.data()), ldc);
+            cblas_sgemm(
+                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                lda,
+                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                ldb, beta,
+                reinterpret_cast<float *>(
+                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                ldc);
             // NOLINTEND
         } else if constexpr (std::is_same_v<blas_type, double>) {
             // NOLINTBEGIN
-            cblas_dgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                        reinterpret_cast<double *>(const_cast<typename Tensor1::value_type *>(t1.data())), lda,
-                        reinterpret_cast<double *>(const_cast<typename Tensor2::value_type *>(t2.data())), ldb, beta,
-                        reinterpret_cast<double *>(result.data()), ldc);
+            cblas_dgemm(
+                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                lda,
+                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                ldb, beta,
+                reinterpret_cast<double *>(
+                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                ldc);
             // NOLINTEND
         }
         return result;

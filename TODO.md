@@ -1,6 +1,5 @@
 
 math (
-    inv,
     pinv,
 
     cross,
