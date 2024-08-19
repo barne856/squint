@@ -311,4 +311,159 @@ TEST_CASE("pinv()") {
     }
 }
 
+TEST_CASE("cross()") {
+    SUBCASE("3D vectors") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        tensor<double, shape<3>> b{4.0, 5.0, 6.0};
+        auto c = cross(a, b);
+        CHECK(c(0) == doctest::Approx(-3.0));
+        CHECK(c(1) == doctest::Approx(6.0));
+        CHECK(c(2) == doctest::Approx(-3.0));
+    }
+
+    SUBCASE("Invalid dimensions") {
+        tensor<double, shape<2>> a{1.0, 2.0};
+        tensor<double, shape<2>> b{3.0, 4.0};
+    }
+}
+
+TEST_CASE("dot()") {
+    SUBCASE("1D vectors") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        tensor<double, shape<3>> b{4.0, 5.0, 6.0};
+        auto result = dot(a, b);
+        CHECK(result == doctest::Approx(32.0));
+    }
+
+    SUBCASE("Invalid dimensions") {
+        tensor<double, shape<2>> a{1.0, 2.0};
+        tensor<double, shape<3>> b{3.0, 4.0, 5.0};
+    }
+}
+
+TEST_CASE("trace()") {
+    SUBCASE("2x2 matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = trace(A);
+        CHECK(result == doctest::Approx(5.0));
+    }
+
+    SUBCASE("3x3 matrix") {
+        tensor<double, shape<3, 3>> A{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}};
+        auto result = trace(A);
+        CHECK(result == doctest::Approx(15.0));
+    }
+}
+
+TEST_CASE("norm()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<3>> a{3.0, 4.0, 0.0};
+        auto result = norm(a);
+        CHECK(result == doctest::Approx(5.0));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = norm(A);
+        CHECK(result == doctest::Approx(5.477225575));
+    }
+}
+
+TEST_CASE("squared_norm()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        auto result = squared_norm(a);
+        CHECK(result == doctest::Approx(14.0));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = squared_norm(A);
+        CHECK(result == doctest::Approx(30.0));
+    }
+}
+
+TEST_CASE("mean()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<4>> a{1.0, 2.0, 3.0, 4.0};
+        auto result = mean(a);
+        CHECK(result == doctest::Approx(2.5));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = mean(A);
+        CHECK(result == doctest::Approx(2.5));
+    }
+}
+
+TEST_CASE("sum()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        auto result = sum(a);
+        CHECK(result == doctest::Approx(6.0));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = sum(A);
+        CHECK(result == doctest::Approx(10.0));
+    }
+}
+
+TEST_CASE("min()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<4>> a{4.0, 2.0, 1.0, 3.0};
+        auto result = min(a);
+        CHECK(result == doctest::Approx(1.0));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{4.0, 2.0, 1.0, 3.0}};
+        auto result = min(A);
+        CHECK(result == doctest::Approx(1.0));
+    }
+}
+
+TEST_CASE("max()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<4>> a{4.0, 2.0, 1.0, 3.0};
+        auto result = max(a);
+        CHECK(result == doctest::Approx(4.0));
+    }
+
+    SUBCASE("2D matrix") {
+        tensor<double, shape<2, 2>> A{{4.0, 2.0, 1.0, 3.0}};
+        auto result = max(A);
+        CHECK(result == doctest::Approx(4.0));
+    }
+}
+
+TEST_CASE("approx_equal()") {
+    SUBCASE("Equal tensors") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        tensor<double, shape<2, 2>> B{{1.0, 2.0, 3.0, 4.0}};
+        CHECK(approx_equal(A, B));
+    }
+
+    SUBCASE("Almost equal tensors") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        tensor<double, shape<2, 2>> B{{1.0000001, 2.0, 3.0, 3.9999999}};
+        CHECK(approx_equal(A, B, 1e-6));
+    }
+
+    SUBCASE("Different tensors") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        tensor<double, shape<2, 2>> B{{1.0, 2.0, 3.0, 5.0}};
+        CHECK_FALSE(approx_equal(A, B));
+    }
+
+    SUBCASE("Different shapes") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        tensor<double, shape<3>> B{1.0, 2.0, 3.0};
+        // should not compile
+        // approx_equal(A, B);
+    }
+}
+
 // NOLINTEND

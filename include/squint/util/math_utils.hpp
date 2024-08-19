@@ -10,6 +10,7 @@
 #define SQUINT_UTIL_MATH_UTILS_HPP
 
 #include "squint/core/concepts.hpp"
+#include <cassert>
 #include <cmath>
 #include <limits>
 

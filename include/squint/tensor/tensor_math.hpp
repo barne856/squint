@@ -9,15 +9,20 @@
 #define SQUINT_TENSOR_TENSOR_MATH_HPP
 
 #include "squint/core/concepts.hpp"
+#include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
+#include "squint/util/math_utils.hpp"
 #include "squint/util/sequence_utils.hpp"
 
+#include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace squint {
@@ -230,6 +235,200 @@ template <dynamic_tensor T> auto pinv(const T &A) {
     // Underdetermined system: pinv(A) = A^T * (A * A^T)^-1
     auto AAt = A * A.transpose();
     return A.transpose() * inv(AAt);
+}
+
+/**
+ * @brief Computes the cross product of two 3D vectors.
+ * @param a The first vector.
+ * @param b The second vector.
+ * @return The cross product of a and b.
+ * @throws std::invalid_argument if the vectors are not 3D.
+ */
+template <tensorial T1, tensorial T2> auto cross(const T1 &a, const T2 &b) {
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 &&
+                          std::get<0>(make_array(typename T1::shape_type{})) == 3 &&
+                          std::get<0>(make_array(typename T2::shape_type{})) == 3,
+                      "Cross product is only defined for 3D vectors");
+    } else if constexpr (T1::error_checking() == error_checking::enabled ||
+                         T2::error_checking() == error_checking::enabled) {
+        if (a.rank() != 1 || b.rank() != 1 || a.shape()[0] != 3 || b.shape()[0] != 3) {
+            throw std::invalid_argument("Cross product is only defined for 3D vectors");
+        }
+    }
+
+    using result_type = std::common_type_t<typename T1::value_type, typename T2::value_type>;
+    tensor<result_type, std::index_sequence<3>> result;
+
+    result[0] = a[1] * b[2] - a[2] * b[1];
+    result[1] = a[2] * b[0] - a[0] * b[2];
+    result[2] = a[0] * b[1] - a[1] * b[0];
+
+    return result;
+}
+
+/**
+ * @brief Computes the dot product of two vectors.
+ * @param a The first vector.
+ * @param b The second vector.
+ * @return The dot product of a and b.
+ * @throws std::invalid_argument if the vectors have different sizes.
+ */
+template <tensorial T1, tensorial T2> auto dot(const T1 &a, const T2 &b) {
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 &&
+                          std::get<0>(make_array(typename T1::shape_type{})) ==
+                              std::get<0>(make_array(typename T2::shape_type{})),
+                      "Dot product requires vectors of the same size");
+    } else if constexpr (T1::error_checking() == error_checking::enabled ||
+                         T2::error_checking() == error_checking::enabled) {
+        if (a.rank() != 1 || b.rank() != 1 || a.shape()[0] != b.shape()[0]) {
+            throw std::invalid_argument("Dot product requires vectors of the same size");
+        }
+    }
+
+    using result_type = std::common_type_t<typename T1::value_type, typename T2::value_type>;
+    result_type result = 0;
+
+    for (size_t i = 0; i < a.shape()[0]; ++i) {
+        result += a[i] * b[i];
+    }
+
+    return result;
+}
+
+/**
+ * @brief Computes the trace of a square matrix.
+ * @param a The input matrix.
+ * @return The trace of the matrix.
+ * @throws std::invalid_argument if the matrix is not square.
+ */
+template <tensorial T> auto trace(const T &a) {
+    if constexpr (fixed_tensor<T>) {
+        static_assert(T::shape_type::size() == 2 && std::get<0>(make_array(typename T::shape_type{})) ==
+                                                        std::get<1>(make_array(typename T::shape_type{})),
+                      "Trace is only defined for square matrices");
+    } else if constexpr (T::error_checking() == error_checking::enabled) {
+        if (a.rank() != 2 || a.shape()[0] != a.shape()[1]) {
+            throw std::invalid_argument("Trace is only defined for square matrices");
+        }
+    }
+
+    typename T::value_type result = 0;
+
+    for (size_t i = 0; i < a.shape()[0]; ++i) {
+        result += a(i, i);
+    }
+
+    return result;
+}
+
+/**
+ * @brief Computes the Euclidean norm (L2 norm) of a vector.
+ * @param a The input vector.
+ * @return The Euclidean norm of the vector.
+ */
+template <tensorial T> auto norm(const T &a) {
+    using value_type = typename T::value_type;
+    if constexpr (quantitative<value_type>) {
+        return sqrt(squared_norm(a));
+    } else {
+        return std::sqrt(squared_norm(a));
+    }
+}
+
+/**
+ * @brief Computes the squared Euclidean norm of a vector.
+ * @param a The input vector.
+ * @return The squared Euclidean norm of the vector.
+ */
+template <tensorial T> auto squared_norm(const T &a) {
+    using value_type = typename T::value_type;
+    using result_type =
+        std::conditional_t<quantitative<value_type>, decltype(std::declval<value_type>() * std::declval<value_type>()),
+                           value_type>;
+    result_type result = result_type();
+
+    for (const auto &val : a) {
+        if constexpr (quantitative<value_type>) {
+            result += pow<2>(val);
+        } else {
+            result += val * val;
+        }
+    }
+
+    return result;
+}
+
+/**
+ * @brief Computes the mean of all elements in the tensor.
+ * @param a The input tensor.
+ * @return The mean value of all elements.
+ */
+template <tensorial T> auto mean(const T &a) {
+    typename T::value_type sum = 0;
+    size_t count = 0;
+
+    for (const auto &val : a) {
+        sum += val;
+        ++count;
+    }
+
+    return sum / count;
+}
+
+/**
+ * @brief Computes the sum of all elements in the tensor.
+ * @param a The input tensor.
+ * @return The sum of all elements.
+ */
+template <tensorial T> auto sum(const T &a) { return std::accumulate(a.begin(), a.end(), typename T::value_type(0)); }
+
+/**
+ * @brief Finds the minimum element in the tensor.
+ * @param a The input tensor.
+ * @return The minimum element.
+ */
+template <tensorial T> auto min(const T &a) { return *std::min_element(a.begin(), a.end()); }
+
+/**
+ * @brief Finds the maximum element in the tensor.
+ * @param a The input tensor.
+ * @return The maximum element.
+ */
+template <tensorial T> auto max(const T &a) { return *std::max_element(a.begin(), a.end()); }
+
+/**
+ * @brief Checks if two tensors are approximately equal within a given tolerance.
+ * @param a The first tensor.
+ * @param b The second tensor.
+ * @param tol The tolerance for comparison (default is machine epsilon).
+ * @return True if the tensors are approximately equal, false otherwise.
+ */
+template <tensorial T1, tensorial T2>
+auto approx_equal(
+    const T1 &a, const T2 &b,
+    typename std::common_type_t<typename T1::value_type, typename T2::value_type> tol =
+        std::numeric_limits<typename std::common_type_t<typename T1::value_type, typename T2::value_type>>::epsilon())
+    -> bool {
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        static_assert(T1::shape_type::size() == T2::shape_type::size(),
+                      "Approximate equality requires tensors of the same shape");
+        static_assert(make_array(typename T1::shape_type{}) == make_array(typename T2::shape_type{}),
+                      "Approximate equality requires tensors of the same shape");
+    } else {
+        if (a.shape() != b.shape()) {
+            return false;
+        }
+    }
+
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (!squint::approx_equal(a.data()[i], b.data()[i], tol)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace squint
