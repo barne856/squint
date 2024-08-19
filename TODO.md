@@ -1,7 +1,5 @@
 
 math (
-    pinv,
-
     cross,
     dot,
     trace,
