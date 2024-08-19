@@ -232,6 +232,94 @@ TEST_CASE("Matrix multiplication") {
     }
 }
 
+TEST_CASE("General matrix division") {
+    SUBCASE("Fixed shape tensors square system") {
+        tensor<float, shape<2, 2>> a({1, 3, 2, 4});
+        tensor<float, shape<2, 2>> b({5, 11, 10, 22});
+        auto c = b / a;
+        CHECK(c == tensor<float, shape<2, 2>>({1, 2, 2, 4}));
+    }
+
+    SUBCASE("Fixed shape tensors overdetermined system 1D") {
+        tensor<double, shape<3, 2>> a{{1.0, 3.0, 5.0, 2.0, 4.0, 6.0}};
+        tensor<double, shape<3>> b{14.0, 32.0, 50.0};
+        auto c = b / a;
+        CHECK(c(0) == doctest::Approx(4.0).epsilon(1e-6));
+        CHECK(c(1) == doctest::Approx(5.0).epsilon(1e-6));
+    }
+
+    SUBCASE("Fixed shape tensors overdetermined system 2D") {
+        tensor<float, shape<3, 2>> a{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        tensor<float, shape<3, 2>> b{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        auto c = b / a;
+        CHECK(c == tensor<float, shape<2, 2>>({1, 0, 0, 1}));
+    }
+
+    SUBCASE("Fixed shape tensors underdetermined system 1D") {
+        tensor<float, shape<2, 3>> a{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        tensor<float, shape<2>> b{14.0, 32.0};
+        auto c = b / a;
+        CHECK(c(0) == doctest::Approx(16).epsilon(1e-4));
+        CHECK(c(1) == doctest::Approx(6).epsilon(1e-4));
+        CHECK(c(2) == doctest::Approx(-4).epsilon(1e-4));
+    }
+
+    SUBCASE("Fixed shape tensors underdetermined system 2D") {
+        tensor<double, shape<2, 3>> a{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
+        tensor<double, shape<2, 2>> b{{14.0, 28.0, 32.0, 64.0}};
+        auto c = b / a;
+        CHECK(c(0, 0) == doctest::Approx(11.6666).epsilon(1e-3));
+        CHECK(c(1, 0) == doctest::Approx(4.6666).epsilon(1e-3));
+        CHECK(c(2, 0) == doctest::Approx(-2.3333).epsilon(1e-3));
+        CHECK(c(0, 1) == doctest::Approx(26.6666).epsilon(1e-3));
+        CHECK(c(1, 1) == doctest::Approx(10.6666).epsilon(1e-3));
+        CHECK(c(2, 1) == doctest::Approx(-5.3333).epsilon(1e-3));
+    }
+
+    SUBCASE("Dynamic shape tensors  square system") {
+        tensor<float, dynamic, dynamic> a({2, 2}, std::vector<float>{1, 3, 2, 4});
+        tensor<float, dynamic, dynamic> b({2, 2}, std::vector<float>{5, 11, 10, 22});
+        auto c = b / a;
+        CHECK(c == tensor<float, dynamic, dynamic>({2, 2}, std::vector<float>{1, 2, 2, 4}));
+    }
+
+    SUBCASE("Dynamic shape tensors overdetermined system 1D") {
+        tensor<double, dynamic, dynamic> a({3, 2}, std::vector<double>{1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
+        tensor<double, dynamic, dynamic> b({3}, std::vector<double>{14.0, 32.0, 50.0});
+        auto c = b / a;
+        CHECK(c(0) == doctest::Approx(4.0).epsilon(1e-6));
+        CHECK(c(1) == doctest::Approx(5.0).epsilon(1e-6));
+    }
+
+    SUBCASE("Dynamic shape tensors overdetermined system 2D") {
+        tensor<float, dynamic, dynamic> a({3, 2}, std::vector<float>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+        tensor<float, dynamic, dynamic> b({3, 2}, std::vector<float>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+        auto c = b / a;
+        CHECK(c == tensor<float, dynamic, dynamic>({2, 2}, std::vector<float>{1, 0, 0, 1}));
+    }
+
+    SUBCASE("Dynamic shape tensors underdetermined system 1D") {
+        tensor<float, dynamic, dynamic> a({2, 3}, std::vector<float>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+        tensor<float, dynamic, dynamic> b({2}, std::vector<float>{14.0, 32.0});
+        auto c = b / a;
+        CHECK(c(0) == doctest::Approx(16).epsilon(1e-4));
+        CHECK(c(1) == doctest::Approx(6).epsilon(1e-4));
+        CHECK(c(2) == doctest::Approx(-4).epsilon(1e-4));
+    }
+
+    SUBCASE("Dynamic shape tensors underdetermined system 2D") {
+        tensor<double, dynamic, dynamic> a({2, 3}, std::vector<double>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+        tensor<double, dynamic, dynamic> b({2, 2}, std::vector<double>{14.0, 28.0, 32.0, 64.0});
+        auto c = b / a;
+        CHECK(c(0, 0) == doctest::Approx(11.6666).epsilon(1e-3));
+        CHECK(c(1, 0) == doctest::Approx(4.6666).epsilon(1e-3));
+        CHECK(c(2, 0) == doctest::Approx(-2.3333).epsilon(1e-3));
+        CHECK(c(0, 1) == doctest::Approx(26.6666).epsilon(1e-3));
+        CHECK(c(1, 1) == doctest::Approx(10.6666).epsilon(1e-3));
+        CHECK(c(2, 1) == doctest::Approx(-5.3333).epsilon(1e-3));
+    }
+}
+
 TEST_CASE("Tensor Ops Type Deduction") {
     auto a = tensor<length, shape<2, 3>>::arange(length(1.0f), length(1.0f));
     auto b = tensor<length, shape<3, 2>>::arange(length(4.0f), length(1.0f));

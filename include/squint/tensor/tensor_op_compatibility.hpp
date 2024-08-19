@@ -270,6 +270,39 @@ template <typename Sequence1, typename Sequence2> struct matrix_multiply_sequenc
 template <typename Sequence1, typename Sequence2>
 using matrix_multiply_sequence_t = typename matrix_multiply_sequence<Sequence1, Sequence2>::type;
 
+template <typename SequenceB, typename SequenceA> struct matrix_division_sequence {
+    static_assert(fixed_shape<SequenceB> || dynamic_shape<SequenceB>,
+                  "SequenceB must satisfy fixed_shape or dynamic_shape concept");
+    static_assert(fixed_shape<SequenceA> || dynamic_shape<SequenceA>,
+                  "SequenceA must satisfy fixed_shape or dynamic_shape concept");
+
+    template <typename B, typename A> static auto helper() {
+        if constexpr (fixed_shape<B> && fixed_shape<A>) {
+            constexpr auto shape_b = make_array(B{});
+            constexpr auto shape_a = make_array(A{});
+
+            constexpr auto m = shape_a[0];
+            constexpr auto n = shape_a.size() == 1 ? 1 : shape_a[1];
+            constexpr auto p = shape_b.size() == 1 ? 1 : shape_b[1];
+
+            static_assert(shape_b[0] == m, "Incompatible shapes for matrix division");
+
+            if constexpr (p == 1) {
+                return std::index_sequence<n>{};
+            } else {
+                return std::index_sequence<n, p>{};
+            }
+        } else {
+            return std::vector<std::size_t>{}; // Placeholder, actual computation done at runtime
+        }
+    }
+
+    using type = decltype(helper<SequenceB, SequenceA>());
+};
+
+template <typename SequenceB, typename SequenceA>
+using matrix_division_sequence_t = typename matrix_division_sequence<SequenceB, SequenceA>::type;
+
 /**
  * @brief Computes the leading dimension for BLAS operations.
  * @tparam Tensor1 Tensor type.

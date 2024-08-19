@@ -1,6 +1,5 @@
 
 math (
-    solve_general,
     inv,
     pinv,
 

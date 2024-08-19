@@ -11,6 +11,7 @@
 #include "squint/core/concepts.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
+
 #include <stdexcept>
 #include <string>
 #include <type_traits>

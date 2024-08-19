@@ -14,7 +14,9 @@
 #include "squint/core/memory.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor.hpp"
+#include "squint/tensor/tensor_math.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
+
 #include <cstddef>
 #include <type_traits>
 #include <utility>
@@ -103,6 +105,151 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
         return result;
     }
 }
+
+// NOLINTBEGIN
+template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
+    using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
+    using result_value_type =
+        decltype(std::declval<typename T1::value_type>() / std::declval<typename T2::value_type>());
+    using result_error_checking = resulting_error_checking<T1::error_checking(), T2::error_checking()>;
+    using result_shape_type = matrix_division_sequence_t<typename T1::shape_type, typename T2::shape_type>;
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        using strides_type = strides::column_major<result_shape_type>;
+        using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
+                                   ownership_type::owner, memory_space::host>;
+        result_type X{};
+        // Create mutable dimensionless copy of A
+        tensor<blas_type, typename T2::shape_type, strides::column_major<typename T2::shape_type>, T2::error_checking(),
+               ownership_type::owner, memory_space::host>
+            A_copy;
+        auto A_copy_iter = A_copy.begin();
+        for (const auto &elem : A) {
+            if constexpr (quantitative<typename T2::value_type>) {
+                *A_copy_iter = elem.value();
+            } else {
+                *A_copy_iter = elem;
+            }
+            ++A_copy_iter;
+        }
+        if constexpr (make_array(result_shape_type{})[0] > make_array(typename T1::shape_type{})[0]) {
+            // copy B into X casting dimension type
+            if constexpr (make_array(result_shape_type{}).size() == 1) {
+                auto X_iter = X.begin();
+                for (const auto &elem : B) {
+                    if constexpr (quantitative<typename T1::value_type>) {
+                        *X_iter = result_value_type(elem.value());
+                    } else {
+                        *X_iter = result_value_type(elem);
+                    }
+                    ++X_iter;
+                }
+            } else {
+                auto X_iter = X.template subview<make_array(typename T1::shape_type{})[0],
+                                                 make_array(typename T1::shape_type{})[1]>(0, 0)
+                                  .begin();
+                for (const auto &elem : B) {
+                    if constexpr (quantitative<typename T1::value_type>) {
+                        *X_iter = result_value_type(elem.value());
+                    } else {
+                        *X_iter = result_value_type(elem);
+                    }
+                    ++X_iter;
+                }
+            }
+            solve_general(A_copy, X);
+        } else {
+            // create mutable copy of B
+            tensor<std::remove_const_t<typename T1::value_type>, typename T1::shape_type,
+                   strides::column_major<typename T1::shape_type>, T1::error_checking(), ownership_type::owner,
+                   memory_space::host>
+                B_copy{B};
+            solve_general(A_copy, B_copy);
+            // copy B into X casting dimension type
+            if constexpr (make_array(result_shape_type{}).size() == 1) {
+                auto B_copy_iter = B_copy.begin();
+                for (auto &elem : X) {
+                    if constexpr (quantitative<typename T1::value_type>) {
+                        elem = result_value_type((*B_copy_iter).value());
+                    } else {
+                        elem = result_value_type(*B_copy_iter);
+                    }
+                    ++B_copy_iter;
+                }
+            } else {
+                auto B_copy_iter =
+                    B_copy
+                        .template subview<make_array(result_shape_type{})[0], make_array(result_shape_type{})[1]>(0, 0)
+                        .begin();
+                for (auto &elem : X) {
+                    if constexpr (quantitative<typename T1::value_type>) {
+                        elem = result_value_type((*B_copy_iter).value());
+                    } else {
+                        elem = result_value_type(*B_copy_iter);
+                    }
+                    ++B_copy_iter;
+                }
+            }
+        }
+        return X;
+    } else {
+        using result_type = tensor<result_value_type, result_shape_type, std::vector<std::size_t>,
+                                   result_error_checking::value, ownership_type::owner, memory_space::host>;
+        auto n = A.shape().size() == 1 ? 1 : A.shape()[1];
+        auto p = B.shape().size() == 1 ? 1 : B.shape()[1];
+        result_type X({n, p}, layout::column_major);
+        // Create mutable dimensionless copy of A
+        tensor<blas_type, std::vector<std::size_t>, std::vector<std::size_t>, T2::error_checking(),
+               ownership_type::owner, memory_space::host>
+            A_copy(A.shape());
+        auto A_copy_iter = A_copy.begin();
+        for (const auto &elem : A) {
+            if constexpr (quantitative<typename T2::value_type>) {
+                *A_copy_iter = elem.value();
+            } else {
+                *A_copy_iter = elem;
+            }
+            ++A_copy_iter;
+        }
+        if (X.shape()[0] > B.shape()[0]) {
+            // copy B into X casting dimension type
+            auto start_indices = std::vector<std::size_t>(B.shape().size(), 0);
+            auto X_iter = X.subview(B.shape(), start_indices).begin();
+            for (const auto &elem : B) {
+                if constexpr (quantitative<typename T1::value_type>) {
+                    *X_iter = result_value_type(elem.value());
+                } else {
+                    *X_iter = result_value_type(elem);
+                }
+                ++X_iter;
+            }
+            if (p == 1) {
+                auto X_view = X.subview({n}, {0, 0});
+                solve_general(A_copy, X_view);
+            } else {
+                solve_general(A_copy, X);
+            }
+        } else {
+            // create mutable copy of B
+            tensor<std::remove_const_t<typename T1::value_type>, std::vector<std::size_t>, std::vector<std::size_t>,
+                   T1::error_checking(), ownership_type::owner, memory_space::host>
+                B_copy{B};
+            solve_general(A_copy, B_copy);
+            // copy B into X casting dimension type
+            auto start_indices = std::vector<std::size_t>(X.shape().size(), 0);
+            auto B_iter = B_copy.subview(X.shape(), start_indices).begin();
+            for (auto &elem : X) {
+                if constexpr (quantitative<typename T1::value_type>) {
+                    elem = result_value_type((*B_iter).value());
+                } else {
+                    elem = result_value_type(*B_iter);
+                }
+                ++B_iter;
+            }
+        }
+        return X;
+    }
+}
+// NOLINTEND
 
 } // namespace squint
 
