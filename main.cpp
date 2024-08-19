@@ -3,8 +3,25 @@
 using namespace squint;
 
 auto main() -> int {
-    auto a = ndarr<5, 4, 6>::arange(1, 1);
-    ndarr<5, 24> b = a.reshape<5, 24>();
-    ndarr<24, 5> b_t = b.transpose();
-    std::cout << b_t.reshape<4, 30>() << std::endl;
+    // Create two 4D tensors
+    auto A = tens({3, 2, 2, 3});
+    auto B = tens({3, 2, 2, 3});
+
+    // Fill tensors with values
+    auto A_flat = A.flatten();
+    auto B_flat = B.flatten();
+    for (size_t i = 0; i < 36; ++i) {
+        A_flat[i] = static_cast<float>(i);
+        B_flat[i] = static_cast<float>(i + 36);
+    }
+
+    std::cout << "Tensor A:" << std::endl << A << std::endl;
+    std::cout << "Tensor B:" << std::endl << B << std::endl;
+
+    // Perform contraction
+    auto C = squint::contract(A, B, {{1, 2}, {2, 1}});
+
+    std::cout << "Result:" << std::endl << C << std::endl;
+
+    return 0;
 }
