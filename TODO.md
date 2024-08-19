@@ -12,4 +12,4 @@ math (
     approx_equal
     )
 
-tensor_ops (/, tensor_contration [*])
+tensor_ops - tensor_contration (*)
