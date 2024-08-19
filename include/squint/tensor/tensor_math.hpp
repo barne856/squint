@@ -9,7 +9,6 @@
 #define SQUINT_TENSOR_TENSOR_MATH_HPP
 
 #include "squint/core/concepts.hpp"
-#include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor.hpp"
