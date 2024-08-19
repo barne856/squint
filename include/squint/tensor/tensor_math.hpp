@@ -11,6 +11,7 @@
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
+#include "squint/quantity/quantity_math.hpp"
 #include "squint/tensor/blas_backend.hpp"
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"

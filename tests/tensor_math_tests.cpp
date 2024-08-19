@@ -1,6 +1,8 @@
 // NOLINTBEGIN
+#include "squint/quantity/quantity_types.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
+#include "squint/quantity.hpp"
 #include "squint/tensor.hpp"
 
 using namespace squint;
@@ -357,9 +359,9 @@ TEST_CASE("trace()") {
 
 TEST_CASE("norm()") {
     SUBCASE("1D vector") {
-        tensor<double, shape<3>> a{3.0, 4.0, 0.0};
+        tensor<length, shape<3>> a{length(3.0), length(4.0), length(0.0)};
         auto result = norm(a);
-        CHECK(result == doctest::Approx(5.0));
+        CHECK(result.value() == doctest::Approx(5.0));
     }
 
     SUBCASE("2D matrix") {
@@ -371,9 +373,9 @@ TEST_CASE("norm()") {
 
 TEST_CASE("squared_norm()") {
     SUBCASE("1D vector") {
-        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        tensor<length, shape<3>> a{length(1.0), length(2.0), length(3.0)};
         auto result = squared_norm(a);
-        CHECK(result == doctest::Approx(14.0));
+        CHECK(result.value() == doctest::Approx(14.0));
     }
 
     SUBCASE("2D matrix") {
