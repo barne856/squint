@@ -180,7 +180,7 @@ template <tensorial T> auto inv(const T &A) {
                                   const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
                               lda, ipiv.data());
     }
-    // NOINTEND
+    // NOLINTEND
 
     if (info != 0) {
         throw std::runtime_error("Matrix inversion failed: " + std::to_string(info));
