@@ -1,6 +1,8 @@
 #ifndef SQUINT_GEOMETRY_TRANSFORMATIONS_HPP
 #define SQUINT_GEOMETRY_TRANSFORMATIONS_HPP
 
+#include "squint/core/concepts.hpp"
+#include "squint/core/layout.hpp"
 #include "squint/quantity/quantity_types.hpp"
 #include "squint/tensor/tensor.hpp"
 
@@ -28,7 +30,7 @@ void rotate(T &matrix, U angle, const tensor<U, shape<3>> &axis) {
     auto B = tensor<U, shape<3, 3>>{
         {U{0}, norm_axis(2), -norm_axis(1), -norm_axis(2), U{0}, norm_axis(0), norm_axis(1), -norm_axis(0), U{0}}};
     auto C = t * (norm_axis * norm_axis.transpose());
-    auto R = A + s * B + C;
+    auto R = A + (s * B) + C;
     rotation.template subview<3, 3>(0, 0) = R;
     matrix = rotation * matrix;
 }

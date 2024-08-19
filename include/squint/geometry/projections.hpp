@@ -1,6 +1,8 @@
 #ifndef SQUINT_GEOMETRY_PROJECTIONS_HPP
 #define SQUINT_GEOMETRY_PROJECTIONS_HPP
 
+#include "squint/core/concepts.hpp"
+#include "squint/core/layout.hpp"
 #include "squint/quantity/quantity_types.hpp"
 #include "squint/tensor/tensor.hpp"
 #include <cmath>
