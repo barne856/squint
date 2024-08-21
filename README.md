@@ -29,21 +29,32 @@
 
 ## Introduction
 
-SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed for compile-time dimensional analysis, unit conversion, and efficient linear algebra operations. It provides a powerful API for enhancing code safety, readability, and expressiveness without compromising performance.
+# SQUINT Tensor Library
 
-SQUINT combines a robust quantity system for handling physical units and dimensions with a flexible tensor system for numerical computations. This integration allows for type-safe calculations involving physical quantities and efficient matrix operations, making it ideal for scientific computing, engineering simulations, and data analysis tasks.
+## Introduction
 
-## Key Features
+SQUINT (Static Quantities in Tensors) is a header-only C++ library designed for compile-time dimensional analysis, unit conversion, and linear algebra operations. It combines a quantity system for handling physical units and dimensions with a tensor system for numerical computations.
 
-- Compile-time dimensional analysis for catching unit-related errors early
-- Efficient tensor operations with both fixed and dynamic shapes
-- Support for physical quantities with units, seamlessly integrated with tensors
-- Flexible error checking policies for both quantities and tensors
-- Integration with BLAS and LAPACK for high-performance linear algebra
-- Header-only design for easy integration into existing projects
-- Comprehensive set of mathematical operations for both quantities and tensors
-- Support for unit conversions and physical constants
-- Column-major default layout for tensors, aligning with common scientific computing practices
+SQUINT was developed primarily to suit the my personal needs and preferences. It is not designed to be the fastest or most straightforward tensor library available. Instead, it prioritizes type safety, expressiveness, and a cohesive API that integrates well with physical simulations and graphics programming.
+
+The primary goals of SQUINT are:
+
+1. To provide a type-safe framework for calculations involving physical quantities, catching dimension-related errors at compile-time where possible.
+2. To offer a tensor system with an API that balances ease of use with static type checking.
+3. To integrate seamlessly with physical quantities, enabling tensor operations on dimensioned values.
+4. To make an honest effort at *good* performance.
+
+Key features of SQUINT include:
+- Compile-time dimensional analysis
+- A flexible tensor system supporting both fixed and dynamic shapes
+- Integration of physical quantities with tensor operations
+- Optional runtime error checking
+- Support for common linear algebra operations
+- Useful mathematical and physical constants
+
+SQUINT is particularly suited for projects where type safety and dimensional correctness are important, such as physics engines, scientific simulations, or graphics applications dealing with real-world units. It aims to catch errors early in the development process while providing a comfortable API for both quantities and tensors.
+
+While the library makes efforts to be performant, especially through the use of compile-time optimizations and BLAS integration, users requiring absolute peak performance or a minimalist API might find other specialized libraries more suitable for their needs.
 
 ## Installation
 
@@ -193,6 +204,12 @@ double scalar_value = 2.0 * dimensionless_value;  // No explicit conversion need
 
 All mathematical operations on quantities are performed in terms of the base unit. Conversion to/from specific units is handled during construction from non-quantity types or through explicit calls to the `unit_value` method.
 
+It is important to note that the size of any quantity type is exactally the size of it's underlying arithmetic type. This can be important for some applications. For example:
+
+```
+sizeof(float) == sizeof(length_t<float>);
+```
+
 #### Basic Operations
 
 SQUINT provides a comprehensive set of mathematical operations for quantities:
@@ -308,6 +325,12 @@ template <typename T> using mat3_t = tensor<T, shape<3, 3>>;
 using vec3 = vec3_t<float>;
 using mat3 = mat3_t<float>;
 // ... more type-specific aliases
+```
+
+It is important to note that the size of any fixed shape tensor type is exactally the size of it's elements. This can be important for some applications. For example:
+
+```
+sizeof(vec3) == 3 * sizeof(float);
 ```
 
 ## Usage
