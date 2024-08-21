@@ -410,7 +410,7 @@ SQUINT supports a wide range of operations for tensors:
 auto C = A + B;  // Element-wise addition
 auto D = A * B;  // Matrix multiplication
 auto E = A * 2.0;  // Scalar multiplication
-auto F = A / B;  // Element-wise division
+auto F = A / B;  // General least squares / least norm solution
 
 // Element access (note the use of () for multi-dimensional access)
 auto element = A(1, 2);  // Access element at row 1, column 2
@@ -418,6 +418,16 @@ auto element = A(1, 2);  // Access element at row 1, column 2
 // Iteration (column-major order by default)
 for (const auto& element : A) {
     // Process each element
+}
+
+// Iteration of rows
+for (const auto& row : A.rows()) {
+    // Process each row
+}
+
+// Iteration of views
+for (const auto& view : A.subviews<2,3>()) {
+    // Process each view
 }
 ```
 
@@ -431,6 +441,7 @@ auto subview = A.subview<2, 2>(0, 1);  // Create a 2x2 subview starting at (0, 1
 auto reshaped = A.reshape<6>();  // Reshape to a 1
 D tensor
 auto transposed = A.transpose();  // Transpose the tensor
+auto permuteed = A.permute<1,0>(); // Permutation of the tensor
 
 // For dynamic tensors
 auto dynamic_reshaped = dynamic_tensor.reshape({6, 4});
