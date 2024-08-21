@@ -14,6 +14,7 @@
    - [Quantity System](#quantity-system)
    - [Tensor System](#tensor-system)
 6. [Usage](#usage)
+   - [Quantity Usage](#quantity-usage)
    - [Tensor Construction](#tensor-construction)
    - [Basic Operations](#basic-operations)
    - [Views and Reshaping](#views-and-reshaping)
@@ -30,18 +31,23 @@
 
 SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed for compile-time dimensional analysis, unit conversion, and efficient linear algebra operations. It provides a powerful API for enhancing code safety, readability, and expressiveness without compromising performance.
 
+SQUINT combines a robust quantity system for handling physical units and dimensions with a flexible tensor system for numerical computations. This integration allows for type-safe calculations involving physical quantities and efficient matrix operations, making it ideal for scientific computing, engineering simulations, and data analysis tasks.
+
 ## Key Features
 
-- Compile-time dimensional analysis
+- Compile-time dimensional analysis for catching unit-related errors early
 - Efficient tensor operations with both fixed and dynamic shapes
-- Support for physical quantities with units
-- Flexible error checking policies
+- Support for physical quantities with units, seamlessly integrated with tensors
+- Flexible error checking policies for both quantities and tensors
 - Integration with BLAS and LAPACK for high-performance linear algebra
-- Header-only design for easy integration
+- Header-only design for easy integration into existing projects
+- Comprehensive set of mathematical operations for both quantities and tensors
+- Support for unit conversions and physical constants
+- Column-major default layout for tensors, aligning with common scientific computing practices
 
 ## Installation
 
-SQUINT is a header-only library. To use it in your project:
+SQUINT is a header-only library, making it easy to integrate into your projects. To use it:
 
 1. Copy the `include/squint` directory to your project's include path.
 2. Include the necessary headers in your C++ files:
@@ -51,7 +57,7 @@ SQUINT is a header-only library. To use it in your project:
 #include <squint/tensor.hpp>
 ```
 
-For CMake projects, you can use FetchContent:
+For CMake projects, you can use FetchContent for a more streamlined integration:
 
 ```cmake
 include(FetchContent)
@@ -71,18 +77,18 @@ target_link_libraries(your_target PRIVATE squint::squint)
 
 ### Compiler Support
 
-SQUINT requires a C++23 compliant compiler. Currently supported compilers:
+SQUINT leverages modern C++ features and requires a C++23 compliant compiler. Currently supported compilers include:
 
 - GCC (g++) version 12 or later
 - Clang version 15 or later
 
-Note: MSVC is partially supported but lacks multidimensional subscript operators.
+Note: MSVC is partially supported but lacks support for multidimensional subscript operators.
 
 ### Build Instructions
 
-1. Install CMake >= 3.28 and a supported compiler.
+1. Ensure you have CMake version 3.28 or later and a supported compiler installed.
 2. Optionally install MKL or OpenBLAS for BLAS backend support.
-3. Build the project:
+3. Build the project using the following commands:
 
 ```bash
 mkdir build && cd build
@@ -92,7 +98,7 @@ cmake --build .
 
 ### CMake Configuration
 
-Key CMake options:
+SQUINT provides several CMake options to customize the build:
 
 - `-DSQUINT_BLAS_BACKEND`: Choose the BLAS backend (MKL, OpenBLAS, or NONE)
 - `-DSQUINT_BUILD_DOCUMENTATION`: Build the documentation files (ON/OFF)
@@ -101,19 +107,19 @@ Key CMake options:
 
 ### BLAS Backends
 
-SQUINT supports three BLAS backends:
+SQUINT supports three BLAS backends to cater to different performance needs and system configurations:
 
-1. Intel MKL: High performance on Intel processors
+1. Intel MKL: Optimized for high performance on Intel processors
    ```bash
    cmake -DSQUINT_BLAS_BACKEND=MKL ..
    ```
 
-2. OpenBLAS: Open-source, portable across architectures
+2. OpenBLAS: An open-source alternative that's portable across different architectures
    ```bash
    cmake -DSQUINT_BLAS_BACKEND=OpenBLAS ..
    ```
 
-3. NONE: Limited fallback implementation for portability
+3. NONE: A limited fallback implementation for maximum portability
    ```bash
    cmake -DSQUINT_BLAS_BACKEND=NONE ..
    ```
@@ -122,7 +128,7 @@ SQUINT supports three BLAS backends:
 
 ### Dimension System
 
-The dimension system uses `std::ratio` for compile-time fraction representation of physical dimensions. Each dimension is represented by seven `std::ratio` values, corresponding to the seven SI base units:
+The dimension system in SQUINT uses `std::ratio` for compile-time fraction representation of physical dimensions. Each dimension is represented by seven `std::ratio` values, corresponding to the seven SI base units:
 
 1. Length (L)
 2. Time (T)
@@ -132,7 +138,7 @@ The dimension system uses `std::ratio` for compile-time fraction representation 
 6. Amount of Substance (N)
 7. Luminous Intensity (J)
 
-Example:
+This system allows for precise and type-safe representation of complex physical dimensions. For example:
 
 ```cpp
 using L = dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
@@ -146,7 +152,7 @@ using force_dim = dim_mult_t<M, acceleration_dim>;
 
 ### Quantity System
 
-The `quantity` class template represents values with associated dimensions:
+The `quantity` class template is the core of SQUINT's quantity system, representing values with associated dimensions:
 
 ```cpp
 template <typename T, typename D, error_checking ErrorChecking = error_checking::disabled>
@@ -158,7 +164,7 @@ Where:
 - `D` is the dimension type
 - `ErrorChecking` is the error checking policy
 
-SQUINT provides alias templates for common quantity types:
+SQUINT provides alias templates for common quantity types to enhance readability:
 
 ```cpp
 template <typename T> using length_t = quantity<T, dimensions::L>;
@@ -167,17 +173,29 @@ template <typename T> using velocity_t = quantity<T, dimensions::velocity_dim>;
 // ... more aliases for other quantities
 ```
 
-Usage example:
+Quantities in SQUINT have all the properties of built-in arithmetic types, allowing for intuitive usage in calculations:
 
 ```cpp
 auto distance = length_t<double>::meters(5.0);
 auto time = time_t<double>::seconds(2.0);
 auto speed = velocity_t<double>(distance / time);
+
+// Quantities can be used in mathematical functions
+auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
 ```
 
-All mathematical operations on quantities are performed in terms of the base unit. Conversion to/from units is handled during construction from non-quantity types or through explicit calls to the `unit_value` method.
+Importantly, dimensionless quantities can be used interchangeably with built-in arithmetic types, providing a seamless integration with existing code:
+
+```cpp
+auto dimensionless_value = distance / distance;  // Results in a dimensionless quantity
+double scalar_value = 2.0 * dimensionless_value;  // No explicit conversion needed
+```
+
+All mathematical operations on quantities are performed in terms of the base unit. Conversion to/from specific units is handled during construction from non-quantity types or through explicit calls to the `unit_value` method.
 
 #### Basic Operations
+
+SQUINT provides a comprehensive set of mathematical operations for quantities:
 
 - **Absolute Value**:
   ```cpp
@@ -194,12 +212,12 @@ All mathematical operations on quantities are performed in terms of the base uni
   auto nth_root = root<N>(quantity);
   ```
 
-- **Exponential**:
+- **Exponential** (for dimensionless quantities):
   ```cpp
   auto exp_value = exp(dimensionless_quantity);
   ```
 
-- **Logarithm**:
+- **Logarithm** (for dimensionless quantities):
   ```cpp
   auto log_value = log(dimensionless_quantity);
   ```
@@ -211,7 +229,7 @@ All mathematical operations on quantities are performed in terms of the base uni
 
 #### Trigonometric Functions
 
-For dimensionless quantities:
+For dimensionless quantities, SQUINT provides standard trigonometric functions:
 
 - **Sine, Cosine, Tangent**:
   ```cpp
@@ -234,7 +252,7 @@ For dimensionless quantities:
 
 #### Hyperbolic Functions
 
-For dimensionless quantities:
+SQUINT also includes hyperbolic functions for dimensionless quantities:
 
 - **Hyperbolic Sine, Cosine, Tangent**:
   ```cpp
@@ -252,6 +270,8 @@ For dimensionless quantities:
 
 #### Comparison
 
+SQUINT provides an approximate equality function for comparing quantities:
+
 - **Approximate Equality**:
   ```cpp
   bool are_equal = approx_equal(quantity1, quantity2, epsilon);
@@ -259,7 +279,7 @@ For dimensionless quantities:
 
 ### Tensor System
 
-SQUINT uses a single, flexible `tensor` class with a policy-based design, supporting both fixed and dynamic shapes:
+SQUINT's tensor system is built around a single, flexible `tensor` class with a policy-based design, supporting both fixed and dynamic shapes:
 
 ```cpp
 template <typename T, typename Shape, typename Strides = strides::column_major<Shape>,
@@ -269,15 +289,16 @@ template <typename T, typename Shape, typename Strides = strides::column_major<S
 class tensor;
 ```
 
-Key features:
-- Single class design for fixed and dynamic shapes
+Key features of the tensor system include:
+- Single class design for both fixed and dynamic shapes
 - Compile-time optimizations for fixed shapes
 - Runtime flexibility for dynamic shapes
 - Configurable error checking
 - Flexible memory ownership (owner or reference)
 - Support for different memory spaces
+- Column-major default layout for construction and iteration
 
-The library includes aliases for common tensor types:
+The library includes aliases for common tensor types to improve code readability:
 
 ```cpp
 template <typename T> using vec3_t = tensor<T, shape<3>>;
@@ -291,9 +312,38 @@ using mat3 = mat3_t<float>;
 
 ## Usage
 
+### Quantity Usage
+
+Quantities in SQUINT can be used in a variety of ways, showcasing their flexibility and integration with both scalar and tensor operations:
+
+```cpp
+// Basic quantity creation and arithmetic
+auto length = length_t<double>::meters(10.0);
+auto time = time_t<double>::seconds(2.0);
+auto velocity = length / time;
+
+// Using quantities with mathematical functions
+auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
+auto kinetic_energy = 0.5 * mass_t<double>::kilograms(2.0) * pow<2>(velocity);
+
+// Dimensionless quantities
+auto ratio = length / length_t<double>::meters(5.0);
+double scalar_value = std::sin(ratio);  // ratio can be used directly in std::sin
+
+// Quantity-aware tensors
+vec3_t<length_t<double>> position{
+    length_t<double>::meters(1.0),
+    length_t<double>::meters(2.0),
+    length_t<double>::meters(3.0)
+};
+
+// Mixing quantities and scalars in tensor operations
+auto scaled_position = position * 2.0;  // Results in a vec3_t<length_t<double>>
+```
+
 ### Tensor Construction
 
-SQUINT provides several ways to construct tensors:
+SQUINT provides several ways to construct tensors, with a default column-major layout:
 
 1. Using initializer lists (column-major order):
 
@@ -319,7 +369,7 @@ auto random_matrix = mat3::random(0.0, 1.0);
 mat3 custom_matrix;
 for (size_t i = 0; i < 3; ++i) {
     for (size_t j = 0; j < 3; ++j) {
-        custom_matrix[i, j] = i * 3 + j;
+        custom_matrix(i, j) = i * 3 + j;  // Note the use of () for element access
     }
 }
 ```
@@ -354,21 +404,42 @@ vec3_t<length_t<double>> position{
 
 ### Basic Operations
 
+SQUINT supports a wide range of operations for tensors:
+
 ```cpp
 auto C = A + B;  // Element-wise addition
 auto D = A * B;  // Matrix multiplication
 auto E = A * 2.0;  // Scalar multiplication
+auto F = A / B;  // Element-wise division
+
+// Element access (note the use of () for multi-dimensional access)
+auto element = A(1, 2);  // Access element at row 1, column 2
+
+// Iteration (column-major order by default)
+for (const auto& element : A) {
+    // Process each element
+}
 ```
 
 ### Views and Reshaping
 
+SQUINT provides powerful view and reshaping capabilities:
+
 ```cpp
 auto view = A.view();  // Create a view of the entire tensor
 auto subview = A.subview<2, 2>(0, 1);  // Create a 2x2 subview starting at (0, 1)
-auto reshaped = A.reshape<6>();  // Reshape to a 1D tensor
+auto reshaped = A.reshape<6>();  // Reshape to a 1
+D tensor
+auto transposed = A.transpose();  // Transpose the tensor
+
+// For dynamic tensors
+auto dynamic_reshaped = dynamic_tensor.reshape({6, 4});
+auto dynamic_transposed = dynamic_tensor.transpose();
 ```
 
 ### Linear Algebra Operations
+
+SQUINT provides a comprehensive set of linear algebra operations:
 
 - **Solving Linear Systems**:
   ```cpp
@@ -388,6 +459,8 @@ auto reshaped = A.reshape<6>();  // Reshape to a 1D tensor
 
 ### Vector Operations
 
+SQUINT supports various vector operations:
+
 - **Cross Product** (for 3D vectors):
   ```cpp
   auto cross_product = cross(a, b);
@@ -406,12 +479,16 @@ auto reshaped = A.reshape<6>();  // Reshape to a 1D tensor
 
 ### Matrix Operations
 
+SQUINT provides essential matrix operations:
+
 - **Trace**:
   ```cpp
   auto matrix_trace = trace(A);
   ```
 
 ### Statistical Functions
+
+SQUINT includes statistical functions for tensors:
 
 - **Mean**:
   ```cpp
@@ -431,12 +508,16 @@ auto reshaped = A.reshape<6>();  // Reshape to a 1D tensor
 
 ### Comparison
 
+SQUINT provides an approximate equality function for comparing tensors:
+
 - **Approximate Equality**:
   ```cpp
   bool are_equal = approx_equal(A, B, tolerance);
   ```
 
 ### Tensor Contraction (for dynamic tensors)
+
+SQUINT supports tensor contraction operations:
 
 - **Tensor Contraction**:
   ```cpp
@@ -447,44 +528,86 @@ auto reshaped = A.reshape<6>();  // Reshape to a 1D tensor
 
 ### Error Checking
 
-SQUINT provides optional runtime error checking:
+SQUINT provides optional runtime error checking for both quantities and tensors. This feature can be enabled or disabled at compile-time:
 
 ```cpp
 using checked_quantity = quantity<double, length, error_checking::enabled>;
 tensor<float, shape<3, 3>, strides::column_major<shape<3, 3>>, error_checking::enabled> checked_tensor;
 ```
 
+When error checking is enabled, SQUINT performs various runtime checks:
+
+- For quantities:
+  - Overflow and underflow checks in arithmetic operations
+  - Division by zero checks
+  - Dimension compatibility checks in operations
+
+- For tensors:
+  - Bounds checking for element access
+  - Shape compatibility checks in operations
+  - Dimension checks for linear algebra operations
+
+Enabling error checking can be valuable during development and debugging, while it can be disabled for maximum performance in production builds.
+
 ### Unit Conversions
+
+SQUINT supports seamless unit conversions within the same dimension:
 
 ```cpp
 auto meters = length_t<double>::meters(5.0);
 auto feet = convert_to<units::feet_t>(meters);
+auto inches = convert_to<units::inches_t>(meters);
+
+// Unit conversions can also be done directly in calculations
+auto speed = length_t<double>::kilometers(60.0) / time_t<double>::hours(1.0);
+auto speed_mph = convert_to<units::miles_per_hour_t>(speed);
 ```
 
 ### Constants
 
-SQUINT includes various physical and mathematical constants:
+SQUINT includes a comprehensive set of physical and mathematical constants:
 
 ```cpp
+// Physical constants
 auto c = si_constants<double>::c;  // Speed of light
+auto G = si_constants<double>::G;  // Gravitational constant
+auto h = si_constants<double>::h;  // Planck constant
+
+// Mathematical constants
 auto pi = math_constants<double>::pi;  // Pi
+auto e = math_constants<double>::e;   // Euler's number
+
+// Astronomical constants
+auto AU = astro_constants<double>::AU;  // Astronomical Unit
+auto solar_mass = astro_constants<double>::solar_mass;  // Solar mass
+
+// Atomic constants
+auto electron_mass = atomic_constants<double>::electron_mass;  // Electron mass
 ```
+
+These constants are implemented as `constant_quantity_t` types, ensuring proper dimensional analysis in calculations.
 
 ## API Reference
 
-For a complete API reference, refer to the inline documentation in the header files.
+For a complete API reference, please refer to the inline documentation in the header files. The documentation provides detailed information about each class, function, and template, including:
+
+- Template parameters and their constraints
+- Function parameters and return types
+- Preconditions and postconditions
+- Exception specifications
+- Usage examples
 
 ## Performance Considerations
 
-- Use fixed-size tensors when dimensions are known at compile-time for better optimization.
-- Choose the appropriate BLAS backend for your hardware and use case.
-- Prefer views over copies for subsections of tensors.
+To get the best performance out of SQUINT:
 
-## Troubleshooting
+1. Use fixed-size tensors when dimensions are known at compile-time. This allows for more aggressive compiler optimizations.
 
-- Ensure you're using a supported compiler version.
-- Check that the BLAS backend is correctly configured.
-- For dimension-related errors, verify that quantities have compatible dimensions.
-- When using MSVC, be aware of the limitations regarding multidimensional subscript operators.
+2. Choose the appropriate BLAS backend for your hardware and use case:
+   - Use Intel MKL on Intel processors for best performance
+   - Use OpenBLAS for good performance on a variety of architectures
+   - Use the NONE backend only when portability is the highest priority
 
-For more detailed information on specific components or usage patterns, refer to the inline documentation and examples in the source code.
+3. Prefer views over copies for subsections of tensors to avoid unnecessary memory allocations and copies.
+
+4. Disable error checking in performance-critical code paths once you're confident in your implementation's correctness.
