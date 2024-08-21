@@ -95,8 +95,9 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(con
 {
     using OtherShape = typename std::common_type_t<OtherTensor...>::shape_type;
     static_assert(subview_compatible<tensor, OtherShape>(), "Incompatible tensor shapes");
-    auto blocks = subviews<OtherShape>().begin();
-    ((*blocks++ = ts), ...);
+    auto blocks = this->template subviews<OtherShape>();
+    auto subviews_iter = blocks.begin();
+    ((*subviews_iter++ = ts), ...);
 }
 
 // Constructor for dynamic shape tensors with explicit shape and strides

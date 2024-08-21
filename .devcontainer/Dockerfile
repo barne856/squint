@@ -33,6 +33,10 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     ninja-build \
     gfortran \
     python3-numpy \
+    python3-sphinx \
+    python3-breathe \
+    python3-sphinx-rtd-theme \
+    doxygen \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \

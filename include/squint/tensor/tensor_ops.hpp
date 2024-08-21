@@ -124,6 +124,15 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
 }
 
 // NOLINTBEGIN
+/**
+ * @brief General least squares or least norm solution operator.
+ * @param A The matrix A in the equation Ax = B.
+ * @param B The matrix B in the equation Ax = B.
+ * @return A new tensor containing the solution x.
+ *
+ * This function computes the least squares solution when Ax =B is overdetermined and the least norm solution when Ax =
+ * B is underdetermined.
+ */
 template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
     using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
     using result_value_type =

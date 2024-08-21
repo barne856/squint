@@ -22,6 +22,7 @@ Contents
    api/core/concepts
    api/core/error_checking
    api/core/layout
+   api/core/memory
    api/quantity/quantity
    api/quantity/dimension
    api/quantity/unit

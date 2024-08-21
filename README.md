@@ -137,6 +137,14 @@ SQUINT supports three BLAS backends to cater to different performance needs and 
    cmake -DSQUINT_BLAS_BACKEND=NONE ..
    ```
 
+### Serving Documentation
+
+If SQUINT was built with documentation, you can serve it locally using
+
+```
+python3 -m http.server 80 -d ./build/sphinx
+```
+
 ## Core Components
 
 ### Dimension System
