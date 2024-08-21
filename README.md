@@ -35,7 +35,7 @@
 
 SQUINT (Static Quantities in Tensors) is a header-only C++ library designed for compile-time dimensional analysis, unit conversion, and linear algebra operations. It combines a quantity system for handling physical units and dimensions with a tensor system for numerical computations.
 
-SQUINT was developed primarily to suit the my personal needs and preferences. It is not designed to be the fastest or most straightforward tensor library available. Instead, it prioritizes type safety, expressiveness, and a cohesive API that integrates well with physical simulations and graphics programming.
+SQUINT was developed primarily to suit my personal needs and preferences. It is not designed to be the fastest or most straightforward tensor library available. Instead, it prioritizes type safety, expressiveness, and a cohesive API that integrates well with physical simulations and graphics programming.
 
 The primary goals of SQUINT are:
 
