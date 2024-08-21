@@ -32,6 +32,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     lld-$LLVM_VERSION \
     ninja-build \
     gfortran \
+    python3-numpy \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \

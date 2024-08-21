@@ -10,7 +10,6 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
-#include "squint/core/layout.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/quantity/quantity_math.hpp"
 #include "squint/tensor/blas_backend.hpp"
@@ -20,7 +19,6 @@
 #include "squint/util/sequence_utils.hpp"
 
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -432,134 +430,6 @@ auto approx_equal(
     }
 
     return true;
-}
-
-template <dynamic_tensor T1, dynamic_tensor T2>
-auto contract(const T1 &A, const T2 &B, const std::vector<std::pair<size_t, size_t>> &contraction_pairs) {
-    const auto &A_shape = A.shape();
-    const auto &B_shape = B.shape();
-
-    std::vector<size_t> A_contracted, A_non_contracted;
-    std::vector<size_t> B_contracted, B_non_contracted;
-
-    for (size_t i = 0; i < A_shape.size(); ++i) {
-        if (std::find_if(contraction_pairs.begin(), contraction_pairs.end(),
-                         [i](const auto &p) { return p.first == i; }) == contraction_pairs.end()) {
-            A_non_contracted.push_back(i);
-        } else {
-            A_contracted.push_back(i);
-        }
-    }
-
-    for (size_t i = 0; i < B_shape.size(); ++i) {
-        if (std::find_if(contraction_pairs.begin(), contraction_pairs.end(),
-                         [i](const auto &p) { return p.second == i; }) == contraction_pairs.end()) {
-            B_non_contracted.push_back(i);
-        } else {
-            B_contracted.push_back(i);
-        }
-    }
-
-    size_t A_rows = std::accumulate(A_non_contracted.begin(), A_non_contracted.end(), 1UL,
-                                    [&A_shape](size_t acc, size_t dim) { return acc * A_shape[dim]; });
-    size_t A_cols = std::accumulate(A_contracted.begin(), A_contracted.end(), 1UL,
-                                    [&A_shape](size_t acc, size_t dim) { return acc * A_shape[dim]; });
-    size_t B_rows = A_cols;
-    size_t B_cols = std::accumulate(B_non_contracted.begin(), B_non_contracted.end(), 1UL,
-                                    [&B_shape](size_t acc, size_t dim) { return acc * B_shape[dim]; });
-
-    // Create new tensors for reshaped A and B
-    T1 A_reshaped({A_rows, A_cols});
-    T2 B_reshaped({B_rows, B_cols});
-
-    // Manually reshape A
-    std::vector<size_t> A_indices(A_shape.size(), 0);
-    for (size_t i = 0; i < A.size(); ++i) {
-        size_t row = 0, col = 0;
-        size_t stride = 1;
-        for (auto dim : A_non_contracted) {
-            row += A_indices[dim] * stride;
-            stride *= A_shape[dim];
-        }
-        stride = 1;
-        for (auto dim : A_contracted) {
-            col += A_indices[dim] * stride;
-            stride *= A_shape[dim];
-        }
-        A_reshaped(row, col) = A[A_indices];
-
-        // Increment indices
-        for (int j = A_shape.size() - 1; j >= 0; --j) {
-            if (++A_indices[j] < A_shape[j])
-                break;
-            A_indices[j] = 0;
-        }
-    }
-
-    // Manually reshape B
-    std::vector<size_t> B_indices(B_shape.size(), 0);
-    for (size_t i = 0; i < B.size(); ++i) {
-        size_t row = 0, col = 0;
-        size_t stride = 1;
-        for (auto dim : B_contracted) {
-            row += B_indices[dim] * stride;
-            stride *= B_shape[dim];
-        }
-        stride = 1;
-        for (auto dim : B_non_contracted) {
-            col += B_indices[dim] * stride;
-            stride *= B_shape[dim];
-        }
-        B_reshaped(row, col) = B[B_indices];
-
-        // Increment indices
-        for (int j = B_shape.size() - 1; j >= 0; --j) {
-            if (++B_indices[j] < B_shape[j])
-                break;
-            B_indices[j] = 0;
-        }
-    }
-
-    // Perform matrix multiplication
-    auto C_reshaped = A_reshaped * B_reshaped;
-
-    // Calculate the shape of the result tensor
-    std::vector<size_t> result_shape;
-    for (auto dim : A_non_contracted)
-        result_shape.push_back(A_shape[dim]);
-    for (auto dim : B_non_contracted)
-        result_shape.push_back(B_shape[dim]);
-
-    // Create the result tensor
-    using result_value_type =
-        decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
-    tensor<result_value_type, dynamic, dynamic> result(result_shape);
-
-    // Manually reshape C_reshaped back to the result tensor
-    std::vector<size_t> result_indices(result_shape.size(), 0);
-    for (size_t i = 0; i < result.size(); ++i) {
-        size_t row = 0, col = 0;
-        size_t stride = 1;
-        for (size_t j = 0; j < A_non_contracted.size(); ++j) {
-            row += result_indices[j] * stride;
-            stride *= A_shape[A_non_contracted[j]];
-        }
-        stride = 1;
-        for (size_t j = 0; j < B_non_contracted.size(); ++j) {
-            col += result_indices[A_non_contracted.size() + j] * stride;
-            stride *= B_shape[B_non_contracted[j]];
-        }
-        result[result_indices] = C_reshaped(row, col);
-
-        // Increment indices
-        for (int j = result_shape.size() - 1; j >= 0; --j) {
-            if (++result_indices[j] < result_shape[j])
-                break;
-            result_indices[j] = 0;
-        }
-    }
-
-    return result;
 }
 
 } // namespace squint
