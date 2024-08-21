@@ -44,6 +44,12 @@ The primary goals of SQUINT are:
 3. To integrate seamlessly with physical quantities, enabling tensor operations on dimensioned values.
 4. To make an honest effort at *good* performance.
 
+SQUINT is particularly suited for projects where type safety and dimensional correctness are important, such as physics engines, scientific simulations, or graphics applications dealing with real-world units. It aims to catch errors early in the development process while providing a comfortable API for both quantities and tensors.
+
+While the library makes efforts to be performant, especially through the use of compile-time optimizations and BLAS integration, users requiring absolute peak performance or a minimalist API might find other specialized libraries more suitable for their needs.
+
+## Key Features
+
 Key features of SQUINT include:
 - Compile-time dimensional analysis
 - A flexible tensor system supporting both fixed and dynamic shapes
@@ -51,10 +57,6 @@ Key features of SQUINT include:
 - Optional runtime error checking
 - Support for common linear algebra operations
 - Useful mathematical and physical constants
-
-SQUINT is particularly suited for projects where type safety and dimensional correctness are important, such as physics engines, scientific simulations, or graphics applications dealing with real-world units. It aims to catch errors early in the development process while providing a comfortable API for both quantities and tensors.
-
-While the library makes efforts to be performant, especially through the use of compile-time optimizations and BLAS integration, users requiring absolute peak performance or a minimalist API might find other specialized libraries more suitable for their needs.
 
 ## Installation
 
