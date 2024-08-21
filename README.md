@@ -441,7 +441,7 @@ auto subview = A.subview<2, 2>(0, 1);  // Create a 2x2 subview starting at (0, 1
 auto reshaped = A.reshape<6>();  // Reshape to a 1
 D tensor
 auto transposed = A.transpose();  // Transpose the tensor
-auto permuteed = A.permute<1,0>(); // Permutation of the tensor
+auto permuted = A.permute<1,0>(); // Permutation of the tensor
 
 // For dynamic tensors
 auto dynamic_reshaped = dynamic_tensor.reshape({6, 4});
