@@ -158,7 +158,9 @@ The dimension system in SQUINT uses `std::ratio` for compile-time fraction repre
 6. Amount of Substance (N)
 7. Luminous Intensity (J)
 
-This system allows for precise and type-safe representation of complex physical dimensions. For example:
+New dimensions can be created by combining these base dimensions. For example, the dimension of force (F) can be represented as:
+
+$F = M \cdot L \cdot T^{-2}$
 
 ```cpp
 using L = dimension<std::ratio<1>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>, std::ratio<0>>;
@@ -193,13 +195,11 @@ template <typename T> using velocity_t = quantity<T, dimensions::velocity_dim>;
 // ... more aliases for other quantities
 ```
 
-Quantities in SQUINT have all the properties of built-in arithmetic types, allowing for intuitive usage in calculations:
+Quantities in SQUINT have all the properties of built-in arithmetic types, allowing for intuitive usage in calculations. For instance, calculating acceleration:
+
+$a = \frac{d}{t^2}$
 
 ```cpp
-auto distance = length_t<double>::meters(5.0);
-auto time = time_t<double>::seconds(2.0);
-auto speed = velocity_t<double>(distance / time);
-
 // Quantities can be used in mathematical functions
 auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
 ```
@@ -463,6 +463,10 @@ for (const auto& view : A.subviews<2,3>()) {
 }
 ```
 
+For matrix multiplication, the operation performed is:
+
+$(AB)_{ij} = \sum_{k=1}^n A_{ik}B_{kj}$
+
 ### Views and Reshaping
 
 SQUINT provides powerful view and reshaping capabilities:
@@ -482,90 +486,108 @@ auto dynamic_transposed = dynamic_tensor.transpose();
 
 ### Linear Algebra Operations
 
-SQUINT provides a comprehensive set of linear algebra operations:
+SQUINT provides comprehensive linear algebra operations:
 
 - **Solving Linear Systems**:
-  ```cpp
-  auto result = solve(A, b);  // Solves Ax = b for square systems
-  auto result_general = solve_general(A, b);  // Solves Ax = b for general (overdetermined or underdetermined) systems
-  ```
+
+```cpp
+auto result = solve(A, b);  // Solves Ax = b for square systems
+```
+
+This solves the system of linear equations:
+  
+$Ax = b$
 
 - **Matrix Inversion**:
-  ```cpp
-  auto inverse = inv(A);  // Computes the inverse of a square matrix
-  ```
+
+```cpp
+auto inverse = inv(A);  // Computes the inverse of a square matrix
+```
+
+The inverse $A^{-1}$ satisfies:
+  
+$AA^{-1} = A^{-1}A = I$
 
 - **Pseudoinverse**:
-  ```cpp
-  auto pseudo_inverse = pinv(A);  // Computes the Moore-Penrose pseudoinverse
-  ```
+
+```cpp
+auto pseudo_inverse = pinv(A);  // Computes the Moore-Penrose pseudoinverse
+```
+
+For a matrix $A$, the Moore-Penrose pseudoinverse $A^+$ satisfies:
+  
+$AA^+A = A$
+$A^+AA^+ = A^+$
+$(AA^+)^* = AA^+$
+$(A^+A)^* = A^+A$
 
 ### Vector Operations
 
-SQUINT supports various vector operations:
-
 - **Cross Product** (for 3D vectors):
-  ```cpp
-  auto cross_product = cross(a, b);
-  ```
+
+```cpp
+auto cross_product = cross(a, b);
+```
+
+For vectors $a = (a_x, a_y, a_z)$ and $b = (b_x, b_y, b_z)$:
+  
+$a \times b = (a_y b_z - a_z b_y, a_z b_x - a_x b_z, a_x b_y - a_y b_x)$
 
 - **Dot Product**:
-  ```cpp
-  auto dot_product = dot(a, b);
-  ```
+
+```cpp
+auto dot_product = dot(a, b);
+```
+
+For vectors $a$ and $b$:
+  
+$a \cdot b = \sum_{i=1}^n a_i b_i$
 
 - **Vector Norm**:
-  ```cpp
-  auto vector_norm = norm(a);
-  auto squared_norm = squared_norm(a);
-  ```
+
+```cpp
+auto vector_norm = norm(a);
+```
+
+The Euclidean norm of a vector $a$ is:
+  
+$\|a\| = \sqrt{\sum_{i=1}^n |a_i|^2}$
 
 ### Matrix Operations
 
-SQUINT provides essential matrix operations:
-
 - **Trace**:
-  ```cpp
-  auto matrix_trace = trace(A);
-  ```
+
+```cpp
+auto matrix_trace = trace(A);
+```
+
+The trace of a square matrix $A$ is:
+  
+$\text{tr}(A) = \sum_{i=1}^n A_{ii}$
 
 ### Statistical Functions
 
-SQUINT includes statistical functions for tensors:
-
 - **Mean**:
-  ```cpp
-  auto tensor_mean = mean(A);
-  ```
 
-- **Sum**:
-  ```cpp
-  auto tensor_sum = sum(A);
-  ```
+```cpp
+auto tensor_mean = mean(A);
+```
 
-- **Min and Max**:
-  ```cpp
-  auto min_value = min(A);
-  auto max_value = max(A);
-  ```
-
-### Comparison
-
-SQUINT provides an approximate equality function for comparing tensors:
-
-- **Approximate Equality**:
-  ```cpp
-  bool are_equal = approx_equal(A, B, tolerance);
-  ```
+For a tensor $A$ with $n$ elements:
+  
+$\text{mean}(A) = \frac{1}{n} \sum_{i=1}^n A_i$
 
 ### Tensor Contraction (for dynamic tensors)
 
-SQUINT supports tensor contraction operations:
-
 - **Tensor Contraction**:
-  ```cpp
-  auto contracted = contract(A, B, contraction_pairs);
-  ```
+
+```cpp
+auto contracted = contract(A, B, contraction_pairs);
+```
+
+For tensors $A$ and $B$, the contraction over indices $i$ and $j$ is:
+  
+$(A \cdot B)_{k_1...k_n l_1...l_m} = \sum_{i,j} A_{k_1...k_n i} B_{j l_1...l_m}$
 
 ## Advanced Features
 

@@ -131,6 +131,10 @@ SQUINT supports a wide range of operations for tensors:
        // Process each view
    }
 
+For matrix multiplication, the operation performed is:
+
+:math:`(AB)_{ij} = \sum_{k=1}^n A_{ik}B_{kj}`
+
 
 Views and Reshaping
 -------------------
@@ -156,103 +160,118 @@ Linear Algebra Operations
 -------------------------
 
 
-SQUINT provides a comprehensive set of linear algebra operations:
+SQUINT provides comprehensive linear algebra operations:
 
 - **Solving Linear Systems**:
-  ```cpp
-  auto result = solve(A, b);  // Solves Ax = b for square systems
-  auto result_general = solve_general(A, b);  // Solves Ax = b for general (overdetermined or underdetermined) systems
-  ```
+
+.. code-block::
+
+   auto result = solve(A, b);  // Solves Ax = b for square systems
+
+This solves the system of linear equations:
+  
+:math:`Ax = b`
 
 - **Matrix Inversion**:
-  ```cpp
-  auto inverse = inv(A);  // Computes the inverse of a square matrix
-  ```
+
+.. code-block::
+
+   auto inverse = inv(A);  // Computes the inverse of a square matrix
+
+The inverse :math:`A^{-1}` satisfies:
+  
+:math:`AA^{-1} = A^{-1}A = I`
 
 - **Pseudoinverse**:
-  ```cpp
-  auto pseudo_inverse = pinv(A);  // Computes the Moore-Penrose pseudoinverse
-  ```
+
+.. code-block::
+
+   auto pseudo_inverse = pinv(A);  // Computes the Moore-Penrose pseudoinverse
+
+For a matrix :math:`A`, the Moore-Penrose pseudoinverse :math:`A^+` satisfies:
+  
+:math:`AA^+A = A`
+:math:`A^+AA^+ = A^+`
+:math:`(AA^+)^* = AA^+`
+:math:`(A^+A)^* = A^+A`
 
 
 Vector Operations
 -----------------
 
 
-SQUINT supports various vector operations:
-
 - **Cross Product** (for 3D vectors):
-  ```cpp
-  auto cross_product = cross(a, b);
-  ```
+
+.. code-block::
+
+   auto cross_product = cross(a, b);
+
+For vectors :math:`a = (a_x, a_y, a_z)` and :math:`b = (b_x, b_y, b_z)`:
+  
+:math:`a \times b = (a_y b_z - a_z b_y, a_z b_x - a_x b_z, a_x b_y - a_y b_x)`
 
 - **Dot Product**:
-  ```cpp
-  auto dot_product = dot(a, b);
-  ```
+
+.. code-block::
+
+   auto dot_product = dot(a, b);
+
+For vectors :math:`a` and :math:`b`:
+  
+:math:`a \cdot b = \sum_{i=1}^n a_i b_i`
 
 - **Vector Norm**:
-  ```cpp
-  auto vector_norm = norm(a);
-  auto squared_norm = squared_norm(a);
-  ```
+
+.. code-block::
+
+   auto vector_norm = norm(a);
+
+The Euclidean norm of a vector :math:`a` is:
+  
+:math:`\|a\| = \sqrt{\sum_{i=1}^n |a_i|^2}`
 
 
 Matrix Operations
 -----------------
 
 
-SQUINT provides essential matrix operations:
-
 - **Trace**:
-  ```cpp
-  auto matrix_trace = trace(A);
-  ```
+
+.. code-block::
+
+   auto matrix_trace = trace(A);
+
+The trace of a square matrix :math:`A` is:
+  
+:math:`\text{tr}(A) = \sum_{i=1}^n A_{ii}`
 
 
 Statistical Functions
 ---------------------
 
 
-SQUINT includes statistical functions for tensors:
-
 - **Mean**:
-  ```cpp
-  auto tensor_mean = mean(A);
-  ```
 
-- **Sum**:
-  ```cpp
-  auto tensor_sum = sum(A);
-  ```
+.. code-block::
 
-- **Min and Max**:
-  ```cpp
-  auto min_value = min(A);
-  auto max_value = max(A);
-  ```
+   auto tensor_mean = mean(A);
 
-
-Comparison
-----------
-
-
-SQUINT provides an approximate equality function for comparing tensors:
-
-- **Approximate Equality**:
-  ```cpp
-  bool are_equal = approx_equal(A, B, tolerance);
-  ```
+For a tensor :math:`A` with :math:`n` elements:
+  
+:math:`\text{mean}(A) = \frac{1}{n} \sum_{i=1}^n A_i`
 
 
 Tensor Contraction (for dynamic tensors)
 ----------------------------------------
 
 
-SQUINT supports tensor contraction operations:
-
 - **Tensor Contraction**:
-  ```cpp
-  auto contracted = contract(A, B, contraction_pairs);
-  ```
+
+.. code-block::
+
+   auto contracted = contract(A, B, contraction_pairs);
+
+For tensors :math:`A` and :math:`B`, the contraction over indices :math:`i` and :math:`j` is:
+  
+:math:`(A \cdot B)_{k_1...k_n l_1...l_m} = \sum_{i,j} A_{k_1...k_n i} B_{j l_1...l_m}`
 

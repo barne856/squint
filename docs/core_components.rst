@@ -18,7 +18,9 @@ The dimension system in SQUINT uses `std::ratio` for compile-time fraction repre
 6. Amount of Substance (N)
 7. Luminous Intensity (J)
 
-This system allows for precise and type-safe representation of complex physical dimensions. For example:
+New dimensions can be created by combining these base dimensions. For example, the dimension of force (F) can be represented as:
+
+:math:`F = M \cdot L \cdot T^{-2}`
 
 .. code-block::
 
@@ -56,14 +58,12 @@ SQUINT provides alias templates for common quantity types to enhance readability
    template <typename T> using velocity_t = quantity<T, dimensions::velocity_dim>;
    // ... more aliases for other quantities
 
-Quantities in SQUINT have all the properties of built-in arithmetic types, allowing for intuitive usage in calculations:
+Quantities in SQUINT have all the properties of built-in arithmetic types, allowing for intuitive usage in calculations. For instance, calculating acceleration:
+
+:math:`a = \frac{d}{t^2}`
 
 .. code-block::
 
-   auto distance = length_t<double>::meters(5.0);
-   auto time = time_t<double>::seconds(2.0);
-   auto speed = velocity_t<double>(distance / time);
-   
    // Quantities can be used in mathematical functions
    auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
 

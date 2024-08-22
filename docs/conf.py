@@ -1,5 +1,5 @@
 
-extensions = [ "breathe" ]
+extensions = [ "breathe", "sphinx.ext.mathjax" ]
 project = "SQUINT"
 breathe_default_project = "SQUINT"
 

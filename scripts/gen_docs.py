@@ -111,6 +111,16 @@ Specific Concepts
 
         create_file(rst_path, content)
 
+def convert_math(line):
+    # Convert inline math
+    line = re.sub(r'\$([^$]+)\$', r':math:`\1`', line)
+    
+    # Convert display math
+    if line.strip().startswith('$$') and line.strip().endswith('$$'):
+        return f"\n.. math::\n\n   {line.strip()[2:-2]}\n"
+    
+    return line
+
 def generate_index_rst(readme_path, docs_dir):
     with open(readme_path, 'r') as f:
         readme_content = f.read()
@@ -131,6 +141,7 @@ Welcome to SQUINT's documentation!
     current_content = ""
     current_level = 0
     in_code_block = False
+    in_math_block = False
     skip_next = False
     introduction_added = False
 
@@ -149,7 +160,13 @@ Welcome to SQUINT's documentation!
                 current_content += ".. code-block::\n\n"
             continue
 
-        if line.startswith('#') and not in_code_block:
+        if line.strip() == '$$' and not in_code_block:
+            in_math_block = not in_math_block
+            if in_math_block:
+                current_content += "\n.. math::\n\n"
+            continue
+
+        if line.startswith('#') and not in_code_block and not in_math_block:
             level = len(line.split()[0])
             section = line.split(' ', 1)[1].strip()
 
@@ -178,8 +195,10 @@ Welcome to SQUINT's documentation!
         elif current_file:
             if in_code_block:
                 current_content += "   " + line + "\n"
+            elif in_math_block:
+                current_content += "   " + line + "\n"
             else:
-                current_content += line + "\n"
+                current_content += convert_math(line) + "\n"
 
     if current_file:
         create_file(os.path.join(docs_dir, f"{current_file}.rst"), current_content)
@@ -199,7 +218,7 @@ Welcome to SQUINT's documentation!
 
 def create_conf_py(docs_dir):
     conf_py_content = '''
-extensions = [ "breathe" ]
+extensions = [ "breathe", "sphinx.ext.mathjax" ]
 project = "SQUINT"
 breathe_default_project = "SQUINT"
 
