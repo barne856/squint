@@ -40,7 +40,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 -DSQUINT_BLAS_BACKEND=NONE ..
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_TESTS=OFF -DSQUINT_BUILD_DOCUMENTATION=ON -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 -DSQUINT_BLAS_BACKEND=NONE ..
           cmake --build .
       - name: Setup Pages
         uses: actions/configure-pages@v5
