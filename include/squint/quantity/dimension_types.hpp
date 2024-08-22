@@ -23,35 +23,35 @@ namespace squint {
  * @brief Utility types for performing arithmetic operations on dimensions.
  */
 
-/** 
+/**
  * @brief Multiply two dimensions.
  * @tparam U1 The first dimension.
  * @tparam U2 The second dimension.
  */
 template <dimensional U1, dimensional U2> using dim_mult_t = typename dim_mult<U1, U2>::type;
 
-/** 
+/**
  * @brief Divide two dimensions.
  * @tparam U1 The numerator dimension.
  * @tparam U2 The denominator dimension.
  */
 template <dimensional U1, dimensional U2> using dim_div_t = typename dim_div<U1, U2>::type;
 
-/** 
+/**
  * @brief Raise a dimension to an integer power.
  * @tparam U The dimension to be raised.
  * @tparam N The power to raise the dimension to.
  */
 template <dimensional U, std::integral auto const N> using dim_pow_t = typename dim_pow<U, N>::type;
 
-/** 
+/**
  * @brief Take the Nth root of a dimension.
  * @tparam U The dimension to take the root of.
  * @tparam N The root to take.
  */
 template <dimensional U, std::integral auto const N> using dim_root_t = typename dim_root<U, N>::type;
 
-/** 
+/**
  * @brief Invert a dimension (raise to power -1).
  * @tparam U The dimension to invert.
  */
