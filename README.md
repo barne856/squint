@@ -27,8 +27,6 @@
 9. [Performance Considerations](#performance-considerations)
 10. [Troubleshooting](#troubleshooting)
 
-## Introduction
-
 # SQUINT Tensor Library
 
 ## Introduction
@@ -693,7 +691,7 @@ When using views with step sizes, keep in mind:
 
 ## API Reference
 
-For a complete API reference, please refer to the inline documentation in the header files. The documentation provides detailed information about each class, function, and template, including:
+For a complete API reference, please refer to the inline documentation in the header files or build SQUINT with the documentation. The documentation provides detailed information about each class, function, and template, including:
 
 - Template parameters and their constraints
 - Function parameters and return types

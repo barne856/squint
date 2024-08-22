@@ -1,55 +1,31 @@
+
 Installation
 ============
 
-Prerequisites
--------------
 
-To use SQUINT, you need:
+SQUINT is a header-only library, making it easy to integrate into your projects. To use it:
 
-- A C++20 compatible compiler
-- CMake (version 3.28 or higher)
+1. Copy the `include/squint` directory to your project's include path.
+2. Include the necessary headers in your C++ files:
 
-Building from Source
---------------------
+.. code-block::
 
-1. Clone the repository:
+   #include <squint/quantity.hpp>
+   #include <squint/tensor.hpp>
+
+For CMake projects, you can use FetchContent for a more streamlined integration:
+
+.. code-block::
+
+   include(FetchContent)
    
-   .. code-block:: bash
+   FetchContent_Declare(
+       squint
+       GIT_REPOSITORY https://github.com/barne856/squint.git
+       GIT_TAG main  # or a specific tag/commit
+   )
+   
+   FetchContent_MakeAvailable(squint)
+   
+   target_link_libraries(your_target PRIVATE squint::squint)
 
-      git clone https://github.com/your-username/squint.git
-      cd squint
-
-2. Create a build directory:
-
-   .. code-block:: bash
-
-      mkdir build
-      cd build
-
-3. Configure the project:
-
-   .. code-block:: bash
-
-      cmake ..
-
-4. Build the library:
-
-   .. code-block:: bash
-
-      cmake --build .
-
-5. (Optional) Install the library:
-
-   .. code-block:: bash
-
-      sudo cmake --install .
-
-Using SQUINT in Your Project
-----------------------------
-
-To use SQUINT in your CMake project, add the following to your CMakeLists.txt:
-
-.. code-block:: cmake
-
-   find_package(SQUINT REQUIRED)
-   target_link_libraries(your_target PRIVATE SQUINT::SQUINT)

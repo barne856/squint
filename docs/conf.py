@@ -1,27 +1,36 @@
-extensions = [ "breathe" ]
+
+# Configuration file for the Sphinx documentation builder.
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
+
+project = 'SQUINT'
+copyright = '2023, Brendan Barnes'
+author = 'Brendan Barnes'
+
+release = '1.0.0'
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
+    'breathe',
+]
+
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+
+breathe_projects = {"SQUINT": "_build/xml"}
 breathe_default_project = "SQUINT"
 
+intersphinx_mapping = {'https://docs.python.org/': None}
 
-# Option 1: Read the Docs theme
-html_theme = 'sphinx_rtd_theme'
-# Option 2: Furo theme
-# html_theme = 'furo'
-# Option 3: Material theme
-# html_theme = 'sphinx_material'
-# Option 4: Book theme
-# html_theme = 'sphinx_book_theme'
-# Customize the theme
-html_theme_options = {
-    'logo_only': False,
-    'display_version': True,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
-    'style_nav_header_background': 'white',
-    # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
-}
+todo_include_todos = True
