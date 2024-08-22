@@ -1,5 +1,6 @@
 
 extensions = [ "breathe" ]
+project = "SQUINT"
 breathe_default_project = "SQUINT"
 
 html_theme = 'furo'

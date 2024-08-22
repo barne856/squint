@@ -200,6 +200,7 @@ Welcome to SQUINT's documentation!
 def create_conf_py(docs_dir):
     conf_py_content = '''
 extensions = [ "breathe" ]
+project = "SQUINT"
 breathe_default_project = "SQUINT"
 
 html_theme = 'furo'
