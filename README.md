@@ -49,6 +49,7 @@ While the library makes efforts to be performant, especially through the use of 
 ## Key Features
 
 Key features of SQUINT include:
+
 - Compile-time dimensional analysis
 - A flexible tensor system supporting both fixed and dynamic shapes
 - Integration of physical quantities with tensor operations
@@ -140,7 +141,7 @@ SQUINT supports three BLAS backends to cater to different performance needs and 
 If SQUINT was built with documentation, you can serve it locally using
 
 ```
-python3 -m http.server 80 -d ./build/sphinx
+python -m http.server 80 -d ./build/sphinx
 ```
 
 ## Core Components

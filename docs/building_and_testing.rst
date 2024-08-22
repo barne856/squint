@@ -73,5 +73,5 @@ If SQUINT was built with documentation, you can serve it locally using
 
 .. code-block::
 
-   python3 -m http.server 80 -d ./build/sphinx
+   python -m http.server 80 -d ./build/sphinx
 

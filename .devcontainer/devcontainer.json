@@ -4,7 +4,12 @@
 		"dockerfile": "Dockerfile"
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/git:1": {}
+		"ghcr.io/devcontainers/features/git:1": {},
+		"ghcr.io/mamba-org/devcontainer-features/micromamba:1": {
+			"envFile": "/tmp/env.yml",
+			"envName": "squint",
+			"autoActivate": true
+		}
 	},
 	"customizations": {
 		"vscode": {
@@ -23,5 +28,5 @@
 	// make vscode user own the workspace and all mounts
 	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
 	// prevent git dubious ownership
-	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+	"postStartCommand": "micromamba shell init --shell=bash && echo 'micromamba activate squint' >> ~/.bashrc && git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

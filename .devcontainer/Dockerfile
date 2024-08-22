@@ -32,10 +32,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     lld-$LLVM_VERSION \
     ninja-build \
     gfortran \
-    python3-numpy \
-    python3-sphinx \
-    python3-breathe \
-    python3-sphinx-rtd-theme \
     doxygen \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
@@ -68,3 +64,6 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
 
 # Clean up
 RUN apt-get -y remove wget gnupg software-properties-common
+
+# Copy env.yml to tmp
+COPY env.yml /tmp/env.yml
