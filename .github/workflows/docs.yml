@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DSQUINT_BLAS_BACKEND=NONE ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DSQUINT_BLAS_BACKEND=NONE ..
           cmake --build .
       - name: Setup Pages
         uses: actions/configure-pages@v5
