@@ -35,12 +35,12 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen ninja-build
+          sudo apt-get install -y doxygen ninja-build gcc-12 g++-12
       - name: Build Documentation
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DSQUINT_BLAS_BACKEND=NONE ..
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -CMAKE_CXX_COMPILER=g++-12 -CMAKE_C_COMPILER=gcc-12 -DSQUINT_BLAS_BACKEND=NONE ..
           cmake --build .
       - name: Setup Pages
         uses: actions/configure-pages@v5
