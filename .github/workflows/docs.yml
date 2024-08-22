@@ -31,11 +31,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install sphinx breathe furo
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
       - name: Build Documentation
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DSQUINT_BLAS_BACKEND=NONE ..
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=ON -DSQUINT_BLAS_BACKEND=NONE ..
           cmake --build .
       - name: Setup Pages
         uses: actions/configure-pages@v5
