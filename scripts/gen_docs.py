@@ -39,6 +39,75 @@ def generate_api_docs(include_dir, docs_dir):
    :project: SQUINT
 
 """
+                # Add specific concept documentation if it's the concepts file
+                if file == 'concepts.hpp':
+                    content += """
+Specific Concepts
+-----------------
+
+.. doxygenconcept:: squint::rational
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dimensional
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dimensionless
+   :project: SQUINT
+
+.. doxygenconcept:: squint::tensorial
+   :project: SQUINT
+
+.. doxygenconcept:: squint::floating_point
+   :project: SQUINT
+
+.. doxygenconcept:: squint::arithmetic
+   :project: SQUINT
+
+.. doxygenconcept:: squint::quantitative
+   :project: SQUINT
+
+.. doxygenconcept:: squint::scalar
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dimensionless_quantity
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dimensionless_scalar
+   :project: SQUINT
+
+.. doxygenconcept:: squint::compile_time_shape
+   :project: SQUINT
+
+.. doxygenconcept:: squint::runtime_shape
+   :project: SQUINT
+
+.. doxygenconcept:: squint::fixed_shape
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dynamic_shape
+   :project: SQUINT
+
+.. doxygenconcept:: squint::fixed_tensor
+   :project: SQUINT
+
+.. doxygenconcept:: squint::dynamic_tensor
+   :project: SQUINT
+
+.. doxygenconcept:: squint::const_tensor
+   :project: SQUINT
+
+.. doxygenconcept:: squint::owning_tensor
+   :project: SQUINT
+
+.. doxygenconcept:: squint::error_checking_enabled
+   :project: SQUINT
+
+.. doxygenconcept:: squint::host_tensor
+   :project: SQUINT
+
+.. doxygenconcept:: squint::fixed_contiguous_tensor
+   :project: SQUINT
+"""
 
         create_file(rst_path, content)
 
@@ -170,26 +239,57 @@ todo_include_todos = True
 
 def create_doxyfile_in(docs_dir, include_dir):
     doxyfile_content = f'''
+# Project information
 PROJECT_NAME           = "SQUINT"
 PROJECT_NUMBER         = 1.0.0
 PROJECT_BRIEF          = "SQUINT (Static Quantities in Tensors) is a modern, header-only C++ library designed to bring together compile-time dimensional analysis, unit conversion, and linear algebra operations in C++."
-OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doxygen
-INPUT                  = {include_dir}
-FILE_PATTERNS          = *.hpp
+
+# Input files
+INPUT                  = @DOXYGEN_INPUT_DIR@
+FILE_PATTERNS          = *.h *.hpp
 RECURSIVE              = YES
+STRIP_FROM_INC_PATH    = @DOXYGEN_INPUT_DIR@
+EXTRACT_CONCEPTS       = YES
+
+# Output directory
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIR@
+
+# Output formats
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+
+# Extraction settings
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
 EXTRACT_STATIC         = YES
-GENERATE_HTML          = YES
-GENERATE_XML           = YES
-XML_OUTPUT             = xml
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+# Index
+ALPHABETICAL_INDEX     = YES
+
+# Preprocessing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+
+# Graphs and diagrams
 HAVE_DOT               = YES
-UML_LOOK               = YES
-TEMPLATE_RELATIONS     = YES
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
 CALL_GRAPH             = YES
 CALLER_GRAPH           = YES
-STRIP_FROM_PATH        = {os.path.dirname(include_dir)}
-STRIP_FROM_INC_PATH    = {os.path.dirname(include_dir)}
+
+# Miscellaneous
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
 '''
     create_file(os.path.join(docs_dir, 'Doxyfile.in'), doxyfile_content)
 
