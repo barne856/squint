@@ -18,11 +18,13 @@ SQUINT provides optional runtime error checking for both quantities and tensors.
 When error checking is enabled, SQUINT performs various runtime checks:
 
 - For quantities:
+
   - Overflow and underflow checks in arithmetic operations
   - Division by zero checks
   - Dimension compatibility checks in operations
 
 - For tensors:
+
   - Bounds checking for element access
   - Shape compatibility checks in operations
   - Dimension checks for linear algebra operations
@@ -51,7 +53,7 @@ Constants
 ---------
 
 
-SQUINT includes a comprehensive set of physical and mathematical constants:
+SQUINT includes a comprehensive set of physical and mathematical constants for example:
 
 .. code-block::
 
@@ -71,7 +73,7 @@ SQUINT includes a comprehensive set of physical and mathematical constants:
    // Atomic constants
    auto electron_mass = atomic_constants<double>::electron_mass;  // Electron mass
 
-These constants are implemented as `constant_quantity_t` types, ensuring proper dimensional analysis in calculations.
+These constants and more are implemented as `constant_quantity_t` types, ensuring proper dimensional analysis in calculations.
 
 
 Tensor Views with Step Sizes

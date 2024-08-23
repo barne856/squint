@@ -13,7 +13,8 @@ SQUINT leverages modern C++ features and requires a C++23 compliant compiler. Cu
 - GCC (g++) version 12 or later
 - Clang version 15 or later
 
-Note: MSVC is partially supported but lacks support for multidimensional subscript operators.
+.. note::
+  MSVC is partially supported but lacks support for multidimensional subscript operators.
 
 
 Build Instructions
@@ -21,7 +22,7 @@ Build Instructions
 
 
 1. Ensure you have CMake version 3.28 or later and a supported compiler installed.
-2. Optionally install MKL or OpenBLAS for BLAS backend support.
+2. Optionally install MKL if you intend to use it as a BLAS backend.
 3. Build the project using the following commands:
 
 .. code-block::
@@ -50,19 +51,25 @@ BLAS Backends
 SQUINT supports three BLAS backends to cater to different performance needs and system configurations:
 
 1. Intel MKL: Optimized for high performance on Intel processors
-   ```bash
+
+.. code-block::
+
    cmake -DSQUINT_BLAS_BACKEND=MKL ..
-   ```
 
 2. OpenBLAS: An open-source alternative that's portable across different architectures
-   ```bash
+   
+.. code-block::
+
    cmake -DSQUINT_BLAS_BACKEND=OpenBLAS ..
-   ```
 
 3. NONE: A limited fallback implementation for maximum portability
-   ```bash
+   
+.. code-block::
+
    cmake -DSQUINT_BLAS_BACKEND=NONE ..
-   ```
+
+.. note::
+  For the OpenBLAS backend, SQUINT will automatically fetch the source code from github and build it from source along with the library if you use the provided CMakeLists.txt file.
 
 
 Serving Documentation
@@ -73,5 +80,5 @@ If SQUINT was built with documentation, you can serve it locally using
 
 .. code-block::
 
-   python -m http.server 80 -d ./build/sphinx
+   python -m http.server -d ./build/sphinx
 

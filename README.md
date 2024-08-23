@@ -94,12 +94,13 @@ SQUINT leverages modern C++ features and requires a C++23 compliant compiler. Cu
 - GCC (g++) version 12 or later
 - Clang version 15 or later
 
-Note: MSVC is partially supported but lacks support for multidimensional subscript operators.
+.. note::
+  MSVC is partially supported but lacks support for multidimensional subscript operators.
 
 ### Build Instructions
 
 1. Ensure you have CMake version 3.28 or later and a supported compiler installed.
-2. Optionally install MKL or OpenBLAS for BLAS backend support.
+2. Optionally install MKL if you intend to use it as a BLAS backend.
 3. Build the project using the following commands:
 
 ```bash
@@ -122,26 +123,32 @@ SQUINT provides several CMake options to customize the build:
 SQUINT supports three BLAS backends to cater to different performance needs and system configurations:
 
 1. Intel MKL: Optimized for high performance on Intel processors
-   ```bash
-   cmake -DSQUINT_BLAS_BACKEND=MKL ..
-   ```
+
+```bash
+cmake -DSQUINT_BLAS_BACKEND=MKL ..
+```
 
 2. OpenBLAS: An open-source alternative that's portable across different architectures
-   ```bash
-   cmake -DSQUINT_BLAS_BACKEND=OpenBLAS ..
-   ```
+   
+```bash
+cmake -DSQUINT_BLAS_BACKEND=OpenBLAS ..
+```
 
 3. NONE: A limited fallback implementation for maximum portability
-   ```bash
-   cmake -DSQUINT_BLAS_BACKEND=NONE ..
-   ```
+   
+```bash
+cmake -DSQUINT_BLAS_BACKEND=NONE ..
+```
+
+.. note::
+  For the OpenBLAS backend, SQUINT will automatically fetch the source code from github and build it from source along with the library if you use the provided CMakeLists.txt file.
 
 ### Serving Documentation
 
 If SQUINT was built with documentation, you can serve it locally using
 
 ```
-python -m http.server 80 -d ./build/sphinx
+python -m http.server -d ./build/sphinx
 ```
 
 ## Core Components
@@ -182,6 +189,7 @@ class quantity;
 ```
 
 Where:
+
 - `T` is the underlying arithmetic type (e.g., `float`, `double`, `int`)
 - `D` is the dimension type
 - `ErrorChecking` is the error checking policy
@@ -224,84 +232,96 @@ sizeof(float) == sizeof(length_t<float>);
 SQUINT provides a comprehensive set of mathematical operations for quantities:
 
 - **Absolute Value**:
-  ```cpp
-  auto abs_value = abs(quantity);
-  ```
+
+```cpp
+auto abs_value = abs(quantity);
+```
 
 - **Square Root**:
-  ```cpp
-  auto sqrt_value = sqrt(quantity);
-  ```
+
+```cpp
+auto sqrt_value = sqrt(quantity);
+```
 
 - **Nth Root**:
-  ```cpp
-  auto nth_root = root<N>(quantity);
-  ```
+  
+```cpp
+auto nth_root = root<N>(quantity);
+```
 
 - **Exponential** (for dimensionless quantities):
-  ```cpp
-  auto exp_value = exp(dimensionless_quantity);
-  ```
+  
+```cpp
+auto exp_value = exp(dimensionless_quantity);
+```
 
 - **Logarithm** (for dimensionless quantities):
-  ```cpp
-  auto log_value = log(dimensionless_quantity);
-  ```
+  
+```cpp
+auto log_value = log(dimensionless_quantity);
+```
 
 - **Power**:
-  ```cpp
-  auto powered_value = pow<N>(quantity);
-  ```
+  
+```cpp
+auto powered_value = pow<N>(quantity);
+```
 
 #### Trigonometric Functions
 
-For dimensionless quantities, SQUINT provides standard trigonometric functions:
+For dimensionless quantities, SQUINT provides standard trigonometric functions for dimensionless quantities:
 
 - **Sine, Cosine, Tangent**:
-  ```cpp
-  auto sin_value = sin(angle);
-  auto cos_value = cos(angle);
-  auto tan_value = tan(angle);
-  ```
+
+```cpp
+auto sin_value = sin(angle);
+auto cos_value = cos(angle);
+auto tan_value = tan(angle);
+```
 
 - **Inverse Trigonometric Functions**:
-  ```cpp
-  auto asin_value = asin(dimensionless_quantity);
-  auto acos_value = acos(dimensionless_quantity);
-  auto atan_value = atan(dimensionless_quantity);
-  ```
+  
+```cpp
+auto asin_value = asin(dimensionless_quantity);
+auto acos_value = acos(dimensionless_quantity);
+auto atan_value = atan(dimensionless_quantity);
+```
 
 - **Two-argument Arctangent**:
-  ```cpp
-  auto atan2_value = atan2(y, x);
-  ```
+  
+```cpp
+auto atan2_value = atan2(y, x);
+```
 
 #### Hyperbolic Functions
 
 SQUINT also includes hyperbolic functions for dimensionless quantities:
 
 - **Hyperbolic Sine, Cosine, Tangent**:
-  ```cpp
-  auto sinh_value = sinh(dimensionless_quantity);
-  auto cosh_value = cosh(dimensionless_quantity);
-  auto tanh_value = tanh(dimensionless_quantity);
-  ```
+
+```cpp
+auto sinh_value = sinh(dimensionless_quantity);
+auto cosh_value = cosh(dimensionless_quantity);
+auto tanh_value = tanh(dimensionless_quantity);
+```
 
 - **Inverse Hyperbolic Functions**:
-  ```cpp
-  auto asinh_value = asinh(dimensionless_quantity);
-  auto acosh_value = acosh(dimensionless_quantity);
-  auto atanh_value = atanh(dimensionless_quantity);
-  ```
+  
+```cpp
+auto asinh_value = asinh(dimensionless_quantity);
+auto acosh_value = acosh(dimensionless_quantity);
+auto atanh_value = atanh(dimensionless_quantity);
+```
 
 #### Comparison
 
-SQUINT provides an approximate equality function for comparing quantities:
+In addition to the standard comparision operators, SQUINT provides an approximate equality function for comparing quantities:
 
 - **Approximate Equality**:
-  ```cpp
-  bool are_equal = approx_equal(quantity1, quantity2, epsilon);
-  ```
+
+```cpp
+bool are_equal = approx_equal(quantity1, quantity2, epsilon);
+```
 
 ### Tensor System
 
@@ -316,6 +336,7 @@ class tensor;
 ```
 
 Key features of the tensor system include:
+
 - Single class design for both fixed and dynamic shapes
 - Compile-time optimizations for fixed shapes
 - Runtime flexibility for dynamic shapes
@@ -393,6 +414,7 @@ auto zero_matrix = mat3::zeros();
 auto ones_matrix = mat4::ones();
 auto identity_matrix = mat3::eye();
 auto random_matrix = mat3::random(0.0, 1.0);
+// and more ...
 ```
 
 3. Element-wise initialization:
@@ -603,11 +625,13 @@ tensor<float, shape<3, 3>, strides::column_major<shape<3, 3>>, error_checking::e
 When error checking is enabled, SQUINT performs various runtime checks:
 
 - For quantities:
+
   - Overflow and underflow checks in arithmetic operations
   - Division by zero checks
   - Dimension compatibility checks in operations
 
 - For tensors:
+
   - Bounds checking for element access
   - Shape compatibility checks in operations
   - Dimension checks for linear algebra operations
@@ -630,7 +654,7 @@ auto speed_mph = convert_to<units::miles_per_hour_t>(speed);
 
 ### Constants
 
-SQUINT includes a comprehensive set of physical and mathematical constants:
+SQUINT includes a comprehensive set of physical and mathematical constants for example:
 
 ```cpp
 // Physical constants
@@ -650,7 +674,7 @@ auto solar_mass = astro_constants<double>::solar_mass;  // Solar mass
 auto electron_mass = atomic_constants<double>::electron_mass;  // Electron mass
 ```
 
-These constants are implemented as `constant_quantity_t` types, ensuring proper dimensional analysis in calculations.
+These constants and more are implemented as `constant_quantity_t` types, ensuring proper dimensional analysis in calculations.
 
 ### Tensor Views with Step Sizes
 
@@ -714,13 +738,7 @@ When using views with step sizes, keep in mind:
 
 ## API Reference
 
-For a complete API reference, please refer to the inline documentation in the header files or build SQUINT with the documentation. The documentation provides detailed information about each class, function, and template, including:
-
-- Template parameters and their constraints
-- Function parameters and return types
-- Preconditions and postconditions
-- Exception specifications
-- Usage examples
+A complete API reference is included with this documentation, you can also refer to the inline documentation in the header files which is used to generate the API reference.
 
 ## Performance Considerations
 

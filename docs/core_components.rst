@@ -45,6 +45,7 @@ The `quantity` class template is the core of SQUINT's quantity system, represent
    class quantity;
 
 Where:
+
 - `T` is the underlying arithmetic type (e.g., `float`, `double`, `int`)
 - `D` is the dimension type
 - `ErrorChecking` is the error checking policy
@@ -90,60 +91,69 @@ Basic Operations
 SQUINT provides a comprehensive set of mathematical operations for quantities:
 
 - **Absolute Value**:
-  ```cpp
-  auto abs_value = abs(quantity);
-  ```
+
+.. code-block::
+
+   auto abs_value = abs(quantity);
 
 - **Square Root**:
-  ```cpp
-  auto sqrt_value = sqrt(quantity);
-  ```
+
+.. code-block::
+
+   auto sqrt_value = sqrt(quantity);
 
 - **Nth Root**:
-  ```cpp
-  auto nth_root = root<N>(quantity);
-  ```
+  
+.. code-block::
+
+   auto nth_root = root<N>(quantity);
 
 - **Exponential** (for dimensionless quantities):
-  ```cpp
-  auto exp_value = exp(dimensionless_quantity);
-  ```
+  
+.. code-block::
+
+   auto exp_value = exp(dimensionless_quantity);
 
 - **Logarithm** (for dimensionless quantities):
-  ```cpp
-  auto log_value = log(dimensionless_quantity);
-  ```
+  
+.. code-block::
+
+   auto log_value = log(dimensionless_quantity);
 
 - **Power**:
-  ```cpp
-  auto powered_value = pow<N>(quantity);
-  ```
+  
+.. code-block::
+
+   auto powered_value = pow<N>(quantity);
 
 
 Trigonometric Functions
 -----------------------
 
 
-For dimensionless quantities, SQUINT provides standard trigonometric functions:
+For dimensionless quantities, SQUINT provides standard trigonometric functions for dimensionless quantities:
 
 - **Sine, Cosine, Tangent**:
-  ```cpp
-  auto sin_value = sin(angle);
-  auto cos_value = cos(angle);
-  auto tan_value = tan(angle);
-  ```
+
+.. code-block::
+
+   auto sin_value = sin(angle);
+   auto cos_value = cos(angle);
+   auto tan_value = tan(angle);
 
 - **Inverse Trigonometric Functions**:
-  ```cpp
-  auto asin_value = asin(dimensionless_quantity);
-  auto acos_value = acos(dimensionless_quantity);
-  auto atan_value = atan(dimensionless_quantity);
-  ```
+  
+.. code-block::
+
+   auto asin_value = asin(dimensionless_quantity);
+   auto acos_value = acos(dimensionless_quantity);
+   auto atan_value = atan(dimensionless_quantity);
 
 - **Two-argument Arctangent**:
-  ```cpp
-  auto atan2_value = atan2(y, x);
-  ```
+  
+.. code-block::
+
+   auto atan2_value = atan2(y, x);
 
 
 Hyperbolic Functions
@@ -153,30 +163,33 @@ Hyperbolic Functions
 SQUINT also includes hyperbolic functions for dimensionless quantities:
 
 - **Hyperbolic Sine, Cosine, Tangent**:
-  ```cpp
-  auto sinh_value = sinh(dimensionless_quantity);
-  auto cosh_value = cosh(dimensionless_quantity);
-  auto tanh_value = tanh(dimensionless_quantity);
-  ```
+
+.. code-block::
+
+   auto sinh_value = sinh(dimensionless_quantity);
+   auto cosh_value = cosh(dimensionless_quantity);
+   auto tanh_value = tanh(dimensionless_quantity);
 
 - **Inverse Hyperbolic Functions**:
-  ```cpp
-  auto asinh_value = asinh(dimensionless_quantity);
-  auto acosh_value = acosh(dimensionless_quantity);
-  auto atanh_value = atanh(dimensionless_quantity);
-  ```
+  
+.. code-block::
+
+   auto asinh_value = asinh(dimensionless_quantity);
+   auto acosh_value = acosh(dimensionless_quantity);
+   auto atanh_value = atanh(dimensionless_quantity);
 
 
 Comparison
 ----------
 
 
-SQUINT provides an approximate equality function for comparing quantities:
+In addition to the standard comparision operators, SQUINT provides an approximate equality function for comparing quantities:
 
 - **Approximate Equality**:
-  ```cpp
-  bool are_equal = approx_equal(quantity1, quantity2, epsilon);
-  ```
+
+.. code-block::
+
+   bool are_equal = approx_equal(quantity1, quantity2, epsilon);
 
 
 Tensor System
@@ -194,6 +207,7 @@ SQUINT's tensor system is built around a single, flexible `tensor` class with a 
    class tensor;
 
 Key features of the tensor system include:
+
 - Single class design for both fixed and dynamic shapes
 - Compile-time optimizations for fixed shapes
 - Runtime flexibility for dynamic shapes

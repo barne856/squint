@@ -59,6 +59,7 @@ SQUINT provides several ways to construct tensors, with a default column-major l
    auto ones_matrix = mat4::ones();
    auto identity_matrix = mat3::eye();
    auto random_matrix = mat3::random(0.0, 1.0);
+   // and more ...
 
 3. Element-wise initialization:
 
