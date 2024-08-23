@@ -30,6 +30,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libc++abi-$LLVM_VERSION-dev \
     lldb-$LLVM_VERSION \
     lld-$LLVM_VERSION \
+    libomp-dev \
     ninja-build \
     gfortran \
     doxygen \
