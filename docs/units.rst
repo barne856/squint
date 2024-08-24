@@ -83,7 +83,7 @@ Here's an example that combines unit literals with calculations:
     auto time = 2.0_h;
     auto speed = distance / time;
 
-    std::cout << "Average speed: " << speed << std::endl;  // Output will be in km/h
+    std::cout << "Average speed: " << speed << std::endl;  // Output will be in base units of m/s
 
     auto acceleration = 9.81_mps / 1.0_s;
     std::cout << "Acceleration: " << acceleration << std::endl;  // Output will be in m/s^2
