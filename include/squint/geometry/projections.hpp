@@ -9,7 +9,24 @@
 
 namespace squint::geometry {
 
-// Orthographic Projection
+/**
+ * @brief Creates an orthographic projection matrix.
+ *
+ * This function generates a 4x4 orthographic projection matrix that maps the specified
+ * viewing frustum onto a unit cube centered at the origin.
+ *
+ * @tparam T The underlying scalar type for the length quantities.
+ * @param left The left clipping plane coordinate.
+ * @param right The right clipping plane coordinate.
+ * @param bottom The bottom clipping plane coordinate.
+ * @param top The top clipping plane coordinate.
+ * @param near_plane The near clipping plane distance.
+ * @param far_plane The far clipping plane distance.
+ * @param unit_length The unit length for the projection space (default is 1).
+ * @return A 4x4 tensor representing the orthographic projection matrix.
+ *
+ * @note The resulting matrix assumes a right-handed coordinate system.
+ */
 template <typename T>
 auto ortho(length_t<T> left, length_t<T> right, length_t<T> bottom, length_t<T> top, length_t<T> near_plane,
            length_t<T> far_plane, length_t<T> unit_length = length_t<T>{1}) {
@@ -29,7 +46,24 @@ auto ortho(length_t<T> left, length_t<T> right, length_t<T> bottom, length_t<T> 
     return result;
 }
 
-// Perspective Projection
+/**
+ * @brief Creates a perspective projection matrix.
+ *
+ * This function generates a 4x4 perspective projection matrix based on the specified
+ * field of view, aspect ratio, and near and far clipping planes.
+ *
+ * @tparam T The underlying scalar type for the field of view and aspect ratio.
+ * @tparam U The underlying scalar type for the length quantities.
+ * @param fovy The vertical field of view in radians.
+ * @param aspect The aspect ratio (width / height) of the viewport.
+ * @param near_plane The distance to the near clipping plane.
+ * @param far_plane The distance to the far clipping plane.
+ * @param unit_length The unit length for the projection space (default is 1).
+ * @return A 4x4 tensor representing the perspective projection matrix.
+ *
+ * @note The resulting matrix assumes a right-handed coordinate system.
+ * @note The field of view (fovy) should be in radians.
+ */
 template <dimensionless_scalar T, typename U>
 auto perspective(T fovy, T aspect, length_t<U> near_plane, length_t<U> far_plane,
                  length_t<U> unit_length = length_t<U>{1}) {

@@ -11,6 +11,8 @@ Welcome to SQUINT's documentation!
    installation
    building_and_testing
    core_components
+   units
+   geometry
    usage
    advanced_features
    api_reference
