@@ -154,12 +154,13 @@ Column-Major Construction (Default)
 
 Column-major is the default ordering for tensor construction in SQUINT:
 
-```cpp
-mat2x3 A{1, 4, 2, 5, 3, 6};
-// A represents:
-// [1 2 3]
-// [4 5 6]
-```
+.. code-block::
+
+   mat2x3 A{1, 4, 2, 5, 3, 6};
+   // A represents:
+   // [1 2 3]
+   // [4 5 6]
+
 
 In this case, the elements are filled column by column.
 
@@ -168,12 +169,12 @@ Row-Major Construction
 
 To construct a tensor using row-major order, you need to explicitly specify it:
 
-```cpp
-tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> B{1, 2, 3, 4, 5, 6};
-// B represents:
-// [1 2 3]
-// [4 5 6]
-```
+.. code-block::
+
+   tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> B{1, 2, 3, 4, 5, 6};
+   // B represents:
+   // [1 2 3]
+   // [4 5 6]
 
 In this case, the elements are filled row by row.
 
@@ -182,29 +183,29 @@ Iteration Order
 
 It's crucial to understand that the choice between row-major and column-major construction does not affect the order of iteration when using flat iterators or subview iterators. The iteration order remains consistent regardless of the construction order:
 
-```cpp
-// Iteration order is the same for both A and B
-for (const auto& element : A) {
-    // Iterates in the order: 1, 4, 2, 5, 3, 6
-}
+.. code-block::
 
-for (const auto& element : B) {
-    // Also iterates in the order: 1, 4, 2, 5, 3, 6
-}
-```
+   // Iteration order is the same for both A and B
+   for (const auto& element : A) {
+       // Iterates in the order: 1, 4, 2, 5, 3, 6
+   }
+
+   for (const auto& element : B) {
+       // Also iterates in the order: 1, 4, 2, 5, 3, 6
+   }
 
 Specifying Strides
 ------------------
 
 You can explicitly specify the stride type when declaring a tensor:
 
-```cpp
-// Column-major tensor (default)
-tensor<float, shape<2,3>, strides::column_major<shape<2,3>>> C{1, 4, 2, 5, 3, 6};
+.. code-block::
 
-// Row-major tensor
-tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> D{1, 2, 3, 4, 5, 6};
-```
+   // Column-major tensor (default)
+   tensor<float, shape<2,3>, strides::column_major<shape<2,3>>> C{1, 4, 2, 5, 3, 6};
+
+   // Row-major tensor
+   tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> D{1, 2, 3, 4, 5, 6};
 
 Performance Considerations
 --------------------------
