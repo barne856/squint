@@ -105,7 +105,7 @@ SQUINT allows easy conversion between compatible units:
 .. code-block:: cpp
 
     auto length_m = units::meters(1000.0);
-    auto length_km = convert_to<units::kilometer_t>(length_m);
+    auto length_km = convert_to<units::kilometers_t>(length_m);
     units::kilometers length_km_2 = length_m; // Equivalent to the above
 
     std::cout << length_m.unit_value() << " meters is " << length_km.unit_value() << " kilometers" << std::endl;
