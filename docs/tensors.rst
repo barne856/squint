@@ -1,39 +1,6 @@
 
-Usage
+Tensors
 =====
-
-
-
-Quantity Usage
---------------
-
-
-Quantities in SQUINT can be used in a variety of ways, showcasing their flexibility and integration with both scalar and tensor operations:
-
-.. code-block::
-
-   // Basic quantity creation and arithmetic
-   auto length = length_t<double>::meters(10.0);
-   auto time = time_t<double>::seconds(2.0);
-   auto velocity = length / time;
-   
-   // Using quantities with mathematical functions
-   auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
-   auto kinetic_energy = 0.5 * mass_t<double>::kilograms(2.0) * pow<2>(velocity);
-   
-   // Dimensionless quantities
-   auto ratio = length / length_t<double>::meters(5.0);
-   double scalar_value = std::sin(ratio);  // ratio can be used directly in std::sin
-   
-   // Quantity-aware tensors
-   vec3_t<length_t<double>> position{
-       length_t<double>::meters(1.0),
-       length_t<double>::meters(2.0),
-       length_t<double>::meters(3.0)
-   };
-   
-   // Mixing quantities and scalars in tensor operations
-   auto scaled_position = position * 2.0;  // Results in a vec3_t<length_t<double>>
 
 
 Tensor Construction
@@ -95,9 +62,9 @@ SQUINT provides several ways to construct tensors, with a default column-major l
 .. code-block::
 
    vec3_t<length_t<double>> position{
-       length_t<double>::meters(1.0),
-       length_t<double>::meters(2.0),
-       length_t<double>::meters(3.0)
+       units::meters(1.0),
+       units::meters(2.0),
+       units::meters(3.0)
    };
 
 
@@ -276,3 +243,78 @@ For tensors :math:`A` and :math:`B`, the contraction over indices :math:`i` and 
   
 :math:`(A \cdot B)_{k_1...k_n l_1...l_m} = \sum_{i,j} A_{k_1...k_n i} B_{j l_1...l_m}`
 
+
+Tensor Error Checking
+---------------------
+
+SQUINT provides optional error checking for tensors, which is separate from and orthogonal to error checking for quantities. When enabled, tensor error checking primarily focuses on bounds checking and additional shape checks at runtime, especially for dynamic tensors.
+
+Enabling Error Checking
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Error checking for tensors can be enabled by specifying the `error_checking::enabled` policy when declaring a tensor:
+
+.. code-block:: cpp
+
+   using ErrorTensor = squint::tensor<float, dynamic, dynamic, error_checking::enabled>
+   ErrorTensor t({2,3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+
+Types of Checks
+^^^^^^^^^^^^^^^
+
+When error checking is enabled for tensors, SQUINT performs the following types of checks:
+
+1. **Bounds Checking**: Ensures that element access is within the tensor's dimensions.
+
+   .. code-block:: cpp
+
+      // This will throw std::out_of_range
+      t(2, 0);
+      t(0, 3);
+
+2. **Shape Compatibility**: Verifies that tensor operations are performed on compatible shapes.
+
+   .. code-block:: cpp
+
+      ErrorTensor a({2, 3});
+      ErrorTensor b({3, 4});
+      ErrorTensor c({2, 4});
+      
+      // This will compile and run correctly
+      auto result1 = a * b;
+      
+      // This will throw a runtime error due to incompatible shapes
+      auto result2 = a * c;
+
+3. **View Bounds**: Ensures that tensor views and reshaping operations are within bounds.
+
+   .. code-block:: cpp
+
+      // This will throw if the subview exceeds the tensor's bounds
+      auto subview = t.subview({2,2}, {1, 2});
+
+Performance Considerations
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While error checking provides additional safety, it does come with a performance cost. In performance-critical code, you may want to disable error checking:
+
+.. code-block:: cpp
+
+   using FastTensor = squint::tensor<float, squint::shape<2, 3>, squint::strides::column_major<squint::shape<2, 3>>, squint::error_checking::disabled>;
+   FastTensor ft{1, 4, 2, 5, 3, 6};
+
+   // No bounds checking performed, may lead to undefined behavior if accessed out of bounds
+   auto element = ft(1, 1);
+
+Error Checking and Quantities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's important to note that tensor error checking is independent of quantity error checking. You can have tensors of quantities with different error checking policies:
+
+.. code-block:: cpp
+
+   // Tensor with error checking, containing quantities without error checking
+   tensor<length_t<double>, shape<3>, strides::column_major<shape<3>>, error_checking::enabled> t1;
+
+   // Tensor without error checking, containing quantities with error checking
+   tensor<quantity<double, dimensions::L, error_checking::enabled>, shape<3>, strides::column_major<shape<3>>, error_checking::disabled> t2;

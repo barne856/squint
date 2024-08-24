@@ -13,7 +13,7 @@ Welcome to SQUINT's documentation!
    core_components
    units
    geometry
-   usage
+   tensors
    advanced_features
    api_reference
    performance_considerations

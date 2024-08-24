@@ -119,11 +119,11 @@ int main() {
     };
 
     // Simulation parameters
-    auto dt = squint::time::seconds(0.1f);
-    auto total_time = squint::time::seconds(1.0f);
+    auto dt = squint::units::seconds(0.1f);
+    auto total_time = squint::units::seconds(1.0f);
 
     // Simulation loop
-    for (auto t = squint::time::seconds(0.0f); t < total_time; t += dt) {
+    for (auto t = squint::units::seconds(0.0f); t < total_time; t += dt) {
         // Update position and velocity
         position += velocity * dt + 0.5f * acceleration * dt * dt;
         velocity += acceleration * dt;
