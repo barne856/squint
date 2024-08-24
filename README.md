@@ -3,6 +3,7 @@
 [![Build and Test](https://github.com/barne856/squint/workflows/Build%20and%20Test/badge.svg)](https://github.com/barne856/squint/actions/workflows/build_and_test.yml)
 [![Deploy static content to Pages](https://github.com/barne856/squint/workflows/Deploy%20static%20content%20to%20Pages/badge.svg)](https://github.com/barne856/squint/actions/workflows/docs.yml)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://barne856.github.io/squint/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 SQUINT is a header-only C++ library designed for compile-time dimensional analysis, unit conversion, and linear algebra operations. It's particularly well-suited for graphics programming and physics simulations, combining a quantity system for handling physical units and dimensions with a tensor system for efficient numerical computations.
 
