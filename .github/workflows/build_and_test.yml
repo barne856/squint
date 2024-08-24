@@ -21,8 +21,6 @@ jobs:
             cc: clang-19
             cxx: clang++-19
         exclude:
-          - os: windows-latest
-            compiler: gcc
           - os: ubuntu-latest
             compiler: msvc
           - os: windows-latest
@@ -84,6 +82,14 @@ jobs:
           if [ "${{ matrix.compiler }}" = "clang" ]; then
             export CC=clang
             export CXX=clang++
+          fi
+          if [ "${{ matrix.compiler }}" = "msvc" ]; then
+            export CC=cl
+            export CXX=cl
+          fi
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            export CC=gcc
+            export CXX=g++
           fi
         fi
         
