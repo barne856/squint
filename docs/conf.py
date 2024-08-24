@@ -18,5 +18,14 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
-    'titles_only': False
+    'titles_only': False,
+    "dark_css_variables": {
+        "color-foreground-primary": "#F0F0F0",
+        "color-foreground-secondary": "#B0B0B0",
+        "color-background-primary": "#0A0A0A",
+        "color-background-secondary": "#1A1A1A",
+        "color-brand-primary": "#DBDBDB",
+        "color-brand-content": "#00BFFF",
+        "color-admonition-background": "#005A82"
+    }
 }
