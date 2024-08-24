@@ -73,31 +73,34 @@ jobs:
         git diff --exit-code
       shell: bash
 
+    - name: Set up MSVC
+      if: matrix.os == 'windows-latest' && matrix.compiler == 'msvc'
+      uses: microsoft/setup-msbuild@v2
+
     - name: Configure CMake
       run: |
-        if [ "${{ runner.os }}" = "Linux" ]; then
-          export CC=${{ matrix.cc }}
-          export CXX=${{ matrix.cxx }}
-        elif [ "${{ runner.os }}" = "Windows" ]; then
-          if [ "${{ matrix.compiler }}" = "clang" ]; then
-            export CC=clang
-            export CXX=clang++
+        if [ "${{ runner.os }}" = "Windows" ] && [ "${{ matrix.compiler }}" = "msvc" ]; then
+          pwsh -Command "cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=OFF -DSQUINT_BLAS_BACKEND=${{ matrix.blas }}"
+        else
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            if [ "${{ matrix.compiler }}" = "clang" ]; then
+              export CC=clang
+              export CXX=clang++
+            elif [ "${{ matrix.compiler }}" = "gcc" ]; then
+              export CC=gcc
+              export CXX=g++
+            fi
+          else
+            export CC=${{ matrix.cc }}
+            export CXX=${{ matrix.cxx }}
           fi
-          if [ "${{ matrix.compiler }}" = "msvc" ]; then
-            export CC=cl
-            export CXX=cl
+          
+          if [ "${{ matrix.blas }}" = "MKL" ] && [ "${{ runner.os }}" = "Linux" ]; then
+            source /opt/intel/oneapi/setvars.sh
           fi
-          if [ "${{ matrix.compiler }}" = "gcc" ]; then
-            export CC=gcc
-            export CXX=g++
-          fi
+          
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=OFF -DSQUINT_BLAS_BACKEND=${{ matrix.blas }}
         fi
-        
-        if [ "${{ matrix.blas }}" = "MKL" ] && [ "${{ runner.os }}" = "Linux" ]; then
-          source /opt/intel/oneapi/setvars.sh
-        fi
-        
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=OFF -DSQUINT_BLAS_BACKEND=${{ matrix.blas }}
       shell: bash
 
     - name: Build
