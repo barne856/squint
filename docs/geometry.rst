@@ -23,6 +23,7 @@ The `ortho` function creates an orthographic projection matrix:
 This function generates a 4x4 orthographic projection matrix that maps the specified viewing frustum onto a unit cube centered at the origin.
 
 Parameters:
+
 - `left`, `right`: The left and right clipping plane coordinates
 - `bottom`, `top`: The bottom and top clipping plane coordinates
 - `near_plane`, `far_plane`: The distances to the near and far clipping planes
@@ -55,6 +56,7 @@ The `perspective` function creates a perspective projection matrix:
 This function generates a 4x4 perspective projection matrix based on the specified field of view, aspect ratio, and near and far clipping planes.
 
 Parameters:
+
 - `fovy`: The vertical field of view in radians
 - `aspect`: The aspect ratio (width / height) of the viewport
 - `near_plane`, `far_plane`: The distances to the near and far clipping planes
