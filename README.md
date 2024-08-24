@@ -94,8 +94,6 @@ int main() {
 }
 ```
 
-## Physics Simulation Example
-
 SQUINT can be used for physics calculations:
 
 ```cpp
