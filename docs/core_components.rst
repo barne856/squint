@@ -66,7 +66,7 @@ Quantities in SQUINT have all the properties of built-in arithmetic types, allow
 .. code-block::
 
    // Quantities can be used in mathematical functions
-   auto acceleration = length_t<double>::meters(9.81) / (time_t<double>::seconds(1) * time_t<double>::seconds(1));
+   auto acceleration = units::meters(9.81) / (units::seconds(1) * units::seconds(1));
 
 Importantly, dimensionless quantities can be used interchangeably with built-in arithmetic types, providing a seamless integration with existing code:
 

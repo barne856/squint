@@ -40,12 +40,12 @@ SQUINT supports seamless unit conversions within the same dimension:
 
 .. code-block::
 
-   auto meters = length_t<double>::meters(5.0);
+   auto meters = units::meters(5.0);
    auto feet = convert_to<units::feet_t>(meters);
    auto inches = convert_to<units::inches_t>(meters);
    
    // Unit conversions can also be done directly in calculations
-   auto speed = length_t<double>::kilometers(60.0) / time_t<double>::hours(1.0);
+   auto speed = units::kilometers(60.0) / units::hours(1.0);
    auto speed_mph = convert_to<units::miles_per_hour_t>(speed);
 
 
