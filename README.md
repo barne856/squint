@@ -56,13 +56,14 @@ SQUINT can be used for common graphics operations:
 #include <squint/tensor.hpp>
 
 using namespace squint;
+using namespace squint::units::literals;
 
 int main() {
     // Define a 3D point
     vec3_t<length> point{
-      length(1.0f),
-      length(2.0f),
-      length(3.0f)
+      1.0_m,
+      2.0_m,
+      3.0_m
     };
 
     // Create a model matrix
@@ -72,14 +73,14 @@ int main() {
     geometry::translate(
     model,
     vec3_t<length>{
-        length(2.0f),
-        length(1.0f),
-        length(0.0f)
+        2.0_m,
+        1.0_m,
+        0.0_m
     });
     geometry::rotate(
     model,
     math_constants<float>::pi / 4.0f,
-    vec3_t<pure>{
+    vec3{
         0.0f,
         1.0f,
         0.0f

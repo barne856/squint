@@ -42,13 +42,14 @@ void translate(T &matrix, const tensor<length_t<U>, shape<3>> &x, length_t<U> un
  * This function modifies the input transformation matrix by applying a rotation around an arbitrary axis.
  *
  * @tparam T The type of the transformation matrix.
- * @tparam U The underlying scalar type for the angle and axis.
+ * @tparam U The underlying scalar type for the angle.
+ * @tparam V The underlying scalar type for the axis.
  * @param matrix The transformation matrix to modify.
  * @param angle The rotation angle in radians.
  * @param axis The rotation axis.
  */
-template <transformation_matrix T, dimensionless_scalar U>
-void rotate(T &matrix, U angle, const tensor<U, shape<3>> &axis) {
+template <transformation_matrix T, dimensionless_scalar U, dimensionless_scalar V>
+void rotate(T &matrix, U angle, const tensor<V, shape<3>> &axis) {
     U c = std::cos(angle);
     U s = std::sin(angle);
     auto norm_axis = axis / norm(axis);
