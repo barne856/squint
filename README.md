@@ -50,19 +50,19 @@ target_link_libraries(your_target PRIVATE squint::squint)
 SQUINT can be used for common graphics operations:
 
 ```cpp
+#include <iostream>
+#include <squint/geometry.hpp>
 #include <squint/quantity.hpp>
 #include <squint/tensor.hpp>
-#include <squint/geometry.hpp>
-#include <iostream>
 
 using namespace squint;
 
 int main() {
     // Define a 3D point
     vec3_t<length> point{
-        length(1.0f),
-        length(2.0f),
-        length(3.0f)
+      length(1.0f),
+      length(2.0f),
+      length(3.0f)
     };
 
     // Create a model matrix
@@ -70,69 +70,71 @@ int main() {
 
     // Apply transformations
     geometry::translate(
-        model,
-        vec3{
-            length(2.0f),
-            length(1.0f),
-            length(0.0f)
-        }
-    );
+    model,
+    vec3_t<length>{
+        length(2.0f),
+        length(1.0f),
+        length(0.0f)
+    });
     geometry::rotate(
-        model,
-        math_constants::pi<float> / 4.0f,
-        vec3{0.0f, 1.0f, 0.0f}
-    );
+    model,
+    math_constants<float>::pi / 4.0f,
+    vec3_t<pure>{
+        0.0f,
+        1.0f,
+        0.0f
+    });
     geometry::scale(
-        model,
-        vec3{2.0f, 2.0f, 2.0f}
-    );
+    model, 
+    vec3{
+        2.0f,
+        2.0f,
+        2.0f
+    });
 
     // Transform the point
-    vec4 homogeneous_point{point(0), point(1), point(2), 1.0f};
-    vec4 transformed_point = model * homogeneous_point;
+    vec4_t<length> homogeneous_point{point(0), point(1), point(2), length(1.0f)};
+    auto transformed_point = model * homogeneous_point;
 
-    return 0;
+    std::cout << "point: " << point << std::endl;
+    std::cout << "transformed_point: " << transformed_point << std::endl;
+
+  return 0;
 }
 ```
 
 SQUINT can be used for physics calculations:
 
 ```cpp
+#include <iostream>
 #include <squint/quantity.hpp>
 #include <squint/tensor.hpp>
-#include <iostream>
 
 using namespace squint;
 
 int main() {
-    // Define initial conditions
-    auto pos = vec3_t<length>::zeros();
-    vec3_t<velocity> vel{
-        velocity(5.0f),
-        velocity(10.0f),
-        velocity(0.0f)
-    };
-    vec3_t<acceleration_t<float>> acc{
-        acceleration(0.0f),
-        acceleration(-9.81f),
-        acceleration(0.0f)
-    };
+  // Define initial conditions
+  auto pos = vec3_t<length>::zeros();
+  vec3_t<velocity> vel{velocity(5.0f), velocity(10.0f), velocity(0.0f)};
+  vec3_t<acceleration_t<float>> acc{acceleration(0.0f), acceleration(-9.81f),
+                                    acceleration(0.0f)};
 
-    // Simulation parameters
-    auto dt = squint::units::seconds(0.1f);
-    auto total_time = squint::units::seconds(1.0f);
+  // Simulation parameters
+  auto dt = squint::units::seconds(0.1f);
+  auto total_time = squint::units::seconds(1.0f);
 
-    // Simulation loop
-    for (auto t = squint::units::seconds(0.0f); t < total_time; t += dt) {
-        // Update position and velocity
-        position += velocity * dt + 0.5f * acceleration * dt * dt;
-        velocity += acceleration * dt;
+  // Simulation loop
+  for (auto t = squint::units::seconds(0.0f); t < total_time; t += dt) {
+    // Update position and velocity
+    pos += vel * dt + 0.5f * acc * dt * dt;
+    vel += acc * dt;
 
-        // Print current state
-        std::cout << "Time: " << t << "\nPosition: " << position << "\nVelocity: " << velocity << "\n\n";
-    }
+    // Print current state
+    std::cout << "Time: " << t << "\nPosition: " << pos
+              << "\nVelocity: " << vel << "\n\n";
+  }
 
-    return 0;
+  return 0;
 }
 ```
 

@@ -6,7 +6,7 @@ SQUINT provides a robust system for handling physical units and dimensions, ensu
 Basic Usage
 -----------
 
-In SQUINT, quantities are represented using the `quantity` class template. Each quantity has a value and an associated dimension. Quantity types like `length` and `time` are specializations of the `quantity` class with specific dimensions set and units types like units::meters are derived classes of those quantity types. Here's a basic example:
+In SQUINT, quantities are represented using the `quantity` class template. Each quantity has a value and an associated dimension. Quantity types like `length` and `time` are specializations of the `quantity` class with specific dimensions and units types like units::meters are derived classes of those quantity types. Here's a basic example:
 
 .. code-block:: cpp
 
@@ -118,7 +118,7 @@ SQUINT allows you to use units with tensors, enabling type-safe calculations in 
 
     // Calculate displacement after 2 seconds
     auto t = units::seconds(2.0);
-    auto displacement = vel * time;
+    auto displacement = vel * t;
 
     std::cout << "Displacement: " << displacement << std::endl;
 
