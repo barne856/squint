@@ -49,6 +49,54 @@ You can create quantities using these predefined units:
     auto mass = units::kilograms(75.0);
     auto speed = units::miles_per_hour(60.0);
 
+Unit Literals
+-------------
+
+SQUINT provides user-defined literals for many common units, allowing for a more concise and readable way to create quantities. To use unit literals, you need to include the appropriate header and use the `squint::literals` namespace:
+
+.. code-block:: cpp
+
+    #include <squint/quantity/unit_literals.hpp>
+
+    using namespace squint::literals;
+
+
+Here are some examples of how to use unit literals:
+
+.. code-block:: cpp
+
+    auto length = 5.0_m;      // 5 meters
+    auto time = 2.5_s;        // 2.5 seconds
+    auto mass = 75.0_kg;      // 75 kilograms
+    auto temperature = 20.0_C; // 20 degrees Celsius
+    auto angle = 45.0_deg;    // 45 degrees
+    auto force = 10.0_N;      // 10 newtons
+    auto pressure = 1.0_atm;  // 1 atmosphere
+
+Using unit literals can make your code more readable and less prone to errors, as the units are clearly specified right next to the numeric values.
+
+Here's an example that combines unit literals with calculations:
+
+.. code-block:: cpp
+
+    auto distance = 100.0_km;
+    auto time = 2.0_h;
+    auto speed = distance / time;
+
+    std::cout << "Average speed: " << speed << std::endl;  // Output will be in km/h
+
+    auto acceleration = 9.81_mps / 1.0_s;
+    std::cout << "Acceleration: " << acceleration << std::endl;  // Output will be in m/s^2
+
+Unit literals are particularly useful when working with mixed units:
+
+.. code-block:: cpp
+
+    auto total_length = 5.0_m + 30.0_cm + 2.0_in;
+    std::cout << "Total length: " << total_length << std::endl;  // Output will be in meters
+
+SQUINT automatically handles the unit conversions, ensuring that the calculations are correct regardless of the input units.
+
 Unit Conversions
 ----------------
 
@@ -58,6 +106,7 @@ SQUINT allows easy conversion between compatible units:
 
     auto length_m = units::meters(1000.0);
     auto length_km = convert_to<units::kilometer_t>(length_m);
+    units::kilometers length_km_2 = length_m; // Equivalent to the above
 
     std::cout << length_m.unit_value() << " meters is " << length_km.unit_value() << " kilometers" << std::endl;
 

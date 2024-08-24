@@ -32,7 +32,7 @@ def count_tokens(text):
     return len(encoding.encode(text))
 
 # Specify the folder path and file extensions to include
-folder_path = "./docs"
+folder_path = "./include"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt', '.py', '.rst']
 
 # Specify the subdirectories to exclude
