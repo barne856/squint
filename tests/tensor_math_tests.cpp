@@ -385,6 +385,24 @@ TEST_CASE("squared_norm()") {
     }
 }
 
+TEST_CASE("normalize()") {
+    SUBCASE("1D vector") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        auto result = normalize(a);
+        CHECK(result(0) == doctest::Approx(0.2672612419));
+        CHECK(result(1) == doctest::Approx(0.5345224838));
+        CHECK(result(2) == doctest::Approx(0.8017837257));
+    }
+    SUBCASE("1D vector length") {
+        tensor<length, shape<3>> a{length(1.0), length(2.0), length(3.0)};
+        auto result = normalize(a);
+        static_assert(dimensionless_scalar<typename decltype(result)::value_type>);
+        CHECK(result(0) == doctest::Approx(0.2672612419));
+        CHECK(result(1) == doctest::Approx(0.5345224838));
+        CHECK(result(2) == doctest::Approx(0.8017837257));
+    }
+}
+
 TEST_CASE("mean()") {
     SUBCASE("1D vector") {
         tensor<double, shape<4>> a{1.0, 2.0, 3.0, 4.0};

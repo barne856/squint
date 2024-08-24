@@ -261,9 +261,9 @@ template <tensorial T1, tensorial T2> auto cross(const T1 &a, const T2 &b) {
     using result_type = std::common_type_t<typename T1::value_type, typename T2::value_type>;
     tensor<result_type, std::index_sequence<3>> result;
 
-    result[0] = a[1] * b[2] - a[2] * b[1];
-    result[1] = a[2] * b[0] - a[0] * b[2];
-    result[2] = a[0] * b[1] - a[1] * b[0];
+    result(0) = a(1) * b(2) - a(2) * b(1);
+    result(1) = a(2) * b(0) - a(0) * b(2);
+    result(2) = a(0) * b(1) - a(1) * b(0);
 
     return result;
 }
@@ -292,7 +292,7 @@ template <tensorial T1, tensorial T2> auto dot(const T1 &a, const T2 &b) {
     result_type result = 0;
 
     for (size_t i = 0; i < a.shape()[0]; ++i) {
-        result += a[i] * b[i];
+        result += a(i) * b(i);
     }
 
     return result;
@@ -360,6 +360,13 @@ template <tensorial T> auto squared_norm(const T &a) {
 
     return result;
 }
+
+/**
+ * @brief Normalizes a vector to have unit length.
+ * @param a The input vector.
+ * @return The normalized vector.
+ */
+template <tensorial T> auto normalize(const T &a) { return a / norm(a); }
 
 /**
  * @brief Computes the mean of all elements in the tensor.
