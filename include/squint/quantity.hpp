@@ -10,6 +10,7 @@
 #include "squint/quantity/quantity_ops.hpp"
 #include "squint/quantity/quantity_types.hpp"
 #include "squint/quantity/unit.hpp"
+#include "squint/quantity/unit_dsl.hpp"
 #include "squint/quantity/unit_literals.hpp"
 #include "squint/quantity/unit_types.hpp"
 // NOLINTEND

@@ -17,6 +17,7 @@ Welcome to SQUINT's documentation!
    advanced_features
    api_reference
    performance_considerations
+   todo
 
 .. toctree::
    :maxdepth: 2
