@@ -80,7 +80,7 @@ jobs:
     - name: Configure CMake
       run: |
         if [ "${{ runner.os }}" = "Windows" ] && [ "${{ matrix.compiler }}" = "msvc" ]; then
-          pwsh -Command "cmake -B build -DCMAKE_BUILD_TYPE=Release -DSQUINT_BUILD_DOCUMENTATION=OFF -DSQUINT_BLAS_BACKEND=${{ matrix.blas }}"
+          pwsh -Command "cmake -B build -DSQUINT_BUILD_DOCUMENTATION=OFF -DSQUINT_BLAS_BACKEND=${{ matrix.blas }} --config Release"
         else
           if [ "${{ runner.os }}" = "Windows" ]; then
             if [ "${{ matrix.compiler }}" = "clang" ]; then
