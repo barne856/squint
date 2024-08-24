@@ -144,3 +144,84 @@ When using views with step sizes, keep in mind:
 - For fixed shape tensors, the shape and step sizes are checked at compile-time, providing additional type safety.
 - For dynamic shape tensors, the shape of the resulting view is determined by the `subview_shape` parameter, not by the original tensor's shape and the step sizes.
 
+Row-Major vs Column-Major Construction
+--------------------------------------
+
+By default, SQUINT tensors use column-major order for construction and internal storage. This aligns with many concepts in linear algebra where columns are more meaningful than rows. However, SQUINT also supports row-major construction when explicitly specified. It's important to note that the choice between row-major and column-major only affects the construction and internal storage of the tensor, not the order of iteration when using flat iterators or subview iterators or the indexing order when using multidimensional subscripting. Tensors of mixed memory layout can often be used together in expressions without issue.
+
+Column-Major Construction (Default)
+-----------------------------------
+
+Column-major is the default ordering for tensor construction in SQUINT:
+
+```cpp
+mat2x3 A{1, 4, 2, 5, 3, 6};
+// A represents:
+// [1 2 3]
+// [4 5 6]
+```
+
+In this case, the elements are filled column by column.
+
+Row-Major Construction
+----------------------
+
+To construct a tensor using row-major order, you need to explicitly specify it:
+
+```cpp
+tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> B{1, 2, 3, 4, 5, 6};
+// B represents:
+// [1 2 3]
+// [4 5 6]
+```
+
+In this case, the elements are filled row by row.
+
+Iteration Order
+---------------
+
+It's crucial to understand that the choice between row-major and column-major construction does not affect the order of iteration when using flat iterators or subview iterators. The iteration order remains consistent regardless of the construction order:
+
+```cpp
+// Iteration order is the same for both A and B
+for (const auto& element : A) {
+    // Iterates in the order: 1, 4, 2, 5, 3, 6
+}
+
+for (const auto& element : B) {
+    // Also iterates in the order: 1, 4, 2, 5, 3, 6
+}
+```
+
+Specifying Strides
+------------------
+
+You can explicitly specify the stride type when declaring a tensor:
+
+```cpp
+// Column-major tensor (default)
+tensor<float, shape<2,3>, strides::column_major<shape<2,3>>> C{1, 4, 2, 5, 3, 6};
+
+// Row-major tensor
+tensor<float, shape<2,3>, strides::row_major<shape<2,3>>> D{1, 2, 3, 4, 5, 6};
+```
+
+Performance Considerations
+--------------------------
+
+The choice between row-major and column-major can have performance implications, especially for larger tensors:
+
+1. Memory access patterns: Row-major tensors may have better cache performance for row-wise operations, while column-major tensors may perform better for column-wise operations.
+
+2. Compatibility with external libraries: Some external libraries may expect a specific memory layout. Choosing the compatible layout can improve performance when interfacing with these libraries.
+
+Best Practices
+--------------
+
+1. Stick to the default column-major order unless you have a specific reason to use row-major.
+
+2. Be consistent in your use of row-major or column-major throughout your codebase to avoid confusion.
+
+3. When interfacing with external libraries or APIs, match their expected memory layout for optimal performance.
+
+4. Remember that the construction order doesn't affect iteration order, so write your algorithms to be agnostic to the underlying storage order when possible.
