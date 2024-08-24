@@ -108,7 +108,13 @@ jobs:
       
     - name: Test
       working-directory: build
-      run: ctest --output-on-failure
+      run: |
+        if [ "${{ runner.os }}" = "Windows" ] && [ "${{ matrix.compiler }}" = "msvc" ]; then
+          ctest -C Release --output-on-failure
+        else
+          ctest --output-on-failure
+        fi
+      shell: bash
 
     - name: Run Clang-Tidy
       if: matrix.compiler == 'clang' && runner.os == 'Linux' && matrix.blas == 'NONE'
