@@ -27,5 +27,5 @@ For CMake projects, you can use FetchContent for a more streamlined integration:
    
    FetchContent_MakeAvailable(squint)
    
-   target_link_libraries(your_target PRIVATE squint::squint)
+   target_link_libraries(your_target PRIVATE SQUINT::SQUINT)
 

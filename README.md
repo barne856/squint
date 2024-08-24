@@ -42,7 +42,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(squint)
 
-target_link_libraries(your_target PRIVATE squint::squint)
+target_link_libraries(your_target PRIVATE SQUINT::SQUINT)
 ```
 
 ## Examples
