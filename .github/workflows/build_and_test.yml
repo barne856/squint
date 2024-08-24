@@ -24,6 +24,8 @@ jobs:
           - os: ubuntu-latest
             compiler: msvc
           - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
             blas: MKL
           - os: windows-latest
             blas: OpenBLAS
