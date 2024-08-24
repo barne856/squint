@@ -1,4 +1,4 @@
-Geometry Functions in SQUINT
+Geometry Functions
 ============================
 
 SQUINT provides a set of geometry functions to facilitate common operations in computer graphics and 3D mathematics. These functions are primarily focused on creating projection matrices and applying transformations to 3D objects.
