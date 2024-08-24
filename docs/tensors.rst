@@ -140,6 +140,23 @@ This solves the system of linear equations:
   
 :math:`Ax = b`
 
+A will be overwritten with the LU decomposition of A and b will be overwritten with the solution x.
+
+- **Least Squares / Least Norm Solution**:
+
+.. code-block::
+
+   auto result = solve_general(A, b);  // Solves Ax = b for non-square systems
+
+:math:`Ax = b`
+
+The system is solved in the least squares sense, where A is an m x n matrix with m >= n and in the least norm sense when m < n.
+
+A will be overwritten with the QR decomposition of A and b will be overwritten with the solution x.
+
+.. note::
+   b must have enough rows to store the solution.
+
 - **Matrix Inversion**:
 
 .. code-block::
@@ -229,8 +246,8 @@ For a tensor :math:`A` with :math:`n` elements:
 :math:`\text{mean}(A) = \frac{1}{n} \sum_{i=1}^n A_i`
 
 
-Tensor Contraction (for dynamic tensors)
-----------------------------------------
+Tensor Contraction
+------------------
 
 
 - **Tensor Contraction**:
