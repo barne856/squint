@@ -27,10 +27,6 @@ def write_combined_file(output_file, combined_content):
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(combined_content)
 
-def count_tokens(text):
-    encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(text))
-
 # Specify the folder path and file extensions to include
 folder_path = "./include/squint/tensor"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt', '.py', '.rst']

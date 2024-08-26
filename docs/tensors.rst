@@ -2,6 +2,49 @@
 Tensors
 =====
 
+Tensor Representation and Order
+-------------------------------
+
+Column-Centric Approach
+^^^^^^^^^^^^^^^^^^^^^^^
+
+SQUINT adopts a column-centric approach to tensor representation, which provides a theoretically useful perspective, particularly in the context of linear algebra and multidimensional data analysis. This approach is distinct from the traditional row-major or column-major memory layouts and instead focuses on the conceptual structure of tensors.
+
+Representation
+^^^^^^^^^^^^^
+
+In this column-centric approach:
+
+1. A 1D tensor (vector) is represented as a column with shape m
+2. A 2D tensor (matrix) has shape m × n
+3. A 3D tensor has shape m × n × l
+4. Higher-order tensors follow this pattern, adding dimensions to the right
+
+This means that indexing a tensor is done by specifying the row index first, followed by the column index, and so on for higher-order tensors. And the shape of a tensor is defined by the number of elements in each dimension, starting from the leftmost dimension. For example, a 3D tensor with shape 2 × 3 × 4 has 2 elements along the first dimension, 3 elements along the second dimension, and 4 elements along the third dimension.
+
+Theoretical Usefulness
+^^^^^^^^^^^^^^^^^^^^^
+
+This representation aligns closely with fundamental concepts in linear algebra and offers several advantages:
+
+1. **Vector-Centric View**: By treating 1D tensors as column vectors by default, this approach emphasizes the column space of matrices, which is crucial in many linear algebra applications.
+
+2. **Natural Extension**: The progression from vectors to matrices to higher-order tensors feels natural, with each step adding a new dimension to the right.
+
+3. **Consistency with Mathematical Notation**: This representation aligns well with standard mathematical notation in linear algebra, where vectors are often implicitly treated as column vectors.
+
+4. **Intuitive for Linear Transformations**: When thinking about linear transformations, it's often helpful to consider how each column of a matrix transforms a basis vector of the input space.
+
+5. **Simplifies Certain Operations**: Operations like matrix-vector multiplication become more intuitive when visualizing the matrix columns as the fundamental building blocks.
+
+
+Bridging Theory and Practice
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This approach bridges the gap between theoretical linear algebra and practical implementation. It allows users to think about tensors in a way that's consistent with mathematical theory while still benefiting from efficient memory layouts and operations.
+
+By adopting this column-centric view, SQUINT encourages users to think about tensors in a way that aligns with important linear algebra concepts, potentially leading to more intuitive algorithm design and better understanding of multidimensional data structures.
+
 
 Tensor Construction
 -------------------

@@ -18,8 +18,10 @@
 #include "squint/util/math_utils.hpp"
 #include "squint/util/sequence_utils.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -437,6 +439,76 @@ auto approx_equal(
     }
 
     return true;
+}
+
+template <dynamic_tensor Tensor1, dynamic_tensor Tensor2>
+auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<size_t, size_t>> &contraction_pairs) {
+    auto A_shape = A.shape();
+    auto B_shape = B.shape();
+    size_t A_rank = A_shape.size();
+    size_t B_rank = B_shape.size();
+
+    // Determine free indices and contracted indices
+    std::vector<size_t> A_free_indices, A_contract_indices;
+    std::vector<size_t> B_free_indices, B_contract_indices;
+    for (size_t i = 0; i < A_rank; ++i) {
+        if (std::none_of(contraction_pairs.begin(), contraction_pairs.end(),
+                         [i](const auto &pair) { return pair.first == i; })) {
+            A_free_indices.push_back(i);
+        } else {
+            A_contract_indices.push_back(i);
+        }
+    }
+    for (size_t i = 0; i < B_rank; ++i) {
+        if (std::none_of(contraction_pairs.begin(), contraction_pairs.end(),
+                         [i](const auto &pair) { return pair.second == i; })) {
+            B_free_indices.push_back(i);
+        } else {
+            B_contract_indices.push_back(i);
+        }
+    }
+
+    // Create permutation for A and B
+    std::vector<size_t> A_permutation(A_free_indices);
+    A_permutation.insert(A_permutation.end(), A_contract_indices.begin(), A_contract_indices.end());
+    std::vector<size_t> B_permutation(B_contract_indices);
+    B_permutation.insert(B_permutation.end(), B_free_indices.begin(), B_free_indices.end());
+
+    // Permute A and B
+    using result_value_type = std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>;
+    using tensor_type = tensor<result_value_type, typename Tensor1::shape_type, typename Tensor1::strides_type,
+                               Tensor1::error_checking(), ownership_type::owner, memory_space::host>;
+
+    // print permutation
+    auto A_permuted = tensor_type(A.permute(A_permutation));
+    auto B_permuted = tensor_type(B.permute(B_permutation));
+
+    // Calculate dimensions for matrix multiplication
+    size_t A_rows = std::accumulate(A_free_indices.begin(), A_free_indices.end(), 1ULL,
+                                    [&A_shape](size_t acc, size_t idx) { return acc * A_shape[idx]; });
+    size_t B_cols = std::accumulate(B_free_indices.begin(), B_free_indices.end(), 1ULL,
+                                    [&B_shape](size_t acc, size_t idx) { return acc * B_shape[idx]; });
+    size_t common_dim = std::accumulate(contraction_pairs.begin(), contraction_pairs.end(), 1ULL,
+                                        [&A_shape](size_t acc, const auto &pair) { return acc * A_shape[pair.first]; });
+
+    // Reshape permuted tensors to matrices
+    auto A_matrix = A_permuted.reshape({A_rows, common_dim});
+    auto B_matrix = B_permuted.reshape({common_dim, B_cols});
+
+    // Perform matrix multiplication
+    auto result_matrix = A_matrix * B_matrix;
+
+    // Calculate result shape
+    std::vector<size_t> result_shape;
+    for (size_t idx : A_free_indices) {
+        result_shape.push_back(A_shape[idx]);
+    }
+    for (size_t idx : B_free_indices) {
+        result_shape.push_back(B_shape[idx]);
+    }
+
+    // Reshape result to final tensor shape
+    return tensor_type(result_matrix.reshape(result_shape));
 }
 
 } // namespace squint

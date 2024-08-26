@@ -218,7 +218,8 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
             }
         }
         shape_ = other.shape();
-        strides_ = other.strides();
+        // compute strides anew
+        strides_ = compute_strides(layout::column_major);
         data_.resize(other.size());
         auto other_begin = other.begin();
         for (auto &element : *this) {
