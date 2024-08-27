@@ -7,7 +7,7 @@ Tensor Representation and Order
 Column-Centric Approach
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-SQUINT adopts a column-centric approach to tensor representation, which provides a theoretically useful perspective, particularly in the context of linear algebra and multidimensional data analysis. This approach is distinct from the traditional row-major or column-major memory layouts and instead focuses on the conceptual structure of tensors.
+SQUINT adopts a column-centric approach to tensor representation, which provides a theoretically useful perspective, particularly in the context of linear algebra and multidimensional data analysis. This approach focuses on the conceptual structure of tensors and has analogous memory layouts to the traditional row-centric approaches.
 
 Representation
 ^^^^^^^^^^^^^^
@@ -43,28 +43,42 @@ Indexing:
 - 2D tensor: t[i, j] where i is the row index and j is the column index
 - 3D tensor: t[i, j, k] where i is the row index, j is the column index, and k is the depth index
 
-Comparison with Row-Major and Column-Major Orders
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Comparison with Row-Centric Approaches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It's important to distinguish between SQUINT's column-centric approach and the traditional row-major and column-major memory layouts:
+It's important to understand how SQUINT's column-centric approach relates to traditional row-centric approaches:
 
-1. Row-major order: Elements are stored contiguously by row.
+1. Row-Centric Row-Major Order:
    - 1D: [a b c]
    - 2D: [a b c | d e f]
    - 3D: [a b c | d e f || g h i | j k l]
+   - Strides: [n*l, l, 1] for a 3D tensor of shape m × n × l
 
-2. Column-major order: Elements are stored contiguously by column.
+2. Row-Centric Column-Major Order:
    - 1D: [a b c]
    - 2D: [a d | b e | c f]
    - 3D: [a g | d j || b h | e k || c i | f l]
+   - Strides: [1, m, m*n] for a 3D tensor of shape m × n × l
 
-3. SQUINT's column-centric approach:
+3. SQUINT's Column-Centric Approach:
    - Conceptual representation, not a memory layout
    - 1D: column vector [a; b; c]
    - 2D: matrix [a b c; d e f]
    - 3D: tensor with shape m × n × l
 
-For 1D and 2D tensors, SQUINT's approach aligns with both row-major and column-major orders in terms of indexing. The difference becomes apparent for higher-order tensors, where SQUINT's approach provides a more intuitive extension of the matrix concept.
+   Column-Centric Row-Major Order:
+   - Strides: [n*l, l, 1] for a 3D tensor of shape m × n × l
+   
+   Column-Centric Column-Major Order:
+   - Strides: [1, m, m*n] for a 3D tensor of shape m × n × l
+
+Note that the column-centric row-major and column-major layouts have the same strides as their row-centric counterparts, but the interpretation of the dimensions is different.
+
+For 1D and 2D tensors, SQUINT's column-centric approach is equivalent to the row-centric approach in terms of indexing and layout. The difference becomes apparent for higher-order tensors, where SQUINT's approach provides a more intuitive extension of the matrix concept.
+
+In the column-centric view, the row-major layout corresponds to the last index changing fastest, while in the column-major layout, the first index changes fastest. This is analogous to the row-centric view, but with a different interpretation of which dimension corresponds to "rows" and which to "columns" in higher dimensions.
+
+The key difference lies in how we conceptualize the extension to higher dimensions. In the column-centric view, we think of adding new dimensions to the right, maintaining the idea of columns as the fundamental building blocks. This aligns well with many linear algebra concepts and operations.
 
 Theoretical Usefulness
 ^^^^^^^^^^^^^^^^^^^^^^
