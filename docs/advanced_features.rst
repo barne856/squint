@@ -84,7 +84,7 @@ SQUINT supports creating tensor views with custom step sizes for both fixed and 
 
 
 API for Fixed Shape Tensors
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 For fixed shape tensors, SQUINT provides a template method that determines the step sizes at compile-time:
@@ -118,7 +118,7 @@ Usage example for fixed shape tensors:
 
 
 API for Dynamic Shape Tensors
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 For dynamic shape tensors, SQUINT provides a method that takes runtime arguments for the subview shape, start indices, and step sizes:

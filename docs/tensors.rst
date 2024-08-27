@@ -1,6 +1,5 @@
-
 Tensors
-=====
+=======
 
 Tensor Representation and Order
 -------------------------------
@@ -11,19 +10,64 @@ Column-Centric Approach
 SQUINT adopts a column-centric approach to tensor representation, which provides a theoretically useful perspective, particularly in the context of linear algebra and multidimensional data analysis. This approach is distinct from the traditional row-major or column-major memory layouts and instead focuses on the conceptual structure of tensors.
 
 Representation
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
-In this column-centric approach:
+In SQUINT's column-centric approach:
 
 1. A 1D tensor (vector) is represented as a column with shape m
-2. A 2D tensor (matrix) has shape m × n
+2. A 2D tensor (matrix) has shape m × n (a single row being of shape 1 × n)
 3. A 3D tensor has shape m × n × l
 4. Higher-order tensors follow this pattern, adding dimensions to the right
 
-This means that indexing a tensor is done by specifying the row index first, followed by the column index, and so on for higher-order tensors. And the shape of a tensor is defined by the number of elements in each dimension, starting from the leftmost dimension. For example, a 3D tensor with shape 2 × 3 × 4 has 2 elements along the first dimension, 3 elements along the second dimension, and 4 elements along the third dimension.
+This means that indexing a tensor is done by specifying the row index first, followed by the column index, and so on for higher-order tensors. The shape of a tensor is defined by the number of elements in each dimension, starting from the leftmost dimension.
+
+Examples:
+
+.. math::
+
+   \text{1D tensor (vector):} \begin{bmatrix} a_1 \\ a_2 \\ \vdots \\ a_m \end{bmatrix} \text{shape: } m
+
+   \text{2D tensor (matrix):} \begin{bmatrix} 
+   a_{11} & a_{12} & \cdots & a_{1n} \\
+   a_{21} & a_{22} & \cdots & a_{2n} \\
+   \vdots & \vdots & \ddots & \vdots \\
+   a_{m1} & a_{m2} & \cdots & a_{mn}
+   \end{bmatrix} \text{shape: } m \times n
+
+   \text{3D tensor:} \text{shape: } m \times n \times l
+
+For a 3D tensor with shape 2 × 3 × 4, it has 2 elements along the first dimension, 3 elements along the second dimension, and 4 elements along the third dimension.
+
+Indexing:
+- 1D tensor: t[i] where i is the row index
+- 2D tensor: t[i, j] where i is the row index and j is the column index
+- 3D tensor: t[i, j, k] where i is the row index, j is the column index, and k is the depth index
+
+Comparison with Row-Major and Column-Major Orders
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's important to distinguish between SQUINT's column-centric approach and the traditional row-major and column-major memory layouts:
+
+1. Row-major order: Elements are stored contiguously by row.
+   - 1D: [a b c]
+   - 2D: [a b c | d e f]
+   - 3D: [a b c | d e f || g h i | j k l]
+
+2. Column-major order: Elements are stored contiguously by column.
+   - 1D: [a b c]
+   - 2D: [a d | b e | c f]
+   - 3D: [a g | d j || b h | e k || c i | f l]
+
+3. SQUINT's column-centric approach:
+   - Conceptual representation, not a memory layout
+   - 1D: column vector [a; b; c]
+   - 2D: matrix [a b c; d e f]
+   - 3D: tensor with shape m × n × l
+
+For 1D and 2D tensors, SQUINT's approach aligns with both row-major and column-major orders in terms of indexing. The difference becomes apparent for higher-order tensors, where SQUINT's approach provides a more intuitive extension of the matrix concept.
 
 Theoretical Usefulness
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 This representation aligns closely with fundamental concepts in linear algebra and offers several advantages:
 
@@ -37,14 +81,12 @@ This representation aligns closely with fundamental concepts in linear algebra a
 
 5. **Simplifies Certain Operations**: Operations like matrix-vector multiplication become more intuitive when visualizing the matrix columns as the fundamental building blocks.
 
-
 Bridging Theory and Practice
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This approach bridges the gap between theoretical linear algebra and practical implementation. It allows users to think about tensors in a way that's consistent with mathematical theory while still benefiting from efficient memory layouts and operations.
 
 By adopting this column-centric view, SQUINT encourages users to think about tensors in a way that aligns with important linear algebra concepts, potentially leading to more intuitive algorithm design and better understanding of multidimensional data structures.
-
 
 Tensor Construction
 -------------------

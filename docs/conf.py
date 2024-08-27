@@ -7,7 +7,10 @@ html_theme = 'furo'
 
 # Customize the theme
 html_theme_options = {
-    'logo_only': False,
+    'logo_only': True,
+    'sidebar_hide_name': True,
+    'light_logo': 'logo-light.png',
+    'dark_logo': 'logo-dark.png',
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
@@ -29,3 +32,5 @@ html_theme_options = {
         "color-admonition-background": "#005A82"
     }
 }
+
+html_static_path = ['_static']
