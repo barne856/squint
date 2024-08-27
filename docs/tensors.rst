@@ -7,7 +7,14 @@ Tensor Representation and Order
 Column-Centric Approach
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-SQUINT adopts a column-centric approach to tensor representation, which provides a theoretically useful perspective, particularly in the context of linear algebra and multidimensional data analysis. This approach focuses on the conceptual structure of tensors and has analogous memory layouts to the traditional row-centric approaches.
+SQUINT uses a unique approach to represent n-dimensional data. From here on we'll refer to this approach as *column-centric*.
+Column-centric is opposed to the more common *row-centric* approach used in almost every other language that deals with multidimensional data.
+In the opinion of the author, even though this may at first feel unnecessarily counter to the established conventions, the column-centric approach is more
+intuitive when viewed from a purley mathematical perspective and leads to simpler implementations of mathematical and physical concepts in many cases.
+
+.. note::
+   It is important to note that the column-centric and row-centric approaches are orthogonal concepts from memory layouts. In fact, there are
+   analogous memory layouts in both approaches to the traditional memory layouts *row-major* and *column-major*.
 
 Representation
 ^^^^^^^^^^^^^^
@@ -19,7 +26,8 @@ In SQUINT's column-centric approach:
 3. A 3rd order tensor has shape m × n × l
 4. Higher-order tensors follow this pattern, adding dimensions to the right
 
-This means that indexing a tensor is done by specifying the row index first, followed by the column index, and so on for higher-order tensors. The shape of a tensor is defined by the number of elements in each dimension, starting from the leftmost dimension.
+This means that indexing a tensor is done by specifying the row index first, followed by the column index, and so on for higher-order tensors.
+The shape of a tensor is defined by the number of elements in each dimension, starting from the leftmost dimension.
 
 .. math::
    \begin{array}{|c|c|c|}
@@ -80,116 +88,50 @@ Comparison with Row-Centric Approaches
 
 It's important to understand how SQUINT's column-centric approach differs from traditional row-centric approaches. The column-centric approach has memory layouts that are analogous to the row-centric layouts but with a different ordering of dimensions:
 
-Consider the following tensors and their representations below:
+Consider a simple example with the following tensors and their representations below:
 
 .. math::
-
-   \text{1D tensor (vector):} \begin{bmatrix} a \\ b \end{bmatrix}
+  \begin{equation}
+      \begin{bmatrix} a \\ b \end{bmatrix}\tag{A}
+  \end{equation}
 
 .. math::
+  \begin{equation}
+      \begin{bmatrix} a & c \\ b & d \end{bmatrix}\tag{B}
+  \end{equation}
 
-   \text{2D tensor (matrix):} \begin{bmatrix} a & c \\ b & d \end{bmatrix}
-
-
-1. Row-Centric Row-Major Order:
-
-   - 1D
-      - Memory: [a, b]
-      - Strides: [1]
-      - Shape: [n]
-      - Indexing: t[column]
-   - 2D
-      - Memory: [a, c, b, d]
-      - Strides: [n, 1]
-      - Shape: [m, n]
-      - Indexing: t[row, column]
-   - 3D
-      - Memory: [a, c, b, d, e, f, g, h]
-      - Strides: [m*n, n, 1]
-      - Shape: [l, m, n]
-      - Indexing: t[depth, row, column]
-
-2. Row-Centric Column-Major Order:
-
-   - 1D
-      - Memory: [a, b]
-      - Strides: [1]
-      - Shape: [n]
-      - Indexing: t[column]
-   - 2D
-      - Memory: [a, b, c, d]
-      - Strides: [1, m]
-      - Shape: [m, n]
-      - Indexing: t[row, column]
-   - 3D
-      - Memory: [a, e, b, f, c, g, d, h]
-      - Strides: [1, m, m*n]
-      - Shape: [l, m, n]
-      - Indexing: t[depth, row, column]
-
-3. Column-Centric Row-Major Order
-
-   - 1D
-      - Memory: [a, b]
-      - Strides: [1]
-      - Shape: [m]
-      - Indexing: t[row]
-   - 2D
-      - Memory: [a, c, b, d]
-      - Strides: [n, 1]
-      - Shape: [m, n]
-      - Indexing: t[row, column]
-   - 3D
-      - Memory: [a, e, c, h, b, f, d, g]
-      - Strides: [m*n, n, 1]
-      - Shape: [m, n, l]
-      - Indexing: t[row, column, depth]
-
-4. Column-Centric Column-Major Order
-
-   - 1D
-      - Memory: [a, b]
-      - Strides: [1]
-      - Shape: [m]
-      - Indexing: t[row]
-   - 2D
-      - Memory: [a, b, c, d]
-      - Strides: [1, m]
-      - Shape: [m, n]
-      - Indexing: t[row, column]
-   - 3D
-      - Memory: [a, b, c, d, e, f, g, h]
-      - Strides: [1, m, m*n]
-      - Shape: [m, n, l]
-      - Indexing: t[row, column, depth]
+.. math::
+  \begin{equation}
+      \begin{bmatrix}\begin{bmatrix} a & c \\ b & d \end{bmatrix} \\ \begin{bmatrix} e & g \\ f & h \end{bmatrix}\end{bmatrix}\tag{C}
+  \end{equation}
 
 .. list-table:: Tensor Memory Layout Comparison
    :widths: 20 20 20 20 20
    :header-rows: 1
 
-   * - Dimension
+   * - Tensor
      - Row-Centric Row-Major
      - Row-Centric Column-Major
      - Column-Centric Row-Major
      - Column-Centric Column-Major
-   * - **1D**
+   * - **A**
      - | Memory: [a, b]
-       | Strides: [1]
-       | Shape: [n]
-       | Indexing: t[column]
+       | Strides: [1, 1]
+       | Shape: [m, 1]
+       | Indexing: t[row, column]
      - | Memory: [a, b]
-       | Strides: [1]
-       | Shape: [n]
-       | Indexing: t[column]
-     - | Memory: [a, b]
-       | Strides: [1]
-       | Shape: [m]
-       | Indexing: t[row]
+       | Strides: [1, 1]
+       | Shape: [m, 1]
+       | Indexing: t[row, column]
      - | Memory: [a, b]
        | Strides: [1]
        | Shape: [m]
        | Indexing: t[row]
-   * - **2D**
+     - | Memory: [a, b]
+       | Strides: [1]
+       | Shape: [m]
+       | Indexing: t[row]
+   * - **B**
      - | Memory: [a, c, b, d]
        | Strides: [n, 1]
        | Shape: [m, n]
@@ -206,7 +148,7 @@ Consider the following tensors and their representations below:
        | Strides: [1, m]
        | Shape: [m, n]
        | Indexing: t[row, column]
-   * - **3D**
+   * - **C**
      - | Memory: [a, c, b, d, e, f, g, h]
        | Strides: [m*n, n, 1]
        | Shape: [l, m, n]
@@ -225,37 +167,24 @@ Consider the following tensors and their representations below:
        | Indexing: t[row, column, depth]
 
 .. note::
-   In the 1D case, all representations are equivalent with the only difference being the interpretation as a row or column.
-   In the 2D case, the column-major and row-major layout are equivalent to their corresponding layout in the other variant.
-   In the 3D case, the column-centric view adds the new dimension to the right, while the row-centric view adds the new dimension to the left. This difference is reflected in the memory layout and indexing.
+   In the 1D case (A), all representations are equivalent with the only difference being an additional dimesion of 1 for the columns needs to be added to the shape of the row-centric views in order to represent a column.
+   In the 2D case (B), the column-major and row-major layout are equivalent to their corresponding layout in the other approach.
+   In the 3D case (C), the column-centric approach adds the new dimension to the right, while the row-centric approach adds the new dimension to the left. This difference is reflected in the memory layout and indexing.
 
-SQUINT uses the column-centric column-major layout by default since this is the most straightforward view when we maintain the idea of columns as the fundamental building blocks. This aligns well with many linear algebra concepts and operations.
-
-Theoretical Usefulness
-^^^^^^^^^^^^^^^^^^^^^^
-
-This representation aligns closely with fundamental concepts in linear algebra and offers several advantages:
-
-1. **Vector-Centric View**: By treating 1D tensors as column vectors by default, this approach emphasizes the column space of matrices, which is crucial in many linear algebra applications.
-
-2. **Natural Extension**: The progression from vectors to matrices to higher-order tensors feels natural, with each step adding a new dimension to the right.
-
-3. **Consistency with Mathematical Notation**: This representation aligns well with standard mathematical notation in linear algebra, where vectors are often implicitly treated as column vectors.
-
-4. **Intuitive for Linear Transformations**: When thinking about linear transformations, it's often helpful to consider how each column of a matrix transforms a basis vector of the input space.
-
-5. **Simplifies Certain Operations**: Operations like matrix-vector multiplication become more intuitive when visualizing the matrix columns as the fundamental building blocks.
+SQUINT uses the column-centric approach with the column-major layout by default since this is the most straightforward view when we maintain the idea of columns as the fundamental building blocks of tensors.
+You can specify any sequence to represent the strides and shape of the tensor, which allows you to use any approach with any memory layout you prefer.
 
 Tensor Construction
 -------------------
 
 
-SQUINT provides several ways to construct tensors, with a default layout:
+SQUINT provides several ways to construct tensors:
 
 1. Using initializer lists:
 
-.. code-block::
+.. code-block:: cpp
 
+   // Alias types use the default column-centric approach and column-major layout
    mat2x3 A{1, 4, 2, 5, 3, 6};
    // A represents:
    // [1 2 3]
@@ -263,7 +192,7 @@ SQUINT provides several ways to construct tensors, with a default layout:
 
 2. Factory methods:
 
-.. code-block::
+.. code-block:: cpp
 
    auto zero_matrix = mat3::zeros();
    auto ones_matrix = mat4::ones();
@@ -273,7 +202,7 @@ SQUINT provides several ways to construct tensors, with a default layout:
 
 3. Element-wise initialization:
 
-.. code-block::
+.. code-block:: cpp
 
    mat3 custom_matrix;
    for (size_t i = 0; i < 3; ++i) {
@@ -284,7 +213,7 @@ SQUINT provides several ways to construct tensors, with a default layout:
 
 4. Construction from other tensors or views:
 
-.. code-block::
+.. code-block:: cpp
 
    mat3 original{{1, 2, 3, 4, 5, 6, 7, 8, 9}};
    mat3 copy(original);
@@ -294,7 +223,7 @@ SQUINT provides several ways to construct tensors, with a default layout:
 
 5. Dynamic tensor construction:
 
-.. code-block::
+.. code-block:: cpp
 
    std::vector<size_t> shape = {3, 4, 5};
    dynamic_tensor<float> dynamic_tensor(shape);
@@ -302,7 +231,7 @@ SQUINT provides several ways to construct tensors, with a default layout:
 
 6. Tensor construction with quantities:
 
-.. code-block::
+.. code-block:: cpp
 
    vec3_t<length_t<double>> position{
        units::meters(1.0),
@@ -317,12 +246,12 @@ Basic Operations
 
 SQUINT supports a wide range of operations for tensors:
 
-.. code-block::
+.. code-block:: cpp
 
    auto C = A + B;  // Element-wise addition
    auto D = A * B;  // Matrix multiplication
    auto E = A * 2.0;  // Scalar multiplication
-   auto F = A / B;  // General least squares / least norm solution
+   auto F = A / B;  // General least squares or least norm solution
    
    // Element access (note the use of () for multi-dimensional access)
    auto element = A(1, 2);  // Access element at row 1, column 2
@@ -353,7 +282,7 @@ Views and Reshaping
 
 SQUINT provides powerful view and reshaping capabilities:
 
-.. code-block::
+.. code-block:: cpp
 
    auto view = A.view();  // Create a view of the entire tensor
    auto subview = A.subview<2, 2>(0, 1);  // Create a 2x2 subview starting at (0, 1)
@@ -375,7 +304,7 @@ SQUINT provides comprehensive linear algebra operations:
 
 - **Solving Linear Systems**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto result = solve(A, b);  // Solves Ax = b for square systems
 
@@ -387,7 +316,7 @@ A will be overwritten with the LU decomposition of A and b will be overwritten w
 
 - **Least Squares / Least Norm Solution**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto result = solve_general(A, b);  // Solves Ax = b for non-square systems
 
@@ -402,7 +331,7 @@ A will be overwritten with the QR decomposition of A and b will be overwritten w
 
 - **Matrix Inversion**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto inverse = inv(A);  // Computes the inverse of a square matrix
 
@@ -412,7 +341,7 @@ The inverse :math:`A^{-1}` satisfies:
 
 - **Pseudoinverse**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto pseudo_inverse = pinv(A);  // Computes the Moore-Penrose pseudoinverse
 
@@ -430,7 +359,7 @@ Vector Operations
 
 - **Cross Product** (for 3D vectors):
 
-.. code-block::
+.. code-block:: cpp
 
    auto cross_product = cross(a, b);
 
@@ -440,7 +369,7 @@ For vectors :math:`a = (a_x, a_y, a_z)` and :math:`b = (b_x, b_y, b_z)`:
 
 - **Dot Product**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto dot_product = dot(a, b);
 
@@ -450,7 +379,7 @@ For vectors :math:`a` and :math:`b`:
 
 - **Vector Norm**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto vector_norm = norm(a);
 
@@ -465,7 +394,7 @@ Matrix Operations
 
 - **Trace**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto matrix_trace = trace(A);
 
@@ -480,7 +409,7 @@ Statistical Functions
 
 - **Mean**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto tensor_mean = mean(A);
 
@@ -495,7 +424,7 @@ Tensor Contraction
 
 - **Tensor Contraction**:
 
-.. code-block::
+.. code-block:: cpp
 
    auto contracted = contract(A, B, contraction_pairs);
 

@@ -25,7 +25,7 @@ Build Instructions
 2. Optionally install MKL if you intend to use it as a BLAS backend.
 3. Build the project using the following commands:
 
-.. code-block::
+.. code-block:: bash
 
    mkdir build && cd build
    cmake ..
@@ -52,19 +52,19 @@ SQUINT supports three BLAS backends to cater to different performance needs and 
 
 1. Intel MKL: Optimized for high performance on Intel processors
 
-.. code-block::
+.. code-block:: bash
 
    cmake -DSQUINT_BLAS_BACKEND=MKL ..
 
 2. OpenBLAS: An open-source alternative that's portable across different architectures
    
-.. code-block::
+.. code-block:: bash
 
    cmake -DSQUINT_BLAS_BACKEND=OpenBLAS ..
 
 3. NONE: A limited fallback implementation for maximum portability
    
-.. code-block::
+.. code-block:: bash
 
    cmake -DSQUINT_BLAS_BACKEND=NONE ..
 
@@ -78,7 +78,7 @@ Serving Documentation
 
 If SQUINT was built with documentation, you can serve it locally using
 
-.. code-block::
+.. code-block:: bash
 
    python -m http.server -d ./build/sphinx
 

@@ -1,21 +1,22 @@
+#include <iostream>
 #include <squint/squint.hpp>
 
 using namespace squint;
 
 auto main() -> int {
-    auto A = tens::arange(1, 1, {2, 2, 2});
-    auto P = tens(A.permute({0, 2, 1}));
-    auto R = P.reshape({4, 2});
-    std::cout << P << std::endl;
-    std::cout << R << std::endl;
-    auto B = tens::arange(1, 1, {2, 2, 2});
-    std::cout << "A" << std::endl;
-    std::cout << A << std::endl;
-    std::cout << "B" << std::endl;
-    std::cout << B << std::endl;
-    std::vector<std::pair<size_t, size_t>> contraction_pairs = {{1, 0}};
+    auto A = tensor<float, shape<2, 2, 2>>::arange(1, 1);
+    auto B = tensor<float, shape<2, 2, 2>>::arange(1, 1);
+    constexpr auto contraction_pairs = make_contraction_pairs(std::index_sequence<1>{}, // A indices
+                                                              std::index_sequence<0>{}  // B indices
+    );
+    // std::cout << contraction_pairs().size() << std::endl;
+    // std::cout << std::get<0>(decltype(contraction_pairs)::value[0]) << std::endl;
+    // std::cout << std::get<1>(decltype(contraction_pairs)::value[0]) << std::endl;
+    // for (size_t i = 0; contraction_pairs().size(); ++i) {
+    //     std::cout << contraction_pairs()[i].first << " ";
+    //     std::cout << contraction_pairs()[i].second << " ";
+    // }
     auto result = contract(A, B, contraction_pairs);
-    std::cout << "Result" << std::endl;
     std::cout << result << std::endl;
     return 0;
 }

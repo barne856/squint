@@ -8,21 +8,21 @@ SQUINT is a header-only library, making it easy to integrate into your projects.
 1. Copy the `include/squint` directory to your project's include path.
 2. Include the necessary headers in your C++ files:
 
-.. code-block::
+.. code-block:: cpp
 
    #include <squint/quantity.hpp>
    #include <squint/tensor.hpp>
 
 For CMake projects, you can use FetchContent for a more streamlined integration:
 
-.. code-block::
+.. code-block:: cmake
 
    include(FetchContent)
    
    FetchContent_Declare(
        squint
        GIT_REPOSITORY https://github.com/barne856/squint.git
-       GIT_TAG main  # or a specific tag/commit
+       GIT_TAG main # or a specific tag/commit
    )
    
    FetchContent_MakeAvailable(squint)

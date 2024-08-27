@@ -486,4 +486,51 @@ TEST_CASE("approx_equal()") {
     }
 }
 
+TEST_CASE("contract()") {
+    // SUBCASE("Fixed 3D") {
+    //     auto A = tensor<float, shape<2, 2, 2>>::arange(1, 1);
+    //     auto B = tensor<float, shape<2, 2, 2>>::arange(1, 1);
+    //     std::vector<std::pair<size_t, size_t>> contraction_pairs = {{1, 0}};
+    //     auto result = contract(A, B, contraction_pairs);
+    //     CHECK(result(0, 0, 0, 0) == doctest::Approx(7));
+    //     CHECK(result(1, 0, 0, 0) == doctest::Approx(10));
+    //     CHECK(result(0, 1, 0, 0) == doctest::Approx(19));
+    //     CHECK(result(1, 1, 0, 0) == doctest::Approx(22));
+    //     CHECK(result(0, 0, 1, 0) == doctest::Approx(15));
+    //     CHECK(result(1, 0, 1, 0) == doctest::Approx(22));
+    //     CHECK(result(0, 1, 1, 0) == doctest::Approx(43));
+    //     CHECK(result(1, 1, 1, 0) == doctest::Approx(50));
+    //     CHECK(result(0, 0, 0, 1) == doctest::Approx(23));
+    //     CHECK(result(1, 0, 0, 1) == doctest::Approx(34));
+    //     CHECK(result(0, 1, 0, 1) == doctest::Approx(67));
+    //     CHECK(result(1, 1, 0, 1) == doctest::Approx(78));
+    //     CHECK(result(0, 0, 1, 1) == doctest::Approx(31));
+    //     CHECK(result(1, 0, 1, 1) == doctest::Approx(46));
+    //     CHECK(result(0, 1, 1, 1) == doctest::Approx(91));
+    //     CHECK(result(1, 1, 1, 1) == doctest::Approx(106));
+    // }
+    SUBCASE("Dynamic 3D") {
+        auto A = tens::arange(1, 1, {2, 2, 2});
+        auto B = tens::arange(1, 1, {2, 2, 2});
+        std::vector<std::pair<size_t, size_t>> contraction_pairs = {{1, 0}};
+        auto result = contract(A, B, contraction_pairs);
+        CHECK(result(0, 0, 0, 0) == doctest::Approx(7));
+        CHECK(result(1, 0, 0, 0) == doctest::Approx(10));
+        CHECK(result(0, 1, 0, 0) == doctest::Approx(19));
+        CHECK(result(1, 1, 0, 0) == doctest::Approx(22));
+        CHECK(result(0, 0, 1, 0) == doctest::Approx(15));
+        CHECK(result(1, 0, 1, 0) == doctest::Approx(22));
+        CHECK(result(0, 1, 1, 0) == doctest::Approx(43));
+        CHECK(result(1, 1, 1, 0) == doctest::Approx(50));
+        CHECK(result(0, 0, 0, 1) == doctest::Approx(23));
+        CHECK(result(1, 0, 0, 1) == doctest::Approx(34));
+        CHECK(result(0, 1, 0, 1) == doctest::Approx(67));
+        CHECK(result(1, 1, 0, 1) == doctest::Approx(78));
+        CHECK(result(0, 0, 1, 1) == doctest::Approx(31));
+        CHECK(result(1, 0, 1, 1) == doctest::Approx(46));
+        CHECK(result(0, 1, 1, 1) == doctest::Approx(91));
+        CHECK(result(1, 1, 1, 1) == doctest::Approx(106));
+    }
+}
+
 // NOLINTEND

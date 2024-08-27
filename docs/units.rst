@@ -228,3 +228,111 @@ When runtime error checking is enabled, SQUINT will throw exceptions for various
 
     checked_length l(1000000);
     auto product = l * 1000000;  // This will throw std::overflow_error
+
+
+Basic Operations
+----------------
+
+
+SQUINT provides a comprehensive set of mathematical operations for quantities:
+
+- **Absolute Value**:
+
+.. code-block:: cpp
+
+   auto abs_value = abs(quantity);
+
+- **Square Root**:
+
+.. code-block:: cpp
+
+   auto sqrt_value = sqrt(quantity);
+
+- **Nth Root**:
+  
+.. code-block:: cpp
+
+   auto nth_root = root<N>(quantity);
+
+- **Exponential** (for dimensionless quantities):
+  
+.. code-block:: cpp
+
+   auto exp_value = exp(dimensionless_quantity);
+
+- **Logarithm** (for dimensionless quantities):
+  
+.. code-block:: cpp
+
+   auto log_value = log(dimensionless_quantity);
+
+- **Power**:
+  
+.. code-block:: cpp
+
+   auto powered_value = pow<N>(quantity);
+
+
+Trigonometric Functions
+-----------------------
+
+
+For dimensionless quantities, SQUINT provides standard trigonometric functions for dimensionless quantities:
+
+- **Sine, Cosine, Tangent**:
+
+.. code-block:: cpp
+
+   auto sin_value = sin(angle);
+   auto cos_value = cos(angle);
+   auto tan_value = tan(angle);
+
+- **Inverse Trigonometric Functions**:
+  
+.. code-block:: cpp
+
+   auto asin_value = asin(dimensionless_quantity);
+   auto acos_value = acos(dimensionless_quantity);
+   auto atan_value = atan(dimensionless_quantity);
+
+- **Two-argument Arctangent**:
+  
+.. code-block:: cpp
+
+   auto atan2_value = atan2(y, x);
+
+
+Hyperbolic Functions
+--------------------
+
+
+SQUINT also includes hyperbolic functions for dimensionless quantities:
+
+- **Hyperbolic Sine, Cosine, Tangent**:
+
+.. code-block:: cpp
+
+   auto sinh_value = sinh(dimensionless_quantity);
+   auto cosh_value = cosh(dimensionless_quantity);
+   auto tanh_value = tanh(dimensionless_quantity);
+
+- **Inverse Hyperbolic Functions**:
+  
+.. code-block:: cpp
+
+   auto asinh_value = asinh(dimensionless_quantity);
+   auto acosh_value = acosh(dimensionless_quantity);
+   auto atanh_value = atanh(dimensionless_quantity);
+
+
+Comparison
+----------
+
+
+In addition to the standard comparision operators, SQUINT provides an approximate equality function for comparing quantities:
+
+- **Approximate Equality**:
+
+.. code-block:: cpp
+
+   bool are_equal = approx_equal(quantity1, quantity2, epsilon);

@@ -38,7 +38,6 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
-
 # custom css
 def setup(app):
     app.add_css_file('custom.css')

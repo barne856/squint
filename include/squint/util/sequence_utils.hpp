@@ -300,6 +300,51 @@ template <std::size_t... Dims> struct is_index_sequence<std::index_sequence<Dims
 template <typename Sequence>
 concept valid_index_permutation = is_unique<Sequence>() && all_less_than(Sequence{}, Sequence::size());
 
+/**
+ * @brief Helper to filter a sequence based on a predicate.
+ */
+template<typename Sequence, template<std::size_t> class Pred>
+struct filter_sequence {
+    template<std::size_t I, std::size_t... Is>
+    static auto helper(std::index_sequence<I, Is...>) {
+        if constexpr (sizeof...(Is) == 0) {
+            if constexpr (Pred<I>::value) {
+                return std::index_sequence<I>{};
+            } else {
+                return std::index_sequence<>{};
+            }
+        } else {
+            if constexpr (Pred<I>::value) {
+                return concat_sequence_t<std::index_sequence<I>, 
+                                         typename filter_sequence<std::index_sequence<Is...>, Pred>::type>{};
+            } else {
+                return typename filter_sequence<std::index_sequence<Is...>, Pred>::type{};
+            }
+        }
+    }
+
+    using type = decltype(helper(Sequence{}));
+};
+
+template<typename Sequence, template<std::size_t> class Pred>
+using filter_sequence_t = typename filter_sequence<Sequence, Pred>::type;
+
+/**
+ * @brief Helper to select values from a sequence using another sequence of indices.
+ */
+template<typename Sequence, typename IndexSequence>
+struct select_values {
+    template<std::size_t... Is>
+    static auto helper(std::index_sequence<Is...>) {
+        return std::index_sequence<std::get<Is>(make_array(Sequence{}))...>{};
+    }
+
+    using type = decltype(helper(IndexSequence{}));
+};
+
+template<typename Sequence, typename IndexSequence>
+using select_values_t = typename select_values<Sequence, IndexSequence>::type;
+
 } // namespace squint
 
 #endif // SQUINT_UTIL_SEQUENCE_UTILS_HPP
