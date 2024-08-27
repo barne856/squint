@@ -31,11 +31,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - run: pip install sphinx breathe furo
+      - run: pip install sphinx breathe furo sphinxcontrib-tikz
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen ninja-build gcc-12 g++-12
+          sudo apt-get install -y doxygen \
+            ninja-build \
+            gcc-12 \
+            g++-12 \
+            texlive-latex-extra \
+            pdf2svg \
+            poppler-utils \
+            netpbm \
+            imagemagick \
+            ghostscript
       - name: Build Documentation
         run: |
           mkdir build

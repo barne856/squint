@@ -34,6 +34,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     ninja-build \
     gfortran \
     doxygen \
+    texlive-latex-extra \
+    pdf2svg \
+    poppler-utils \
+    netpbm \
+    imagemagick \
+    ghostscript \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \
