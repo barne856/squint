@@ -449,8 +449,10 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
     size_t B_rank = B_shape.size();
 
     // Determine free indices and contracted indices
-    std::vector<size_t> A_free_indices, A_contract_indices;
-    std::vector<size_t> B_free_indices, B_contract_indices;
+    std::vector<size_t> A_free_indices;
+    std::vector<size_t> A_contract_indices;
+    std::vector<size_t> B_free_indices;
+    std::vector<size_t> B_contract_indices;
     for (size_t i = 0; i < A_rank; ++i) {
         if (std::none_of(contraction_pairs.begin(), contraction_pairs.end(),
                          [i](const auto &pair) { return pair.first == i; })) {
