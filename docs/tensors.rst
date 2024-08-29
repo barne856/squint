@@ -451,6 +451,7 @@ For dynamic shape tensors:
 
    auto result = einsum("subscript_string", tensor1, tensor2);
 
+
 For fixed shape tensors:
 
 .. code-block:: cpp
@@ -491,6 +492,7 @@ Dynamic shape:
 
    auto result = einsum("ij,jk->ik", A, B);
 
+
 Fixed shape:
 
 .. code-block:: cpp
@@ -506,6 +508,7 @@ Dynamic shape:
 
    auto result = einsum("i,i->", A, B);
 
+
 Fixed shape:
 
 .. code-block:: cpp
@@ -519,6 +522,7 @@ Dynamic shape:
 .. code-block:: cpp
 
    auto result = einsum("i,j->ij", A, B);
+
 
 Fixed shape:
 
@@ -535,6 +539,7 @@ Dynamic shape:
 
    auto result = einsum("ii->", A);
 
+
 Fixed shape:
 
 .. code-block:: cpp
@@ -550,6 +555,7 @@ Dynamic shape:
 
    auto result = einsum("ii->i", A);
 
+
 Fixed shape:
 
 .. code-block:: cpp
@@ -563,6 +569,7 @@ Dynamic shape:
 .. code-block:: cpp
 
    auto result = einsum("ijk->kji", A);
+
 
 Fixed shape:
 
