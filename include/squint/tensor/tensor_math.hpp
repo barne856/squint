@@ -688,7 +688,7 @@ auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
     }
 
     // Permute result if necessary
-    if (!permutation.empty() && !std::is_sorted(permutation.begin(), permutation.end())) {
+    if (!std::ranges::empty(permutation) && !std::ranges::is_sorted(permutation)) {
         return result.permute(permutation).copy();
     }
 
