@@ -426,11 +426,153 @@ Tensor Contraction
 
 .. code-block:: cpp
 
+   // for dynamic shape tensors
+   auto contraction_pairs = std::vector<std::pair<size_t, size_t>>{{I, J}};
    auto contracted = contract(A, B, contraction_pairs);
+   // for fixed shape tensors
+   auto contracted = contract(A, B, std::index_sequence<I>{}, std::index_sequence<J>{});
 
 For tensors :math:`A` and :math:`B`, the contraction over indices :math:`i` and :math:`j` is:
   
 :math:`(A \cdot B)_{k_1...k_n l_1...l_m} = \sum_{i,j} A_{k_1...k_n i} B_{j l_1...l_m}`
+
+
+Einstein Summation (einsum)
+---------------------------
+
+SQUINT provides an implementation of Einstein summation convention through the `einsum` function. This powerful method allows for concise expression of many tensor operations including, but not limited to, transpose, matrix multiplication, and trace.
+
+Syntax
+^^^^^^
+
+For dynamic shape tensors:
+
+.. code-block:: cpp
+
+   auto result = einsum("subscript_string", tensor1, tensor2);
+
+For fixed shape tensors:
+
+.. code-block:: cpp
+
+   auto result = einsum<InputSubscripts1, InputSubscripts2, OutputSubscripts>(tensor1, tensor2);
+
+
+Where:
+
+- `subscript_string` is a string specifying the operation in Einstein notation
+- `InputSubscripts1`, `InputSubscripts2`, and `OutputSubscripts` are `std::index_sequence`s representing the input and output subscripts
+- `tensor1` and `tensor2` are the input tensors
+
+For operations on a single tensor, use:
+
+For dynamic shape tensors:
+
+.. code-block:: cpp
+
+   auto result = einsum("subscript_string", tensor);
+
+
+For fixed shape tensors:
+
+.. code-block:: cpp
+
+   auto result = einsum<InputSubscripts, OutputSubscripts>(tensor);
+
+
+Examples
+^^^^^^^^
+
+1. Matrix Multiplication:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("ij,jk->ik", A, B);
+
+
+   Fixed shape:
+
+.. code-block:: cpp
+   
+   auto result = einsum<seq<I, J>, seq<J, K>, seq<I, K>>(A, B);
+
+
+2. Dot Product:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("i,i->", A, B);
+
+   Fixed shape:
+
+.. code-block:: cpp
+
+   auto result = einsum<seq<I>, seq<I>, seq<>>(A, B);
+
+3. Outer Product:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("i,j->ij", A, B);
+
+
+   Fixed shape:
+
+.. code-block:: cpp
+
+   auto result = einsum<seq<I>, seq<J>, seq<I, J>>(A, B);
+
+
+4. Trace:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("ii->", A);
+
+   Fixed shape:
+
+.. code-block:: cpp
+
+   auto result = einsum<seq<I, I>, seq<>>(A);
+
+
+5. Diagonal:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("ii->i", A);
+
+   Fixed shape:
+
+.. code-block:: cpp
+
+   auto result = einsum<seq<I, I>, seq<I>>(A);
+
+6. Permutation:
+
+   Dynamic shape:
+
+.. code-block:: cpp
+
+   auto result = einsum("ijk->kji", A);
+
+   Fixed shape:
+
+.. code-block:: cpp
+
+   auto result = einsum<seq<I, J, K>, seq<K, J, I>>(A);
+
+The `einsum` function provides a unified interface for many tensor operations, allowing for concise and readable code. It automatically handles the necessary contractions and permutations based on the specified subscripts.
 
 
 Tensor Error Checking

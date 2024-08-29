@@ -33,6 +33,8 @@ New dimensions can be created by combining these base dimensions. For example, t
    using force_dim = dim_mult_t<M, acceleration_dim>;
 
 
+The use of std::ratio allows for fractional exponents in the dimension representation.
+
 Quantity System
 ---------------
 

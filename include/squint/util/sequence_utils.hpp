@@ -27,7 +27,7 @@ namespace squint {
  * @return std::array<std::size_t, sizeof...(Ix)> An array containing the indices.
  */
 template <std::size_t... Ix> constexpr auto make_array(std::index_sequence<Ix...> /*unused*/) {
-    return std::array{Ix...};
+    return std::array<std::size_t, sizeof...(Ix)>{Ix...};
 }
 
 /**

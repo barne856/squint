@@ -555,4 +555,124 @@ TEST_CASE("contract()") {
     }
 }
 
+TEST_CASE("tensor_einsum") {
+    SUBCASE("Matrix multiplication (dynamic shape)") {
+        auto A = tens::arange(1, 1, {2, 3});
+        auto B = tens::arange(1, 1, {3, 2});
+        auto result = einsum("ij,jk->ik", A, B);
+        CHECK(result.shape() == std::vector<size_t>{2, 2});
+        CHECK(result == A * B);
+        CHECK(result(0, 0) == doctest::Approx(22));
+        CHECK(result(0, 1) == doctest::Approx(49));
+        CHECK(result(1, 0) == doctest::Approx(28));
+        CHECK(result(1, 1) == doctest::Approx(64));
+    }
+
+    SUBCASE("Dot product (dynamic shape)") {
+        auto A = tens::arange(1, 1, {3});
+        auto B = tens::arange(1, 1, {3});
+        auto result = einsum("i,i->", A, B);
+        CHECK(dot(A, B) == result(0));
+        CHECK(result.shape() == std::vector<size_t>{1});
+        CHECK(result(0) == doctest::Approx(14));
+    }
+
+    SUBCASE("Outer product (dynamic shape)") {
+        auto A = tens::arange(1, 1, {3});
+        auto B = tens::arange(1, 1, {2});
+        auto result = einsum("i,j->ij", A, B);
+        CHECK(result == A * B.transpose());
+        CHECK(result.shape() == std::vector<size_t>{3, 2});
+        CHECK(result(0, 0) == doctest::Approx(1));
+        CHECK(result(0, 1) == doctest::Approx(2));
+        CHECK(result(1, 0) == doctest::Approx(2));
+        CHECK(result(1, 1) == doctest::Approx(4));
+        CHECK(result(2, 0) == doctest::Approx(3));
+        CHECK(result(2, 1) == doctest::Approx(6));
+    }
+
+    SUBCASE("Trace (dynamic shape)") {
+        auto A = tens::arange(1, 1, {3, 3});
+        auto result = einsum("ii->", A);
+        CHECK(result.shape() == std::vector<size_t>{1});
+        CHECK(result(0) == doctest::Approx(15));
+    }
+
+    SUBCASE("Diagonal (dynamic shape)") {
+        auto A = tens::arange(1, 1, {3, 3});
+        auto result = einsum("ii->i", A);
+        CHECK(result.shape() == std::vector<size_t>{3});
+        CHECK(result(0) == doctest::Approx(1));
+        CHECK(result(1) == doctest::Approx(5));
+        CHECK(result(2) == doctest::Approx(9));
+    }
+
+    SUBCASE("Permutation (dynamic shape)") {
+        auto A = tens::arange(1, 1, {2, 3, 4});
+        auto result = einsum("ijk->kji", A);
+        CHECK(result.shape() == std::vector<size_t>{4, 3, 2});
+        CHECK(result(0, 0, 0) == doctest::Approx(1));
+        CHECK(result(3, 2, 1) == doctest::Approx(24));
+    }
+
+    SUBCASE("Matrix multiplication (fixed shape)") {
+        auto A = ndarr<2, 3>::arange(1, 1);
+        auto B = ndarr<3, 2>::arange(1, 1);
+        auto result = einsum<seq<I, J>, seq<J, K>, seq<I, K>>(A, B);
+        CHECK(result.shape() == std::array<size_t, 2>{2, 2});
+        CHECK(result == A * B);
+        CHECK(result(0, 0) == doctest::Approx(22));
+        CHECK(result(0, 1) == doctest::Approx(49));
+        CHECK(result(1, 0) == doctest::Approx(28));
+        CHECK(result(1, 1) == doctest::Approx(64));
+    }
+
+    SUBCASE("Dot product (fixed shape)") {
+        auto A = ndarr<3>::arange(1, 1);
+        auto B = ndarr<3>::arange(1, 1);
+        auto result = einsum<seq<I>, seq<I>, seq<>>(A, B);
+        CHECK(dot(A, B) == result());
+        CHECK(result.shape().size() == 1);
+        CHECK(result.shape()[0] == 1);
+        CHECK(result() == doctest::Approx(14));
+    }
+
+    SUBCASE("Outer product (fixed shape)") {
+        auto A = ndarr<3>::arange(1, 1);
+        auto B = ndarr<2>::arange(1, 1);
+        auto result = einsum<seq<I>, seq<J>, seq<I, J>>(A, B);
+        CHECK(result.shape() == std::array<size_t, 2>{3, 2});
+        CHECK(result(0, 0) == doctest::Approx(1));
+        CHECK(result(0, 1) == doctest::Approx(2));
+        CHECK(result(1, 0) == doctest::Approx(2));
+        CHECK(result(1, 1) == doctest::Approx(4));
+        CHECK(result(2, 0) == doctest::Approx(3));
+        CHECK(result(2, 1) == doctest::Approx(6));
+    }
+
+    SUBCASE("Trace (fixed shape)") {
+        auto A = ndarr<3, 3>::arange(1, 1);
+        auto result = einsum<seq<I, I>, seq<>>(A);
+        CHECK(result.shape() == std::array<size_t, 1>{1});
+        CHECK(result(0) == doctest::Approx(15));
+    }
+
+    SUBCASE("Diagonal (fixed shape)") {
+        auto A = ndarr<3, 3>::arange(1, 1);
+        auto result = einsum<seq<I, I>, seq<I>>(A);
+        CHECK(result.shape() == std::array<size_t, 1>{3});
+        CHECK(result(0) == doctest::Approx(1));
+        CHECK(result(1) == doctest::Approx(5));
+        CHECK(result(2) == doctest::Approx(9));
+    }
+
+    SUBCASE("Permutation (fixed shape)") {
+        auto A = ndarr<2, 3, 4>::arange(1, 1);
+        auto result = einsum<seq<I, J, K>, seq<K, J, I>>(A);
+        CHECK(result.shape() == std::array<size_t, 3>{4, 3, 2});
+        CHECK(result(0, 0, 0) == doctest::Approx(1));
+        CHECK(result(3, 2, 1) == doctest::Approx(24));
+    }
+}
+
 // NOLINTEND

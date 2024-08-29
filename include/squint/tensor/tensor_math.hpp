@@ -515,10 +515,23 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
         result_shape.push_back(B_shape[idx]);
     }
 
+    // if result shape is empty, it means the result is a scalar, so add 1
+    if (result_shape.empty()) {
+        result_shape.push_back(1);
+    }
+
     // Reshape result to final tensor shape
     return result_matrix.reshape(result_shape).copy();
 }
 
+/**
+ * @brief Helper function to determine if an index is contracted or free.
+ * @tparam Sequence1 The sequence of contracted indices for the first tensor.
+ * @tparam Sequence2 The sequence of contracted indices for the second tensor.
+ * @tparam TensorId The tensor id (0 for the first tensor, 1 for the second tensor).
+ * @tparam Idx The index to check.
+ * @return True if the index is contracted, false otherwise.
+ */
 template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> struct is_contracted {
     static constexpr auto value() -> bool {
         if constexpr (TensorId == 0) {
@@ -533,10 +546,25 @@ template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> s
     }
 };
 
+/**
+ * @brief Helper function to determine if an index is contracted or free.
+ * @tparam Sequence1 The sequence of contracted indices for the first tensor.
+ * @tparam Sequence2 The sequence of contracted indices for the second tensor.
+ * @tparam TensorId The tensor id (0 for the first tensor, 1 for the second tensor).
+ * @tparam Idx The index to check.
+ * @return True if the index is free, false otherwise.
+ */
 template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> struct is_free {
     static constexpr auto value() -> bool { return !is_contracted<Sequence1, Sequence2, TensorId, Idx>::value(); }
 };
 
+/**
+ * @brief Helper struct to determine the types needed for tensor contraction.
+ * @tparam Tensor1 The first tensor type.
+ * @tparam Tensor2 The second tensor type.
+ * @tparam Sequence1 The sequence of contracted indices for the first tensor.
+ * @tparam Sequence2 The sequence of contracted indices for the second tensor.
+ */
 template <typename Tensor1, typename Tensor2, typename Sequence1, typename Sequence2> struct contraction_types {
     using A_shape = typename Tensor1::shape_type;
     using B_shape = typename Tensor2::shape_type;
@@ -565,6 +593,14 @@ template <typename Tensor1, typename Tensor2, typename Sequence1, typename Seque
     static constexpr size_t common_dim = product(select_values_t<A_shape, A_contract_indices>{});
 };
 
+/**
+ * @brief Computes the tensor contraction of two tensors.
+ * @param A The first tensor.
+ * @param B The second tensor.
+ * @param Sequence1 The sequence of contracted indices for the first tensor.
+ * @param Sequence2 The sequence of contracted indices for the second tensor.
+ * @return The result of the tensor contraction.
+ */
 template <fixed_tensor Tensor1, fixed_tensor Tensor2, typename Sequence1, typename Sequence2>
 auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, const Sequence2 /*unused*/) {
     using types = contraction_types<Tensor1, Tensor2, Sequence1, Sequence2>;
@@ -577,8 +613,197 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, co
     auto B_matrix = B_permuted.template reshape<types::common_dim, types::B_cols>();
 
     auto result_matrix = A_matrix * B_matrix;
+    if constexpr (types::result_shape::size() != 0) {
+        return (result_matrix.template reshape<typename types::result_shape>()).copy();
+    } else {
+        return (result_matrix.template reshape<1>()).copy();
+    }
+}
 
-    return (result_matrix.template reshape<typename types::result_shape>()).copy();
+/**
+ * @brief Computes the tensor contraction of two tensors using the Einstein summation convention.
+ * @param subscripts The Einstein summation subscripts.
+ * @param A The first tensor.
+ * @param B The second tensor.
+ * @return The result of the tensor contraction.
+ *
+ * The Einstein summation convention is a shorthand notation for tensor contraction. The subscripts
+ * string specifies the contraction pairs and the output subscripts. For example, the subscripts "ij,jk->ik"
+ * specifies the contraction of the second index of the first tensor with the first index of the second tensor,
+ * and the output subscripts are the first and third indices.
+ */
+template <dynamic_tensor Tensor1, dynamic_tensor Tensor2>
+auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
+    // Parse the subscripts
+    auto pos = subscripts.find("->");
+    if (pos == std::string::npos) {
+        throw std::invalid_argument("Invalid einsum subscripts: missing '->'");
+    }
+
+    std::string input_subscripts = subscripts.substr(0, pos);
+    std::string output_subscript = subscripts.substr(pos + 2);
+
+    auto comma_pos = input_subscripts.find(',');
+    if (comma_pos == std::string::npos) {
+        throw std::invalid_argument("Invalid einsum subscripts: missing ','");
+    }
+
+    std::string A_subscript = input_subscripts.substr(0, comma_pos);
+    std::string B_subscript = input_subscripts.substr(comma_pos + 1);
+
+    // Determine contraction pairs
+    std::vector<std::pair<size_t, size_t>> contraction_pairs;
+    for (size_t i = 0; i < A_subscript.size(); ++i) {
+        auto pos = B_subscript.find(A_subscript[i]);
+        if (pos != std::string::npos && output_subscript.find(A_subscript[i]) == std::string::npos) {
+            contraction_pairs.push_back({i, pos});
+        }
+    }
+
+    // Perform contraction
+    auto result = contract(A, B, contraction_pairs);
+
+    // Determine permutation
+    std::vector<size_t> permutation;
+    std::string result_subscript;
+    for (char c : A_subscript) {
+        if (output_subscript.find(c) != std::string::npos) {
+            result_subscript += c;
+        }
+    }
+    for (char c : B_subscript) {
+        if (output_subscript.find(c) != std::string::npos && result_subscript.find(c) == std::string::npos) {
+            result_subscript += c;
+        }
+    }
+
+    for (char c : output_subscript) {
+        auto pos = result_subscript.find(c);
+        if (pos == std::string::npos) {
+            throw std::invalid_argument("Invalid output subscript: contains indices not present in input");
+        }
+        permutation.push_back(pos);
+    }
+
+    // Permute result if necessary
+    if (permutation.size() > 0 && !std::is_sorted(permutation.begin(), permutation.end())) {
+        return result.permute(permutation).copy();
+    }
+
+    return result;
+}
+
+/**
+ * @brief Specialization of the einsum function for a single tensor.
+ * @param subscripts The Einstein summation subscripts.
+ * @param tensor The input tensor.
+ * @return The result of the einsum operation.
+ *
+ * This function is a specialization of the einsum function for a single tensor. The subscripts
+ * string specifies the operation to perform on the tensor. For example, the subscripts "ij->ji"
+ * specifies a matrix transpose operation.
+ */
+template <dynamic_tensor Tensor> auto einsum(const std::string &subscripts, const Tensor &tensor) {
+    // Parse the subscripts
+    auto pos = subscripts.find("->");
+    if (pos == std::string::npos) {
+        throw std::invalid_argument("Invalid einsum subscripts: missing '->'");
+    }
+
+    std::string input_subscripts = subscripts.substr(0, pos);
+    std::string output_subscripts = subscripts.substr(pos + 2);
+
+    if (input_subscripts == output_subscripts) {
+        // No operation needed
+        return tensor;
+    }
+    if (output_subscripts.empty()) {
+        // Trace operation
+        using result_value_type = std::remove_const_t<typename Tensor::value_type>;
+        using result_type = ::squint::tensor<result_value_type, dynamic, dynamic>;
+        return result_type({1}, trace(tensor));
+    }
+    if (output_subscripts.size() < input_subscripts.size()) {
+        // Diagonal operation
+        return tensor.diag_view().copy();
+    }
+    // Permutation
+    std::vector<size_t> permutation;
+    for (char c : output_subscripts) {
+        permutation.push_back(input_subscripts.find(c));
+    }
+    return tensor.permute(permutation).copy();
+}
+
+// Define constexpr aliases for indices
+constexpr size_t I = 0, J = 1, K = 2, L = 3, M = 4, N = 5, O = 6, P = 7, Q = 8, R = 9;
+
+// Helper metafunction to check if a value is in a sequence
+template <std::size_t Val, typename Seq> struct is_in_sequence;
+
+template <std::size_t Val, std::size_t... Seq>
+struct is_in_sequence<Val, std::index_sequence<Seq...>> : std::bool_constant<((Val == Seq) || ...)> {};
+
+// Helper metafunction to get contraction indices
+template <typename ASubscripts, typename BSubscripts> struct get_contraction_indices {
+    template <std::size_t... Is> static constexpr auto helper(std::index_sequence<Is...>) {
+        constexpr std::size_t size = sizeof...(Is);
+        std::array<std::size_t, size> indices{};
+        std::size_t count = 0;
+        constexpr auto a_subscripts_arr = make_array(ASubscripts{});
+        ((is_in_sequence<a_subscripts_arr[Is], BSubscripts>::value ? indices[count++] = Is : 0), ...);
+        return std::pair{indices, count};
+    }
+
+    static constexpr auto indices_and_count = helper(std::make_index_sequence<ASubscripts::size()>{});
+
+    template <std::size_t... Is> static constexpr auto to_sequence(std::index_sequence<Is...> /*unused*/) {
+        return std::index_sequence<indices_and_count.first[Is]...>{};
+    }
+
+    using type = decltype(to_sequence(std::make_index_sequence<indices_and_count.second>{}));
+};
+
+// // Einsum for two fixed tensors
+template <typename ASubscripts, typename BSubscripts, typename OutputSubscripts, typename Tensor1, typename Tensor2>
+auto einsum(const Tensor1 &A, const Tensor2 &B) {
+    using a_contractions = typename get_contraction_indices<ASubscripts, BSubscripts>::type;
+    using b_contractions = typename get_contraction_indices<BSubscripts, ASubscripts>::type;
+
+    auto result = contract(A, B, a_contractions{}, b_contractions{});
+
+    // Determine permutation
+
+    // Permute result if necessary
+    if constexpr (OutputSubscripts::size() > 0) {
+        constexpr auto permutation = make_array(OutputSubscripts{});
+        if constexpr (!std::is_sorted(permutation.begin(), permutation.end())) {
+            return result.template permute<OutputSubscripts>().copy();
+        } else {
+            return result;
+        }
+    } else {
+        return result;
+    }
+}
+
+// Einsum for a single fixed tensor
+template <typename InputSubscripts, typename OutputSubscripts, typename Tensor> auto einsum(const Tensor &tensor) {
+    if constexpr (std::is_same_v<InputSubscripts, OutputSubscripts>) {
+        // No operation needed
+        return tensor;
+    } else if constexpr (OutputSubscripts::size() == 0) {
+        // Trace operation
+        using value_type = std::remove_const_t<typename Tensor::value_type>;
+        using result_type = ::squint::tensor<value_type, shape<1>, seq<1>>;
+        return result_type{trace(tensor)};
+    } else if constexpr (OutputSubscripts::size() < InputSubscripts::size()) {
+        // Diagonal operation
+        return tensor.diag_view().copy();
+    } else {
+        // Permutation
+        return tensor.template permute<OutputSubscripts>().copy();
+    }
 }
 
 } // namespace squint
