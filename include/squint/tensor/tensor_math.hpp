@@ -448,6 +448,7 @@ auto approx_equal(
  * @brief Computes the tensor product of two tensors.
  * @param A The first tensor.
  * @param B The second tensor.
+ * @param contraction_pairs The pairs of indices to contract.
  * @return The tensor product of A and B.
  */
 template <dynamic_tensor Tensor1, dynamic_tensor Tensor2>
@@ -767,15 +768,24 @@ template <typename ASubscripts, typename BSubscripts> struct get_contraction_ind
     using type = decltype(to_sequence(std::make_index_sequence<indices_and_count.second>{}));
 };
 
-// // Einsum for two fixed tensors
-template <typename ASubscripts, typename BSubscripts, typename OutputSubscripts, typename Tensor1, typename Tensor2>
+/**
+ * @brief Einsum for two fixed tensors.
+ * @tparam ASubscripts The subscripts for the first tensor.
+ * @tparam BSubscripts The subscripts for the second tensor.
+ * @tparam OutputSubscripts The subscripts for the output tensor.
+ * @tparam Tensor1 The first tensor type.
+ * @tparam Tensor2 The second tensor type.
+ * @param A The first tensor.
+ * @param B The second tensor.
+ * @return The result of the einsum operation.
+ */
+template <typename ASubscripts, typename BSubscripts, typename OutputSubscripts, fixed_tensor Tensor1,
+          fixed_tensor Tensor2>
 auto einsum(const Tensor1 &A, const Tensor2 &B) {
     using a_contractions = typename get_contraction_indices<ASubscripts, BSubscripts>::type;
     using b_contractions = typename get_contraction_indices<BSubscripts, ASubscripts>::type;
 
     auto result = contract(A, B, a_contractions{}, b_contractions{});
-
-    // Determine permutation
 
     // Permute result if necessary
     if constexpr (OutputSubscripts::size() > 0) {
@@ -790,7 +800,13 @@ auto einsum(const Tensor1 &A, const Tensor2 &B) {
     }
 }
 
-// Einsum for a single fixed tensor
+/**
+ * @brief Einsum for a single fixed tensor.
+ * @tparam Subscripts The subscripts for the tensor.
+ * @tparam Tensor The tensor type.
+ * @param tensor The tensor.
+ * @return The result of the einsum operation.
+ */
 template <typename InputSubscripts, typename OutputSubscripts, typename Tensor> auto einsum(const Tensor &tensor) {
     if constexpr (std::is_same_v<InputSubscripts, OutputSubscripts>) {
         // No operation needed

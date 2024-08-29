@@ -257,7 +257,7 @@ squint::flow calculate_flow_rate(const squint::area &cross_sectional_area, const
 squint::pure calculate_reynolds_number(const squint::density &fluid_density,
                                        const squint::velocity &characteristic_velocity,
                                        const squint::length &characteristic_length,
-                                       const squint::viscosity &dynamic_viscosity) {
+                                       const squint::dynamic_viscosity &dynamic_viscosity) {
     // Calculate Reynolds number: Re = (ρvL) / μ
     return (fluid_density * characteristic_velocity * characteristic_length) / dynamic_viscosity;
 }
