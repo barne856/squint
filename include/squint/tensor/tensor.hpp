@@ -178,9 +178,15 @@ class tensor {
     auto copy() const -> auto
         requires(OwnershipType == ownership_type::reference)
     {
-        using owning_type = tensor<std::remove_const_t<T>, Shape, strides::column_major<Shape>, ErrorChecking,
-                                   ownership_type::owner, memory_space::host>;
-        return owning_type(*this);
+        if constexpr (fixed_shape<Shape>) {
+            using owning_type = tensor<std::remove_const_t<T>, Shape, strides::column_major<Shape>, ErrorChecking,
+                                       ownership_type::owner, memory_space::host>;
+            return owning_type(*this);
+        } else {
+            using owning_type = tensor<std::remove_const_t<T>, std::vector<size_t>, std::vector<size_t>, ErrorChecking,
+                                       ownership_type::owner, memory_space::host>;
+            return owning_type(*this);
+        }
     }
 
     // Subview operations

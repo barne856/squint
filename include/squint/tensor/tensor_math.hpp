@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace squint {
 
@@ -485,8 +487,8 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
                                Tensor1::error_checking(), ownership_type::owner, memory_space::host>;
 
     // print permutation
-    auto A_permuted = tensor_type(A.permute(A_permutation));
-    auto B_permuted = tensor_type(B.permute(B_permutation));
+    auto A_permuted = A.permute(A_permutation).copy();
+    auto B_permuted = B.permute(B_permutation).copy();
 
     // Calculate dimensions for matrix multiplication
     size_t A_rows = std::accumulate(A_free_indices.begin(), A_free_indices.end(), 1ULL,
@@ -505,15 +507,15 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
 
     // Calculate result shape
     std::vector<size_t> result_shape;
-    for (size_t idx : A_free_indices) {
+    for (const size_t idx : A_free_indices) {
         result_shape.push_back(A_shape[idx]);
     }
-    for (size_t idx : B_free_indices) {
+    for (const size_t idx : B_free_indices) {
         result_shape.push_back(B_shape[idx]);
     }
 
     // Reshape result to final tensor shape
-    return tensor_type(result_matrix.reshape(result_shape));
+    return result_matrix.reshape(result_shape).copy();
 }
 
 template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> struct is_contracted {
