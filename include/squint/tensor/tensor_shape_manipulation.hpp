@@ -84,6 +84,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
     return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
 }
 
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+template <typename NewShape>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape()
+    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+{
+    constexpr size_t new_size = product(NewShape{});
+    constexpr size_t current_size = product(Shape{});
+    static_assert(new_size == current_size, "New shape must have the same number of elements as the original tensor");
+
+    using NewStrides = typename std::conditional_t<std::is_same_v<Strides, strides::column_major<Shape>>,
+                                                   strides::column_major<NewShape>, strides::row_major<NewShape>>;
+
+    return tensor<T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
+}
+
 /**
  * @brief Reshapes the tensor to a new shape.
  * @tparam NewDims The new dimensions of the tensor.
@@ -100,6 +116,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
     static_assert(new_size == current_size, "New shape must have the same number of elements as the original tensor");
 
     using NewShape = std::index_sequence<NewDims...>;
+    using NewStrides = typename std::conditional_t<std::is_same_v<Strides, strides::column_major<Shape>>,
+                                                   strides::column_major<NewShape>, strides::row_major<NewShape>>;
+
+    return tensor<const T, NewShape, NewStrides, ErrorChecking, ownership_type::reference, MemorySpace>(this->data());
+}
+
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+template <typename NewShape>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape() const
+    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+{
+    constexpr size_t new_size = product(NewShape{});
+    constexpr size_t current_size = product(Shape{});
+    static_assert(new_size == current_size, "New shape must have the same number of elements as the original tensor");
+
     using NewStrides = typename std::conditional_t<std::is_same_v<Strides, strides::column_major<Shape>>,
                                                    strides::column_major<NewShape>, strides::row_major<NewShape>>;
 

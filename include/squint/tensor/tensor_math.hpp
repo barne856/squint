@@ -516,37 +516,35 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
     return tensor_type(result_matrix.reshape(result_shape));
 }
 
-/**
- * @brief Helper function to create a compile-time list of contraction pairs.
- * @tparam As The indices of the first tensor.
- * @tparam Bs The indices of the second tensor.
- * @param seq1 The indices of the first tensor as an index sequence.
- * @param seq2 The indices of the second tensor as an index sequence.
- * @return The compile-time list of contraction pairs.
- */
-template <size_t... As, size_t... Bs>
-constexpr auto make_contraction_pairs(std::index_sequence<As...>, std::index_sequence<Bs...>) {
-    return std::integral_constant<std::array<std::pair<size_t, size_t>, sizeof...(As)>,
-                                  std::array<std::pair<size_t, size_t>, sizeof...(As)>{std::pair{As, Bs}...}>{};
-}
-
-// Helper predicates
-template <typename ContractionPairs, size_t TensorId, size_t Idx> struct is_contracted {
-    static constexpr bool value = (std::get<TensorId>(ContractionPairs::value[Idx]) == Idx);
+template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> struct is_contracted {
+    static constexpr auto value() -> bool {
+        if constexpr (TensorId == 0) {
+            constexpr auto constraction_indices_a = make_array(Sequence1{});
+            return !static_cast<bool>(std::none_of(constraction_indices_a.begin(), constraction_indices_a.end(),
+                                                   [](auto i) { return i == Idx; }));
+        } else {
+            constexpr auto constraction_indices_b = make_array(Sequence2{});
+            return !static_cast<bool>(std::none_of(constraction_indices_b.begin(), constraction_indices_b.end(),
+                                                   [](auto i) { return i == Idx; }));
+        }
+    }
 };
 
-// Type computation structures
-template <typename Tensor1, typename Tensor2, typename ContractionPairs> struct contraction_types {
+template <typename Sequence1, typename Sequence2, size_t TensorId, size_t Idx> struct is_free {
+    static constexpr auto value() -> bool { return !is_contracted<Sequence1, Sequence2, TensorId, Idx>::value(); }
+};
+
+template <typename Tensor1, typename Tensor2, typename Sequence1, typename Sequence2> struct contraction_types {
     using A_shape = typename Tensor1::shape_type;
     using B_shape = typename Tensor2::shape_type;
     static constexpr size_t A_rank = A_shape::size();
     static constexpr size_t B_rank = B_shape::size();
 
-    template <size_t I> using is_A_contracted = is_contracted<ContractionPairs, 0, I>;
-    template <size_t I> using is_A_free = std::negation<is_A_contracted<I>>;
+    template <size_t I> using is_A_contracted = is_contracted<Sequence1, Sequence2, 0, I>;
+    template <size_t I> using is_A_free = is_free<Sequence1, Sequence2, 0, I>;
 
-    template <size_t I> using is_B_contracted = is_contracted<ContractionPairs, 1, I>;
-    template <size_t I> using is_B_free = std::negation<is_B_contracted<I>>;
+    template <size_t I> using is_B_contracted = is_contracted<Sequence1, Sequence2, 1, I>;
+    template <size_t I> using is_B_free = is_free<Sequence1, Sequence2, 1, I>;
 
     using A_free_indices = filter_sequence_t<std::make_index_sequence<A_rank>, is_A_free>;
     using A_contract_indices = filter_sequence_t<std::make_index_sequence<A_rank>, is_A_contracted>;
@@ -564,24 +562,20 @@ template <typename Tensor1, typename Tensor2, typename ContractionPairs> struct 
     static constexpr size_t common_dim = product(select_values_t<A_shape, A_contract_indices>{});
 };
 
-template <fixed_tensor Tensor1, fixed_tensor Tensor2, typename ContractionPairs>
-auto contract(const Tensor1 &A, const Tensor2 &B, ContractionPairs) {
-    using types = contraction_types<Tensor1, Tensor2, ContractionPairs>;
+template <fixed_tensor Tensor1, fixed_tensor Tensor2, typename Sequence1, typename Sequence2>
+auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, const Sequence2 /*unused*/) {
+    using types = contraction_types<Tensor1, Tensor2, Sequence1, Sequence2>;
     using result_value_type = std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>;
 
-    // Permute A and B
-    auto A_permuted = A.template permute<typename types::A_permutation>();
-    auto B_permuted = B.template permute<typename types::B_permutation>();
+    auto A_permuted = (A.template permute<typename types::A_permutation>()).copy();
+    auto B_permuted = (B.template permute<typename types::B_permutation>()).copy();
 
-    // Reshape permuted tensors to matrices
     auto A_matrix = A_permuted.template reshape<types::A_rows, types::common_dim>();
     auto B_matrix = B_permuted.template reshape<types::common_dim, types::B_cols>();
 
-    // Perform matrix multiplication
     auto result_matrix = A_matrix * B_matrix;
 
-    // Reshape result to final tensor shape
-    return result_matrix.template reshape<typename types::result_shape>();
+    return (result_matrix.template reshape<typename types::result_shape>()).copy();
 }
 
 } // namespace squint

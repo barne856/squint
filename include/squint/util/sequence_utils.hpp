@@ -303,19 +303,17 @@ concept valid_index_permutation = is_unique<Sequence>() && all_less_than(Sequenc
 /**
  * @brief Helper to filter a sequence based on a predicate.
  */
-template<typename Sequence, template<std::size_t> class Pred>
-struct filter_sequence {
-    template<std::size_t I, std::size_t... Is>
-    static auto helper(std::index_sequence<I, Is...>) {
+template <typename Sequence, template <std::size_t> class Pred> struct filter_sequence {
+    template <std::size_t I, std::size_t... Is> static auto helper(std::index_sequence<I, Is...> /*unused*/) {
         if constexpr (sizeof...(Is) == 0) {
-            if constexpr (Pred<I>::value) {
+            if constexpr (Pred<I>::value()) {
                 return std::index_sequence<I>{};
             } else {
                 return std::index_sequence<>{};
             }
         } else {
-            if constexpr (Pred<I>::value) {
-                return concat_sequence_t<std::index_sequence<I>, 
+            if constexpr (Pred<I>::value()) {
+                return concat_sequence_t<std::index_sequence<I>,
                                          typename filter_sequence<std::index_sequence<Is...>, Pred>::type>{};
             } else {
                 return typename filter_sequence<std::index_sequence<Is...>, Pred>::type{};
@@ -326,23 +324,21 @@ struct filter_sequence {
     using type = decltype(helper(Sequence{}));
 };
 
-template<typename Sequence, template<std::size_t> class Pred>
+template <typename Sequence, template <std::size_t> class Pred>
 using filter_sequence_t = typename filter_sequence<Sequence, Pred>::type;
 
 /**
  * @brief Helper to select values from a sequence using another sequence of indices.
  */
-template<typename Sequence, typename IndexSequence>
-struct select_values {
-    template<std::size_t... Is>
-    static auto helper(std::index_sequence<Is...>) {
+template <typename Sequence, typename IndexSequence> struct select_values {
+    template <std::size_t... Is> static auto helper(std::index_sequence<Is...> /*unused*/) {
         return std::index_sequence<std::get<Is>(make_array(Sequence{}))...>{};
     }
 
     using type = decltype(helper(IndexSequence{}));
 };
 
-template<typename Sequence, typename IndexSequence>
+template <typename Sequence, typename IndexSequence>
 using select_values_t = typename select_values<Sequence, IndexSequence>::type;
 
 } // namespace squint

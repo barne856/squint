@@ -167,6 +167,22 @@ class tensor {
     template <typename... Indices> auto operator[](Indices... indices) -> T &;
 #endif
 
+    /**
+     * @brief Create an owning copy of the tensor.
+     *
+     * This method creates an owning copy of the tensor. If the tensor is already an owner, it will return a copy of
+     * itself. If the tensor is a reference, it will create a new tensor that owns its data.
+     * The resulting tensor will have the same shape and values as the original tensor, but will own its data, use the
+     * host memory space, and have column-major strides.
+     */
+    auto copy() const -> auto
+        requires(OwnershipType == ownership_type::reference)
+    {
+        using owning_type = tensor<std::remove_const_t<T>, Shape, strides::column_major<Shape>, ErrorChecking,
+                                   ownership_type::owner, memory_space::host>;
+        return owning_type(*this);
+    }
+
     // Subview operations
     template <typename SubviewShape, typename StepSizes>
     auto subview(const index_type &start_indices)
@@ -216,6 +232,12 @@ class tensor {
     auto reshape()
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     template <size_t... NewDims>
+    auto reshape() const
+        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+    template <typename NewShape>
+    auto reshape()
+        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+    template <typename NewShape>
     auto reshape() const
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
     auto flatten()

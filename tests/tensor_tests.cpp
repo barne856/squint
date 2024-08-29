@@ -451,10 +451,35 @@ TEST_CASE("Tensor Static Creation Methods") {
     }
 }
 
+TEST_CASE("copy()") {
+    squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+    // permute the tensor
+    auto t2 = t1.template permute<1, 0>();
+    // take the first column of the permuted tensor and copy it
+    auto col = t2.col(0).copy();
+    CHECK(col(0) == 1);
+    CHECK(col(1) == 2);
+    CHECK(col(2) == 3);
+    // static assert ownership is owner
+    static_assert(col.ownership() == squint::ownership_type::owner);
+}
+
 TEST_CASE("Tensor Shape Manipulation") {
     SUBCASE("Fixed shape reshape") {
         squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto reshaped = t.template reshape<3, 2>();
+        CHECK(reshaped.shape() == std::array<std::size_t, 2>{3, 2});
+        CHECK(reshaped(0, 0) == 1);
+        CHECK(reshaped(1, 0) == 4);
+        CHECK(reshaped(2, 0) == 2);
+        CHECK(reshaped(0, 1) == 5);
+        CHECK(reshaped(1, 1) == 3);
+        CHECK(reshaped(2, 1) == 6);
+    }
+
+    SUBCASE("Fixed shape reshape from sequence") {
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
+        auto reshaped = t.template reshape<std::index_sequence<3, 2>>();
         CHECK(reshaped.shape() == std::array<std::size_t, 2>{3, 2});
         CHECK(reshaped(0, 0) == 1);
         CHECK(reshaped(1, 0) == 4);
