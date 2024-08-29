@@ -461,7 +461,7 @@ For fixed shape tensors:
 Where:
 
 - `subscript_string` is a string specifying the operation in Einstein notation
-- `InputSubscripts1`, `InputSubscripts2`, and `OutputSubscripts` are `std::index_sequence`s representing the input and output subscripts
+- `InputSubscripts1`, `InputSubscripts2`, and `OutputSubscripts` are `std::index_sequence` representing the input and output subscripts
 - `tensor1` and `tensor2` are the input tensors
 
 For operations on a single tensor, use:
@@ -485,14 +485,13 @@ Examples
 
 1. Matrix Multiplication:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("ij,jk->ik", A, B);
 
-
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
    
@@ -501,13 +500,13 @@ Examples
 
 2. Dot Product:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("i,i->", A, B);
 
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
 
@@ -515,14 +514,13 @@ Examples
 
 3. Outer Product:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("i,j->ij", A, B);
 
-
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
 
@@ -531,13 +529,13 @@ Examples
 
 4. Trace:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("ii->", A);
 
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
 
@@ -546,13 +544,13 @@ Examples
 
 5. Diagonal:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("ii->i", A);
 
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
 
@@ -560,13 +558,13 @@ Examples
 
 6. Permutation:
 
-   Dynamic shape:
+Dynamic shape:
 
 .. code-block:: cpp
 
    auto result = einsum("ijk->kji", A);
 
-   Fixed shape:
+Fixed shape:
 
 .. code-block:: cpp
 
