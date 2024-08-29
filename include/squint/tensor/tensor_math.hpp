@@ -10,6 +10,7 @@
 
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
+#include "squint/core/layout.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/quantity/quantity_math.hpp"
 #include "squint/tensor/blas_backend.hpp"
@@ -19,6 +20,7 @@
 #include "squint/util/sequence_utils.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <limits>
 #include <numeric>
@@ -640,23 +642,23 @@ auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
         throw std::invalid_argument("Invalid einsum subscripts: missing '->'");
     }
 
-    std::string input_subscripts = subscripts.substr(0, pos);
-    std::string output_subscript = subscripts.substr(pos + 2);
+    const std::string input_subscripts = subscripts.substr(0, pos);
+    const std::string output_subscript = subscripts.substr(pos + 2);
 
     auto comma_pos = input_subscripts.find(',');
     if (comma_pos == std::string::npos) {
         throw std::invalid_argument("Invalid einsum subscripts: missing ','");
     }
 
-    std::string A_subscript = input_subscripts.substr(0, comma_pos);
-    std::string B_subscript = input_subscripts.substr(comma_pos + 1);
+    const std::string A_subscript = input_subscripts.substr(0, comma_pos);
+    const std::string B_subscript = input_subscripts.substr(comma_pos + 1);
 
     // Determine contraction pairs
     std::vector<std::pair<size_t, size_t>> contraction_pairs;
     for (size_t i = 0; i < A_subscript.size(); ++i) {
         auto pos = B_subscript.find(A_subscript[i]);
         if (pos != std::string::npos && output_subscript.find(A_subscript[i]) == std::string::npos) {
-            contraction_pairs.push_back({i, pos});
+            contraction_pairs.emplace_back(i, pos);
         }
     }
 
@@ -666,18 +668,18 @@ auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
     // Determine permutation
     std::vector<size_t> permutation;
     std::string result_subscript;
-    for (char c : A_subscript) {
+    for (const char c : A_subscript) {
         if (output_subscript.find(c) != std::string::npos) {
             result_subscript += c;
         }
     }
-    for (char c : B_subscript) {
+    for (const char c : B_subscript) {
         if (output_subscript.find(c) != std::string::npos && result_subscript.find(c) == std::string::npos) {
             result_subscript += c;
         }
     }
 
-    for (char c : output_subscript) {
+    for (const char c : output_subscript) {
         auto pos = result_subscript.find(c);
         if (pos == std::string::npos) {
             throw std::invalid_argument("Invalid output subscript: contains indices not present in input");
@@ -686,7 +688,7 @@ auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
     }
 
     // Permute result if necessary
-    if (permutation.size() > 0 && !std::is_sorted(permutation.begin(), permutation.end())) {
+    if (!permutation.empty() && !std::is_sorted(permutation.begin(), permutation.end())) {
         return result.permute(permutation).copy();
     }
 
@@ -710,8 +712,8 @@ template <dynamic_tensor Tensor> auto einsum(const std::string &subscripts, cons
         throw std::invalid_argument("Invalid einsum subscripts: missing '->'");
     }
 
-    std::string input_subscripts = subscripts.substr(0, pos);
-    std::string output_subscripts = subscripts.substr(pos + 2);
+    const std::string input_subscripts = subscripts.substr(0, pos);
+    const std::string output_subscripts = subscripts.substr(pos + 2);
 
     if (input_subscripts == output_subscripts) {
         // No operation needed
@@ -729,7 +731,7 @@ template <dynamic_tensor Tensor> auto einsum(const std::string &subscripts, cons
     }
     // Permutation
     std::vector<size_t> permutation;
-    for (char c : output_subscripts) {
+    for (const char c : output_subscripts) {
         permutation.push_back(input_subscripts.find(c));
     }
     return tensor.permute(permutation).copy();
@@ -746,7 +748,7 @@ struct is_in_sequence<Val, std::index_sequence<Seq...>> : std::bool_constant<((V
 
 // Helper metafunction to get contraction indices
 template <typename ASubscripts, typename BSubscripts> struct get_contraction_indices {
-    template <std::size_t... Is> static constexpr auto helper(std::index_sequence<Is...>) {
+    template <std::size_t... Is> static constexpr auto helper(std::index_sequence<Is...> /*unused*/) {
         constexpr std::size_t size = sizeof...(Is);
         std::array<std::size_t, size> indices{};
         std::size_t count = 0;
