@@ -877,4 +877,22 @@ TEST_CASE("Dynamic Tensor Operations") {
     }
 }
 
+#ifdef SQUINT_USE_CUDA
+TEST_CASE("CUDA") {
+    SUBCASE("to_device() and to_host()") {
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
+        auto t_device = t.to_device();
+        CHECK(t_device.memory_space() == squint::memory_space::device);
+        auto t_host = t_device.to_host();
+        CHECK(t_host.memory_space() == squint::memory_space::host);
+        CHECK(t_host(0, 0) == 1);
+        CHECK(t_host(1, 0) == 4);
+        CHECK(t_host(0, 1) == 2);
+        CHECK(t_host(1, 1) == 5);
+        CHECK(t_host(0, 2) == 3);
+        CHECK(t_host(1, 2) == 6);
+    }
+}
+#endif
+
 // NOLINTEND

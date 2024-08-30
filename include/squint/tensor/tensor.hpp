@@ -37,6 +37,11 @@
 #include <variant>
 #include <vector>
 
+#ifdef SQUINT_USE_CUDA
+#include <cublas_v2.h>
+#include <cuda_runtime.h>
+#endif
+
 namespace squint {
 
 /**
@@ -135,6 +140,13 @@ class tensor {
     tensor(T *data)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::reference);
 
+    // Destructor
+    ~tensor()
+        requires(MemorySpace == memory_space::device && OwnershipType == ownership_type::reference)
+    {
+        cudaFree(data_);
+    }
+
     // Assignment operators
     template <typename U, typename OtherShape, typename OtherStrides, ownership_type OtherOwnershipType>
     auto operator=(const tensor<U, OtherShape, OtherStrides, ErrorChecking, OtherOwnershipType, MemorySpace> &other)
@@ -188,6 +200,68 @@ class tensor {
             return owning_type(*this);
         }
     }
+
+#ifdef SQUINT_USE_CUDA
+    auto to_device() const -> tensor<std::remove_const_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference,
+                                     memory_space::device>
+        requires(MemorySpace == memory_space::host && OwnershipType == ownership_type::owner)
+    {
+        using device_tensor_type = tensor<std::remove_const_t<T>, Shape, Strides, ErrorChecking,
+                                          ownership_type::reference, memory_space::device>;
+        size_t size = this->size() * sizeof(T);
+
+        // Create device pointer
+        void *device_ptr = nullptr;
+
+        // Allocate memory on the device
+        cudaError_t malloc_status = cudaMalloc(&device_ptr, size);
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+
+        // Copy data from host to device
+        cudaError_t memcpy_status =
+            cudaMemcpy(device_ptr, static_cast<void *>(const_cast<std::remove_const_t<T> *>(this->data())), size,
+                       cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            cudaFree(device_ptr);
+            throw std::runtime_error("Failed to copy data to device");
+        }
+
+        // Create and return the device tensor
+        if constexpr (dynamic_shape<Shape>) {
+            return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr), this->shape_, this->strides_);
+        } else {
+            return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr));
+        }
+    }
+
+    auto to_host() const -> tensor<T, Shape, Strides, ErrorChecking, ownership_type::owner, memory_space::host>
+        requires(MemorySpace == memory_space::device && OwnershipType == ownership_type::reference)
+    {
+        using host_tensor_type = tensor<T, Shape, Strides, ErrorChecking, ownership_type::owner, memory_space::host>;
+        size_t size = this->size() * sizeof(T);
+
+        if constexpr (dynamic_shape<Shape>) {
+            host_tensor_type host_tensor(this->shape());
+            host_tensor.strides_ = this->strides_;
+            // Copy data from device to host
+            cudaError_t memcpy_status = cudaMemcpy(host_tensor.data(), this->data(), size, cudaMemcpyDeviceToHost);
+            if (memcpy_status != cudaSuccess) {
+                throw std::runtime_error("Failed to copy data to host");
+            }
+            return host_tensor;
+        } else {
+            host_tensor_type host_tensor;
+            // Copy data from device to host
+            cudaError_t memcpy_status = cudaMemcpy(host_tensor.data(), this->data(), size, cudaMemcpyDeviceToHost);
+            if (memcpy_status != cudaSuccess) {
+                throw std::runtime_error("Failed to copy data to host");
+            }
+            return host_tensor;
+        }
+    }
+#endif
 
     // Subview operations
     template <typename SubviewShape, typename StepSizes>
