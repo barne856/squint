@@ -50,7 +50,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && ln -s /usr/bin/lld-$LLVM_VERSION /usr/bin/lld \
     && ln -f -s /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld 
 
-# download the key to system keyring and add signed entry to apt sources and configure the APT client to use Intel repository:
+# download the intel key to system keyring and add signed entry to apt sources and configure the APT client to use Intel repository:
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
     | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list

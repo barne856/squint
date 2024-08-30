@@ -25,6 +25,9 @@
 	"mounts": [
 		"source=squint-build,target=${containerWorkspaceFolder}/build,type=volume"
 	],
+	"runArgs": [
+		"--gpus", "all"
+	],
 	// make vscode user own the workspace and all mounts
 	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
 	// prevent git dubious ownership

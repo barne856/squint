@@ -4,9 +4,15 @@ cmake_minimum_required(VERSION 3.28)
 set(SQUINT_BLAS_BACKEND "NONE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
 set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
 
+# Add CUDA option
+option(SQUINT_USE_CUDA "Enable CUDA support" OFF)
+
 set(PROJECT_LANGUAGES CXX)
 if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
   list(APPEND PROJECT_LANGUAGES C Fortran)
+endif()
+if(SQUINT_USE_CUDA)
+  list(APPEND PROJECT_LANGUAGES CUDA)
 endif()
 
 project(SQUINT VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
@@ -79,6 +85,21 @@ target_include_directories(SQUINT INTERFACE
 
 # Setup BLAS backend
 setup_blas_backend()
+
+# Setup CUDA if enabled
+if(SQUINT_USE_CUDA)
+  include(CheckLanguage)
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+    find_library(CUBLAS_LIBRARIES cublas HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+    target_compile_definitions(SQUINT INTERFACE SQUINT_USE_CUDA)
+    target_include_directories(SQUINT INTERFACE ${CUDA_INCLUDE_DIRS})
+    target_link_libraries(SQUINT INTERFACE ${CUDA_LIBRARIES} ${CUBLAS_LIBRARIES})
+  else()
+    message(FATAL_ERROR "CUDA requested but not found")
+  endif()
+endif()
 
 # Tests
 if(SQUINT_BUILD_TESTS)
