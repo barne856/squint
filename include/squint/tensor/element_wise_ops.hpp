@@ -19,6 +19,10 @@
 #include <type_traits>
 #include <vector>
 
+#ifdef SQUINT_USE_CUDA
+#include "squint/tensor/cuda/cuda_context.hpp"
+#endif
+
 namespace squint {
 
 // Element-wise addition assignment
@@ -34,7 +38,26 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator+=(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) -> tensor & {
     element_wise_compatible(*this, other);
-    std::transform(begin(), end(), other.begin(), begin(), std::plus{});
+    if constexpr (MemorySpace == memory_space::host) {
+        std::transform(begin(), end(), other.begin(), begin(), std::plus{});
+    } else {
+#ifdef SQUINT_USE_CUDA
+        auto &cuda_context = cuda::CudaContext::instance();
+        cublasHandle_t handle = cuda_context.cublas_handle();
+        using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+        // NOLINTBEGIN
+        if constexpr (std::is_same_v<blas_type, float>) {
+            const float alpha = 1.0F;
+            cublasSaxpy(handle, size(), &alpha, reinterpret_cast<const float *>(other.data()), 1,
+                        reinterpret_cast<float *>(data()), 1);
+        } else if constexpr (std::is_same_v<blas_type, double>) {
+            const double alpha = 1.0;
+            cublasDaxpy(handle, size(), &alpha, reinterpret_cast<const double *>(other.data()), 1,
+                        reinterpret_cast<double *>(data()), 1);
+        }
+        // NOLINTEND
+#endif
+    }
     return *this;
 }
 

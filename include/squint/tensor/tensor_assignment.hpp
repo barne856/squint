@@ -8,6 +8,7 @@
 #ifndef SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 #define SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 
+#include "driver_types.h"
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
@@ -38,11 +39,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             throw std::runtime_error("Invalid shape conversion");
         }
     }
-    auto other_begin = other.begin();
-    for (auto &element : *this) {
-        element = *other_begin++;
+    if constexpr (MemorySpace == memory_space::host) {
+        auto other_begin = other.begin();
+        for (auto &element : *this) {
+            element = *other_begin++;
+        }
+        return *this;
+    } else {
+#ifdef SQUINT_USE_CUDA
+        // cuda memory copy
+        cudaError_t status = cudaMemcpy(data_, other.data(), size() * sizeof(T), cudaMemcpyDeviceToDevice);
+        if (status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy data between device tensors");
+        }
+        return *this;
+#endif
     }
-    return *this;
 }
 
 // Copy assignment operator
@@ -60,11 +72,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             throw std::runtime_error("Invalid shape conversion");
         }
     }
-    auto other_begin = other.begin();
-    for (auto &element : *this) {
-        element = *other_begin++;
+    if constexpr (MemorySpace == memory_space::host) {
+        auto other_begin = other.begin();
+        for (auto &element : *this) {
+            element = *other_begin++;
+        }
+        return *this;
+    } else {
+#ifdef SQUINT_USE_CUDA
+        // cuda memory copy
+        cudaError_t status = cudaMemcpy(data_, other.data(), size() * sizeof(T), cudaMemcpyDeviceToDevice);
+        if (status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy data between device tensors");
+        }
+        return *this;
+#endif
     }
-    return *this;
 }
 } // namespace squint
 

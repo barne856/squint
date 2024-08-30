@@ -32,7 +32,7 @@ namespace squint {
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::access_element(
-    const index_type &indices) const -> const T & {
+    const index_type &indices) const -> const T &requires(MemorySpace == memory_space::host) {
     if constexpr (ErrorChecking == error_checking::enabled) {
         check_bounds(indices);
     }
@@ -49,7 +49,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <typename... Indices>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator()(Indices... indices) const
-    -> const T & {
+    -> const T &requires(MemorySpace == memory_space::host) {
     return access_element({static_cast<std::size_t>(indices)...});
 }
 
@@ -62,9 +62,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator()(Indices... indices) -> T & {
-    return const_cast<T &>(std::as_const(*this)(indices...));
-}
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator()(Indices... indices)
+    -> T &requires(MemorySpace == memory_space::host) { return const_cast<T &>(std::as_const(*this)(indices...)); }
 
 // Const element access using index_type and operator[]
 /**
@@ -75,9 +74,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](const index_type &indices) const
-    -> const T & {
-    return access_element(indices);
-}
+    -> const T &requires(MemorySpace == memory_space::host) { return access_element(indices); }
 
 // Non-const element access using index_type and operator[]
 /**
@@ -88,9 +85,7 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](const index_type &indices)
-    -> T & {
-    return const_cast<T &>(std::as_const(*this)[indices]);
-}
+    -> T &requires(MemorySpace == memory_space::host) { return const_cast<T &>(std::as_const(*this)[indices]); }
 
 #ifndef _MSC_VER
 // MSVC does not support the multidimensional subscript operator yet
@@ -105,7 +100,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <typename... Indices>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](Indices... indices) const
-    -> const T & {
+    -> const T &requires(MemorySpace == memory_space::host) {
     return access_element({static_cast<std::size_t>(indices)...});
 }
 
@@ -118,9 +113,8 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 template <typename... Indices>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](Indices... indices) -> T & {
-    return const_cast<T &>(std::as_const(*this)[indices...]);
-}
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator[](Indices... indices)
+    -> T &requires(MemorySpace == memory_space::host) { return const_cast<T &>(std::as_const(*this)[indices...]); }
 
 #endif // !_MSC_VER
 

@@ -34,7 +34,9 @@ namespace squint {
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows() {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows()
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (fixed_shape<Shape>) {
         using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
         return this->template subviews<RowShape>();
@@ -52,7 +54,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows(
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows() const {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows() const
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (fixed_shape<Shape>) {
         using RowShape = prepend_sequence_t<tail_sequence_t<Shape>, 1>;
         return this->template subviews<RowShape>();
@@ -70,7 +74,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::rows(
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols() {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols()
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (fixed_shape<Shape>) {
         using ColShape = init_sequence_t<Shape>;
         return this->template subviews<ColShape>();
@@ -88,7 +94,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols(
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols() const {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols() const
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (fixed_shape<Shape>) {
         using ColShape = init_sequence_t<Shape>;
         return this->template subviews<ColShape>();
@@ -108,7 +116,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cols(
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index) {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index)
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (index >= std::get<0>(make_array(Shape{}))) {
             throw std::out_of_range("Row index out of range");
@@ -136,7 +146,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index) const {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(size_t index) const
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (index >= std::get<0>(make_array(Shape{}))) {
             throw std::out_of_range("Row index out of range");
@@ -164,7 +176,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::row(s
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index) {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index)
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (index >= std::get<1>(make_array(Shape{}))) {
             throw std::out_of_range("Column index out of range");
@@ -197,7 +211,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index) const {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(size_t index) const
+    requires(MemorySpace == memory_space::host)
+{
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (index >= std::get<1>(make_array(Shape{}))) {
             throw std::out_of_range("Column index out of range");
@@ -229,7 +245,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::col(s
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() -> flat_iterator<tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() -> flat_iterator<tensor>
+    requires(MemorySpace == memory_space::host)
+{
     typename tensor::index_type start_indices{};
     if constexpr (dynamic_shape<Shape>) {
         start_indices.resize(this->rank(), 0);
@@ -245,7 +263,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() -> flat_iterator<tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() -> flat_iterator<tensor>
+    requires(MemorySpace == memory_space::host)
+{
     return flat_iterator<tensor>(this, this->shape());
 }
 
@@ -257,8 +277,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end()
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() const
-    -> flat_iterator<const tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin() const -> flat_iterator<const tensor>
+    requires(MemorySpace == memory_space::host)
+{
     typename tensor::index_type start_indices{};
     if constexpr (dynamic_shape<Shape>) {
         start_indices.resize(this->rank(), 0);
@@ -274,7 +295,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::begin
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() const -> flat_iterator<const tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end() const -> flat_iterator<const tensor>
+    requires(MemorySpace == memory_space::host)
+{
     return flat_iterator<const tensor>(this, this->shape());
 }
 
@@ -286,8 +309,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::end()
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cbegin() const
-    -> flat_iterator<const tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cbegin() const -> flat_iterator<const tensor>
+    requires(MemorySpace == memory_space::host)
+{
     return begin();
 }
 
@@ -299,7 +323,9 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cbegi
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cend() const -> flat_iterator<const tensor> {
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::cend() const -> flat_iterator<const tensor>
+    requires(MemorySpace == memory_space::host)
+{
     return end();
 }
 
@@ -314,7 +340,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <fixed_shape SubviewShape>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews()
     -> iterator_range<subview_iterator<tensor, SubviewShape>>
-    requires fixed_shape<Shape>
+    requires(fixed_shape<Shape> && MemorySpace == memory_space::host)
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
@@ -353,7 +379,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <std::size_t... Dims>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews()
     -> iterator_range<subview_iterator<tensor, std::index_sequence<Dims...>>>
-    requires fixed_shape<Shape>
+    requires(fixed_shape<Shape> && MemorySpace == memory_space::host)
 {
     return subviews<std::index_sequence<Dims...>>();
 }
@@ -369,7 +395,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <fixed_shape SubviewShape>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews() const
     -> iterator_range<subview_iterator<const tensor, SubviewShape>>
-    requires fixed_shape<Shape>
+    requires(fixed_shape<Shape> && MemorySpace == memory_space::host)
 {
     static_assert(SubviewShape::size() <= Shape::size(),
                   "Subview dimensions must be less than or equal to tensor rank");
@@ -409,7 +435,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <std::size_t... Dims>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews() const
     -> iterator_range<subview_iterator<const tensor, std::index_sequence<Dims...>>>
-    requires fixed_shape<Shape>
+    requires(fixed_shape<Shape> && MemorySpace == memory_space::host)
 {
     return subviews<std::index_sequence<Dims...>>();
 }
@@ -425,7 +451,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(
     const std::vector<std::size_t> &subview_shape) -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>>
-    requires dynamic_shape<Shape>
+    requires(dynamic_shape<Shape> && MemorySpace == memory_space::host)
 {
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (subview_shape.size() > this->rank()) {
@@ -467,7 +493,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::subviews(
     const std::vector<std::size_t> &subview_shape) const
     -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>>
-    requires dynamic_shape<Shape>
+    requires(dynamic_shape<Shape> && MemorySpace == memory_space::host)
 {
     if constexpr (ErrorChecking == error_checking::enabled) {
         if (subview_shape.size() > this->rank()) {

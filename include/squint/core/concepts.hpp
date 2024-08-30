@@ -89,7 +89,6 @@ concept tensorial = requires(T t) {
     { T::error_checking() } -> std::same_as<error_checking>;
     { T::ownership() } -> std::same_as<ownership_type>;
     { T::memory_space() } -> std::same_as<memory_space>;
-    { t[std::declval<typename T::index_type>()] } -> std::convertible_to<const typename T::value_type &>;
 };
 
 /**
@@ -233,6 +232,24 @@ concept error_checking_enabled = (T::error_checking() == error_checking::enabled
  */
 template <typename T>
 concept host_tensor = (T::memory_space() == memory_space::host);
+
+/**
+ * @concept device_tensor
+ * @brief Concept for tensors residing in device memory.
+ *
+ * @tparam T The type to check.
+ */
+template <typename T>
+concept device_tensor = (T::memory_space() == memory_space::device);
+
+/**
+ * @concept fixed_contiguous_strides
+ * @brief Concept for contiguous strides.
+ *
+ * @tparam T The type to check.
+ */
+template <typename Strides, typename Shape>
+concept fixed_contiguous_strides = is_column_major_v<Strides, Shape> || is_row_major_v<Strides, Shape>;
 
 /**
  * @concept fixed_contiguous_tensor

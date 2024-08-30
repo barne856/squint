@@ -106,6 +106,28 @@ template <std::size_t... Dims> using seq = std::index_sequence<Dims...>; //< Com
 template <std::size_t... Dims> using shape = seq<Dims...>;               //< Compile-time shape
 using dynamic = std::vector<std::size_t>;                                //< Dynamic shape
 
+// helper struct for is column major strides
+template <typename Strides, typename Shape> struct is_column_major_t;
+
+template <std::size_t... Strides, std::size_t... Shape>
+struct is_column_major_t<std::index_sequence<Strides...>, std::index_sequence<Shape...>> {
+    static constexpr bool value = std::is_same_v<std::index_sequence<Strides...>, strides::column_major<shape<Shape...>>>;
+};
+
+template <typename Strides, typename Shape>
+inline constexpr bool is_column_major_v = is_column_major_t<Strides, Shape>::value;
+
+// helper struct for is row major strides
+template <typename Strides, typename Shape> struct is_row_major_t;
+
+template <std::size_t... Strides, std::size_t... Shape>
+struct is_row_major_t<std::index_sequence<Strides...>, std::index_sequence<Shape...>> {
+    static constexpr bool value = std::is_same_v<std::index_sequence<Strides...>, strides::row_major<shape<Shape...>>>;
+};
+
+template <typename Strides, typename Shape>
+inline constexpr bool is_row_major_v = is_row_major_t<Strides, Shape>::value;
+
 } // namespace squint
 
 #endif // SQUINT_CORE_LAYOUT_HPP

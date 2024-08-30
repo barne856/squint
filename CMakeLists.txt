@@ -207,6 +207,11 @@ if(SQUINT_BUILD_DOCUMENTATION)
 
 endif()
 
-# add_executable(main main.cpp)
-# target_link_libraries(main PRIVATE SQUINT)
-# include_directories(include)
+include_directories("./" "./include")
+add_executable(main main.cu)
+target_link_libraries(main PRIVATE SQUINT)
+
+set_target_properties(main PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    POSITION_INDEPENDENT_CODE ON
+)

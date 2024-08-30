@@ -168,15 +168,19 @@ class tensor {
     static constexpr auto memory_space() -> memory_space { return MemorySpace; };
 
     // Element access
-    auto access_element(const index_type &indices) const -> const T &;
-    template <typename... Indices> auto operator()(Indices... indices) const -> const T &;
-    template <typename... Indices> auto operator()(Indices... indices) -> T &;
-    auto operator[](const index_type &indices) const -> const T &;
-    auto operator[](const index_type &indices) -> T &;
+    auto access_element(const index_type &indices) const -> const T &requires(MemorySpace == memory_space::host);
+    template <typename... Indices>
+    auto operator()(Indices... indices) const -> const T &requires(MemorySpace == memory_space::host);
+    template <typename... Indices>
+    auto operator()(Indices... indices) -> T &requires(MemorySpace == memory_space::host);
+    auto operator[](const index_type &indices) const -> const T &requires(MemorySpace == memory_space::host);
+    auto operator[](const index_type &indices) -> T &requires(MemorySpace == memory_space::host);
 #ifndef _MSC_VER
     // MSVC does not support the multidimensional subscript operator yet
-    template <typename... Indices> auto operator[](Indices... indices) const -> const T &;
-    template <typename... Indices> auto operator[](Indices... indices) -> T &;
+    template <typename... Indices>
+    auto operator[](Indices... indices) const -> const T &requires(MemorySpace == memory_space::host);
+    template <typename... Indices>
+    auto operator[](Indices... indices) -> T &requires(MemorySpace == memory_space::host);
 #endif
 
     /**
@@ -188,7 +192,7 @@ class tensor {
      * host memory space, and have column-major strides.
      */
     auto copy() const -> auto
-        requires(OwnershipType == ownership_type::reference)
+        requires(MemorySpace == memory_space::host)
     {
         if constexpr (fixed_shape<Shape>) {
             using owning_type = tensor<std::remove_const_t<T>, Shape, strides::column_major<Shape>, ErrorChecking,
@@ -198,6 +202,46 @@ class tensor {
             using owning_type = tensor<std::remove_const_t<T>, std::vector<size_t>, std::vector<size_t>, ErrorChecking,
                                        ownership_type::owner, memory_space::host>;
             return owning_type(*this);
+        }
+    }
+
+    /**
+     * @brief Create a copy of the tensor on the device.
+     *
+     * This method creates a copy of the tensor on the device and returns a reference tensor to the device memory.
+     */
+    auto copy() const -> auto
+        requires(OwnershipType == ownership_type::reference && MemorySpace == memory_space::device)
+    {
+        if constexpr (fixed_shape<Shape>) {
+            using device_tensor_type = tensor<std::remove_const_t<T>, Shape, Strides, ErrorChecking,
+                                              ownership_type::reference, memory_space::device>;
+            size_t size = this->size() * sizeof(T);
+            // Create device pointer
+            void *device_ptr = nullptr;
+
+            // Allocate memory on the device
+            cudaError_t malloc_status = cudaMalloc(&device_ptr, size);
+            if (malloc_status != cudaSuccess) {
+                throw std::runtime_error("Failed to allocate device memory");
+            }
+
+            // Copy data from device to device
+            cudaError_t memcpy_status =
+                cudaMemcpy(device_ptr, static_cast<void *>(const_cast<std::remove_const_t<T> *>(this->data())), size,
+                           cudaMemcpyDeviceToDevice);
+            if (memcpy_status != cudaSuccess) {
+                cudaFree(device_ptr);
+                throw std::runtime_error("Failed to copy data to device");
+            }
+
+            // Create and return the device tensor
+            if constexpr (dynamic_shape<Shape>) {
+                return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr), this->shape_,
+                                          this->strides_);
+            } else {
+                return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr));
+            }
         }
     }
 
@@ -230,8 +274,18 @@ class tensor {
 
         // Create and return the device tensor
         if constexpr (dynamic_shape<Shape>) {
+            if constexpr (ErrorChecking == error_checking::enabled) {
+                auto column_major_strides = this->compute_strides(this->shape(), layout::column_major);
+                auto strides = this->strides();
+                if (!std::equal(strides.begin(), strides.end(), column_major_strides.begin())) {
+                    cudaFree(device_ptr);
+                    throw std::runtime_error("Only column-major strides are supported for device tensors");
+                }
+            }
             return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr), this->shape_, this->strides_);
         } else {
+            static_assert(is_column_major_v<Strides, Shape>,
+                          "Only column-major strides are supported for device tensors");
             return device_tensor_type(static_cast<std::remove_const_t<T> *>(device_ptr));
         }
     }
@@ -244,7 +298,6 @@ class tensor {
 
         if constexpr (dynamic_shape<Shape>) {
             host_tensor_type host_tensor(this->shape());
-            host_tensor.strides_ = this->strides_;
             // Copy data from device to host
             cudaError_t memcpy_status = cudaMemcpy(host_tensor.data(), this->data(), size, cudaMemcpyDeviceToHost);
             if (memcpy_status != cudaSuccess) {
@@ -310,26 +363,24 @@ class tensor {
     // Shape manipulation
     template <size_t... NewDims>
     auto reshape()
-        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>);
     template <size_t... NewDims>
     auto reshape() const
-        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>);
     template <typename NewShape>
     auto reshape()
-        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>);
     template <typename NewShape>
     auto reshape() const
-        requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
-    auto flatten()
-        requires(OwnershipType == ownership_type::owner);
-    auto flatten() const
-        requires(OwnershipType == ownership_type::owner);
+        requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>);
+    auto flatten();
+    auto flatten() const;
     auto reshape(std::vector<size_t> new_shape, layout l = layout::column_major)
-        requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(dynamic_shape<Shape>);
     auto reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
-        requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(dynamic_shape<Shape>);
     auto set_shape(const std::vector<size_t> &new_shape, layout l = layout::column_major)
-        requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+        requires(dynamic_shape<Shape>);
     template <valid_index_permutation IndexPermutation>
     auto permute()
         requires fixed_shape<Shape>;
@@ -358,38 +409,52 @@ class tensor {
     auto transpose() const;
 
     // Iteration methods
-    auto rows();
-    auto rows() const;
-    auto cols();
-    auto cols() const;
-    auto row(size_t index);
-    auto row(size_t index) const;
-    auto col(size_t index);
-    auto col(size_t index) const;
-    auto begin() -> flat_iterator<tensor>;
-    auto end() -> flat_iterator<tensor>;
-    auto begin() const -> flat_iterator<const tensor>;
-    auto end() const -> flat_iterator<const tensor>;
-    auto cbegin() const -> flat_iterator<const tensor>;
-    auto cend() const -> flat_iterator<const tensor>;
+    auto rows()
+        requires(MemorySpace == memory_space::host);
+    auto rows() const
+        requires(MemorySpace == memory_space::host);
+    auto cols()
+        requires(MemorySpace == memory_space::host);
+    auto cols() const
+        requires(MemorySpace == memory_space::host);
+    auto row(size_t index)
+        requires(MemorySpace == memory_space::host);
+    auto row(size_t index) const
+        requires(MemorySpace == memory_space::host);
+    auto col(size_t index)
+        requires(MemorySpace == memory_space::host);
+    auto col(size_t index) const
+        requires(MemorySpace == memory_space::host);
+    auto begin() -> flat_iterator<tensor>
+        requires(MemorySpace == memory_space::host);
+    auto end() -> flat_iterator<tensor>
+        requires(MemorySpace == memory_space::host);
+    auto begin() const -> flat_iterator<const tensor>
+        requires(MemorySpace == memory_space::host);
+    auto end() const -> flat_iterator<const tensor>
+        requires(MemorySpace == memory_space::host);
+    auto cbegin() const -> flat_iterator<const tensor>
+        requires(MemorySpace == memory_space::host);
+    auto cend() const -> flat_iterator<const tensor>
+        requires(MemorySpace == memory_space::host);
     template <fixed_shape SubviewShape>
     auto subviews() -> iterator_range<subview_iterator<tensor, SubviewShape>>
-        requires fixed_shape<Shape>;
+        requires(fixed_shape<Shape> && MemorySpace == memory_space::host);
     template <std::size_t... Dims>
     auto subviews() -> iterator_range<subview_iterator<tensor, std::index_sequence<Dims...>>>
-        requires fixed_shape<Shape>;
+        requires(fixed_shape<Shape> && MemorySpace == memory_space::host);
     template <fixed_shape SubviewShape>
     auto subviews() const -> iterator_range<subview_iterator<const tensor, SubviewShape>>
-        requires fixed_shape<Shape>;
+        requires(fixed_shape<Shape> && MemorySpace == memory_space::host);
     template <std::size_t... Dims>
     auto subviews() const -> iterator_range<subview_iterator<const tensor, std::index_sequence<Dims...>>>
-        requires fixed_shape<Shape>;
+        requires(fixed_shape<Shape> && MemorySpace == memory_space::host);
     auto subviews(const std::vector<std::size_t> &subview_shape)
         -> iterator_range<subview_iterator<tensor, std::vector<std::size_t>>>
-        requires dynamic_shape<Shape>;
+        requires(dynamic_shape<Shape> && MemorySpace == memory_space::host);
     auto subviews(const std::vector<std::size_t> &subview_shape) const
         -> iterator_range<subview_iterator<const tensor, std::vector<std::size_t>>>
-        requires dynamic_shape<Shape>;
+        requires(dynamic_shape<Shape> && MemorySpace == memory_space::host);
 
     // Incremental operators
     template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,

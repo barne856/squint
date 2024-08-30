@@ -71,7 +71,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <size_t... NewDims>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape()
-    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>)
 {
     constexpr size_t new_size = (NewDims * ...);
     constexpr size_t current_size = product(Shape{});
@@ -88,8 +88,18 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <typename NewShape>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape()
-    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>)
 {
+    if constexpr (fixed_shape<Shape>) {
+        // data must be contiguous
+        static_assert(fixed_contiguous_tensor<tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>>,
+                      "Reshaping a non-contiguous tensor is not supported");
+    } else if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     constexpr size_t new_size = product(NewShape{});
     constexpr size_t current_size = product(Shape{});
     static_assert(new_size == current_size, "New shape must have the same number of elements as the original tensor");
@@ -109,7 +119,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <size_t... NewDims>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape() const
-    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>)
 {
     constexpr size_t new_size = (NewDims * ...);
     constexpr size_t current_size = product(Shape{});
@@ -126,7 +136,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 template <typename NewShape>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape() const
-    requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(fixed_shape<Shape> && fixed_contiguous_strides<Strides, Shape>)
 {
     constexpr size_t new_size = product(NewShape{});
     constexpr size_t current_size = product(Shape{});
@@ -144,9 +154,17 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten()
-    requires(OwnershipType == ownership_type::owner)
-{
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() {
+    if constexpr (fixed_shape<Shape>) {
+        // data must be contiguous
+        static_assert(fixed_contiguous_tensor<tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>>,
+                      "Reshaping a non-contiguous tensor is not supported");
+    } else if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     if constexpr (fixed_shape<Shape>) {
         constexpr size_t total_size = product(Shape{});
         using FlatShape = std::index_sequence<total_size>;
@@ -168,9 +186,17 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatt
  */
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
-auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() const
-    requires(OwnershipType == ownership_type::owner)
-{
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::flatten() const {
+    if constexpr (fixed_shape<Shape>) {
+        // data must be contiguous
+        static_assert(fixed_contiguous_tensor<tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>>,
+                      "Reshaping a non-contiguous tensor is not supported");
+    } else if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     if constexpr (fixed_shape<Shape>) {
         constexpr size_t total_size = product(Shape{});
         using FlatShape = std::index_sequence<total_size>;
@@ -197,8 +223,14 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape(std::vector<size_t> new_shape,
                                                                                    layout l)
-    requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(dynamic_shape<Shape>)
 {
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     if constexpr (ErrorChecking == error_checking::enabled) {
         size_t new_size = std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>());
         if (new_size != this->size()) {
@@ -220,8 +252,14 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::reshape(std::vector<size_t> new_shape,
                                                                                    layout l) const
-    requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(dynamic_shape<Shape>)
 {
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     if constexpr (ErrorChecking == error_checking::enabled) {
         size_t new_size = std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>());
         if (new_size != this->size()) {
@@ -243,8 +281,14 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::set_shape(
     const std::vector<size_t> &new_shape, layout l)
-    requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner)
+    requires(dynamic_shape<Shape>)
 {
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        // data must be contiguous
+        if (this->is_contiguous()) {
+            throw std::runtime_error("Reshaping a non-contiguous tensor is not supported");
+        }
+    }
     if constexpr (ErrorChecking == error_checking::enabled) {
         size_t new_size = std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>());
         if (new_size != this->size()) {

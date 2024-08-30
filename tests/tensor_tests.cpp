@@ -452,16 +452,31 @@ TEST_CASE("Tensor Static Creation Methods") {
 }
 
 TEST_CASE("copy()") {
-    squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
-    // permute the tensor
-    auto t2 = t1.template permute<1, 0>();
-    // take the first column of the permuted tensor and copy it
-    auto col = t2.col(0).copy();
-    CHECK(col(0) == 1);
-    CHECK(col(1) == 2);
-    CHECK(col(2) == 3);
-    // static assert ownership is owner
-    static_assert(col.ownership() == squint::ownership_type::owner);
+    SUBCASE("Host copy()") {
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        // permute the tensor
+        auto t2 = t1.template permute<1, 0>();
+        // take the first column of the permuted tensor and copy it
+        auto col = t2.col(0).copy();
+        CHECK(col(0) == 1);
+        CHECK(col(1) == 2);
+        CHECK(col(2) == 3);
+        // static assert ownership is owner
+        static_assert(col.ownership() == squint::ownership_type::owner);
+    }
+    SUBCASE("Device copy()") {
+        squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
+        // permute the tensor
+        auto t1_device = t1.to_device();
+        auto t2_device = t1_device.copy();
+        auto t2_host = t2_device.to_host();
+        CHECK(t2_host(0, 0) == 1);
+        CHECK(t2_host(1, 0) == 4);
+        CHECK(t2_host(0, 1) == 2);
+        CHECK(t2_host(1, 1) == 5);
+        CHECK(t2_host(0, 2) == 3);
+        CHECK(t2_host(1, 2) == 6);
+    }
 }
 
 TEST_CASE("Tensor Shape Manipulation") {
@@ -891,6 +906,80 @@ TEST_CASE("CUDA") {
         CHECK(t_host(1, 1) == 5);
         CHECK(t_host(0, 2) == 3);
         CHECK(t_host(1, 2) == 6);
+    }
+    SUBCASE("dynamic to_device() and to_host()") {
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
+            {2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+        auto t_device = t.to_device();
+        CHECK(t_device.memory_space() == squint::memory_space::device);
+        auto t_host = t_device.to_host();
+        CHECK(t_host.memory_space() == squint::memory_space::host);
+        CHECK(t_host(0, 0) == 1);
+        CHECK(t_host(1, 0) == 4);
+        CHECK(t_host(0, 1) == 2);
+        CHECK(t_host(1, 1) == 5);
+        CHECK(t_host(0, 2) == 3);
+        CHECK(t_host(1, 2) == 6);
+    }
+    SUBCASE("device assignment") {
+        squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2{7, 10, 8, 11, 9, 12};
+        auto t_device = t.to_device();
+        auto t2_device = t2.to_device();
+        t2_device = t_device;
+        auto t2_host = t2_device.to_host();
+        CHECK(t2_host(0, 0) == 1);
+        CHECK(t2_host(1, 0) == 4);
+        CHECK(t2_host(0, 1) == 2);
+        CHECK(t2_host(1, 1) == 5);
+        CHECK(t2_host(0, 2) == 3);
+        CHECK(t2_host(1, 2) == 6);
+    }
+    SUBCASE("dynamic device assignment") {
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
+            {2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t2(
+            {2, 3}, std::vector<float>{7, 10, 8, 11, 9, 12});
+        auto t_device = t.to_device();
+        auto t2_device = t2.to_device();
+        t2_device = t_device;
+        auto t2_host = t2_device.to_host();
+        CHECK(t2_host(0, 0) == 1);
+        CHECK(t2_host(1, 0) == 4);
+        CHECK(t2_host(0, 1) == 2);
+        CHECK(t2_host(1, 1) == 5);
+        CHECK(t2_host(0, 2) == 3);
+        CHECK(t2_host(1, 2) == 6);
+    }
+    SUBCASE("device assignment convertible shapes") {
+        squint::tensor<float, squint::shape<2, 3, 1>> t{1, 4, 2, 5, 3, 6};
+        squint::tensor<float, squint::shape<2, 3>> t2{7, 10, 8, 11, 9, 12};
+        auto t_device = t.to_device();
+        auto t2_device = t2.to_device();
+        t2_device = t_device;
+        auto t2_host = t2_device.to_host();
+        CHECK(t2_host(0, 0) == 1);
+        CHECK(t2_host(1, 0) == 4);
+        CHECK(t2_host(0, 1) == 2);
+        CHECK(t2_host(1, 1) == 5);
+        CHECK(t2_host(0, 2) == 3);
+        CHECK(t2_host(1, 2) == 6);
+    }
+    SUBCASE("dynamic device assignment convertible shapes") {
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
+            {2, 3, 1}, std::vector<float>{1, 4, 2, 5, 3, 6});
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t2(
+            {2, 3}, std::vector<float>{7, 10, 8, 11, 9, 12});
+        auto t_device = t.to_device();
+        auto t2_device = t2.to_device();
+        t2_device = t_device;
+        auto t2_host = t2_device.to_host();
+        CHECK(t2_host(0, 0) == 1);
+        CHECK(t2_host(1, 0) == 4);
+        CHECK(t2_host(0, 1) == 2);
+        CHECK(t2_host(1, 1) == 5);
+        CHECK(t2_host(0, 2) == 3);
+        CHECK(t2_host(1, 2) == 6);
     }
 }
 #endif
