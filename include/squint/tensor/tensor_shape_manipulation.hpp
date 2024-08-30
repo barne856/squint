@@ -235,6 +235,28 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::resha
 }
 
 /**
+ * @brief Sets the shape of the tensor to a new shape. The tensor is modified in place.
+ * @param new_shape The new shape of the tensor.
+ * @param l The layout of the tensor.
+ */
+template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
+          memory_space MemorySpace>
+auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::set_shape(
+    const std::vector<size_t> &new_shape, layout l)
+    requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner)
+{
+    if constexpr (ErrorChecking == error_checking::enabled) {
+        size_t new_size = std::accumulate(new_shape.begin(), new_shape.end(), 1ULL, std::multiplies<>());
+        if (new_size != this->size()) {
+            throw std::invalid_argument("New shape must have the same number of elements as the original tensor");
+        }
+    }
+
+    this->shape_ = new_shape;
+    this->strides_ = compute_strides(l, new_shape);
+}
+
+/**
  * @brief Applies an index permutation to a tensor.
  * @tparam IndexPermutation The index permutation.
  * @return A new tensor with the permuted shape and strides.

@@ -491,7 +491,7 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
     using tensor_type = tensor<result_value_type, typename Tensor1::shape_type, typename Tensor1::strides_type,
                                Tensor1::error_checking(), ownership_type::owner, memory_space::host>;
 
-    // print permutation
+    // create permutations
     auto A_permuted = A.permute(A_permutation).copy();
     auto B_permuted = B.permute(B_permutation).copy();
 
@@ -525,7 +525,8 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
     }
 
     // Reshape result to final tensor shape
-    return result_matrix.reshape(result_shape).copy();
+    result_matrix.set_shape(result_shape);
+    return result_matrix;
 }
 
 /**

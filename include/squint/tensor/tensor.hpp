@@ -254,6 +254,8 @@ class tensor {
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     auto reshape(std::vector<size_t> new_shape, layout l = layout::column_major) const
         requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
+    auto set_shape(const std::vector<size_t> &new_shape, layout l = layout::column_major)
+        requires(dynamic_shape<Shape> && OwnershipType == ownership_type::owner);
     template <valid_index_permutation IndexPermutation>
     auto permute()
         requires fixed_shape<Shape>;

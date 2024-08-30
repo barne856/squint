@@ -503,6 +503,20 @@ TEST_CASE("Tensor Shape Manipulation") {
         CHECK(reshaped(2, 1) == 6);
     }
 
+    SUBCASE("Dynamic shape set_shape") {
+        squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
+            {2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+        t.set_shape({3, 2});
+        CHECK(t.shape() == std::vector<std::size_t>{3, 2});
+        CHECK(t.strides() == std::vector<std::size_t>{1, 3});
+        CHECK(t(0, 0) == 1);
+        CHECK(t(1, 0) == 4);
+        CHECK(t(2, 0) == 2);
+        CHECK(t(0, 1) == 5);
+        CHECK(t(1, 1) == 3);
+        CHECK(t(2, 1) == 6);
+    }
+
     SUBCASE("Flatten") {
         squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto flattened = t.flatten();
