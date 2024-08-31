@@ -187,7 +187,7 @@ class tensor {
     // Static accessors
     static constexpr auto error_checking() -> error_checking { return ErrorChecking; };
     static constexpr auto ownership() -> ownership_type { return OwnershipType; };
-    static constexpr auto memory_space() -> memory_space { return MemorySpace; };
+    static constexpr auto get_memory_space() -> memory_space { return MemorySpace; };
 
     // Element access
     auto access_element(const index_type &indices) const -> const T &requires(MemorySpace == memory_space::host);

@@ -317,7 +317,7 @@ TEST_CASE("Tensor Static Accessors") {
 
     SUBCASE("ownership()") { CHECK(TensorType::ownership() == squint::ownership_type::owner); }
 
-    SUBCASE("memory_space()") { CHECK(TensorType::memory_space() == squint::memory_space::host); }
+    SUBCASE("get_memory_space()") { CHECK(TensorType::get_memory_space() == squint::memory_space::host); }
 }
 
 TEST_CASE("Tensor Subview Operations") {
@@ -639,7 +639,7 @@ TEST_CASE("Memory Space") {
 
     SUBCASE("Device memory space") {
         DeviceTensor t;
-        CHECK(t.memory_space() == squint::memory_space::device);
+        CHECK(t.get_memory_space() == squint::memory_space::device);
     }
 }
 
@@ -899,9 +899,9 @@ TEST_CASE("CUDA") {
     SUBCASE("to_device() and to_host()") {
         squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
         auto t_device = t.to_device();
-        CHECK(t_device.memory_space() == squint::memory_space::device);
+        CHECK(t_device.get_memory_space() == squint::memory_space::device);
         auto t_host = t_device.to_host();
-        CHECK(t_host.memory_space() == squint::memory_space::host);
+        CHECK(t_host.get_memory_space() == squint::memory_space::host);
         CHECK(t_host(0, 0) == 1);
         CHECK(t_host(1, 0) == 4);
         CHECK(t_host(0, 1) == 2);
@@ -913,9 +913,9 @@ TEST_CASE("CUDA") {
         squint::tensor<float, std::vector<std::size_t>, std::vector<std::size_t>> t(
             {2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
         auto t_device = t.to_device();
-        CHECK(t_device.memory_space() == squint::memory_space::device);
+        CHECK(t_device.get_memory_space() == squint::memory_space::device);
         auto t_host = t_device.to_host();
-        CHECK(t_host.memory_space() == squint::memory_space::host);
+        CHECK(t_host.get_memory_space() == squint::memory_space::host);
         CHECK(t_host(0, 0) == 1);
         CHECK(t_host(1, 0) == 4);
         CHECK(t_host(0, 1) == 2);
