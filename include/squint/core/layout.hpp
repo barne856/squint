@@ -111,7 +111,8 @@ template <typename Strides, typename Shape> struct is_column_major_t;
 
 template <std::size_t... Strides, std::size_t... Shape>
 struct is_column_major_t<std::index_sequence<Strides...>, std::index_sequence<Shape...>> {
-    static constexpr bool value = std::is_same_v<std::index_sequence<Strides...>, strides::column_major<shape<Shape...>>>;
+    static constexpr bool value =
+        std::is_same_v<std::index_sequence<Strides...>, strides::column_major<shape<Shape...>>>;
 };
 
 template <typename Strides, typename Shape>
