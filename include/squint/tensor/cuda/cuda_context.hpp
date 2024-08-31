@@ -1,5 +1,5 @@
-#ifndef SQUINT_TENSOR_CUDA_CONTEXT_HPP
 // NOLINTBEGIN
+#ifndef SQUINT_TENSOR_CUDA_CONTEXT_HPP
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <stdexcept>
@@ -37,5 +37,5 @@ class CudaContext {
 };
 
 } // namespace squint::cuda
-// NOLINTEND
 #endif // SQUINT_TENSOR_CUDA_CONTEXT_HPP
+       // NOLINTEND
