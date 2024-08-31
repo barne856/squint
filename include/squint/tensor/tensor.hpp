@@ -110,10 +110,65 @@ class tensor {
 
     // Constructors
     tensor()
-        requires(OwnershipType == ownership_type::owner)
+        requires(OwnershipType == ownership_type::owner && MemorySpace == memory_space::host)
     = default;
     tensor(const tensor &other) = default;
     tensor(tensor &&other) noexcept = default;
+    // Device constructors for uninitialized data
+    tensor() requires(fixed_shape<Shape> && MemorySpace == memory_space::device && OwnershipType == ownership_type::reference)
+    {
+#ifdef SQUINT_USE_CUDA
+        cudaError_t malloc_status = cudaMalloc(&data_, _size() * sizeof(T));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor data");
+        }
+        malloc_status = cudaMalloc(&device_shape_, _rank() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor shape");
+        }
+        malloc_status = cudaMalloc(&device_strides_, _rank() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor strides");
+        }
+        auto host_shape = this->shape();
+        auto host_strides = make_array(strides::column_major<Shape>{});
+        cudaError_t memcpy_status = cudaMemcpy(device_shape_, host_shape.data(), _rank() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy tensor shape to device");
+        }
+        memcpy_status = cudaMemcpy(device_strides_, host_strides.data(), _rank() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy tensor strides to device");
+        }
+#endif
+    }
+    tensor(std::vector<size_t> shape) requires(dynamic_shape<Shape> && MemorySpace == memory_space::device && OwnershipType == ownership_type::reference)
+    {
+#ifdef SQUINT_USE_CUDA
+        shape_ = shape;
+        strides_ = compute_strides(shape, layout::column_major);
+        cudaError_t malloc_status = cudaMalloc(&data_, _size() * sizeof(T));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor data");
+        }
+        malloc_status = cudaMalloc(&device_shape_, _rank() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor shape");
+        }
+        malloc_status = cudaMalloc(&device_strides_, _rank() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory for tensor strides");
+        }
+        cudaError_t memcpy_status = cudaMemcpy(device_shape_, shape.data(), _rank() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy tensor shape to device");
+        }
+        memcpy_status = cudaMemcpy(device_strides_, strides_.data(), _rank() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy tensor strides to device");
+        }
+#endif
+    }
     // Fixed shape constructors
     tensor(std::initializer_list<T> init)
         requires(fixed_shape<Shape> && OwnershipType == ownership_type::owner);
@@ -492,11 +547,11 @@ class tensor {
     template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
               enum ownership_type OtherOwnershipType>
     auto operator==(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace>
-                        &other) const -> bool;
+                        &other) const -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
     template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
               enum ownership_type OtherOwnershipType>
     auto operator!=(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace>
-                        &other) const -> bool;
+                        &other) const -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
     // Unary operators
     auto operator-() const -> tensor;
     // scalar operations

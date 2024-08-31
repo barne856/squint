@@ -513,7 +513,9 @@ TEST_CASE("contract()") {
         auto B = tensor<float, shape<2, 2>>::arange(1, 1);
         auto result = contract(A, B, std::index_sequence<1>{}, std::index_sequence<0>{});
         // This should be the same as the matrix multiplication
-        CHECK(result == A * B);
+        auto is_equal_mat = result == A * B;
+        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal);
         CHECK(result(0, 0) == doctest::Approx(7));
         CHECK(result(1, 0) == doctest::Approx(10));
         CHECK(result(0, 1) == doctest::Approx(15));
@@ -547,7 +549,9 @@ TEST_CASE("contract()") {
         std::vector<std::pair<size_t, size_t>> contraction_pairs = {{1, 0}};
         auto result = contract(A, B, contraction_pairs);
         // This should be the same as the matrix multiplication
-        CHECK(result == A * B);
+        auto is_equal_mat = result == A * B;
+        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal);
         CHECK(result(0, 0) == doctest::Approx(7));
         CHECK(result(1, 0) == doctest::Approx(10));
         CHECK(result(0, 1) == doctest::Approx(15));
@@ -561,7 +565,9 @@ TEST_CASE("tensor_einsum") {
         auto B = tens::arange(1, 1, {3, 2});
         auto result = einsum("ij,jk->ik", A, B);
         CHECK(result.shape() == std::vector<size_t>{2, 2});
-        CHECK(result == A * B);
+        auto is_equal_mat = result == A * B;
+        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal);
         CHECK(result(0, 0) == doctest::Approx(22));
         CHECK(result(0, 1) == doctest::Approx(49));
         CHECK(result(1, 0) == doctest::Approx(28));
@@ -581,7 +587,9 @@ TEST_CASE("tensor_einsum") {
         auto A = tens::arange(1, 1, {3});
         auto B = tens::arange(1, 1, {2});
         auto result = einsum("i,j->ij", A, B);
-        CHECK(result == A * B.transpose());
+        auto is_equal_mat = result == A * B;
+        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal);
         CHECK(result.shape() == std::vector<size_t>{3, 2});
         CHECK(result(0, 0) == doctest::Approx(1));
         CHECK(result(0, 1) == doctest::Approx(2));
@@ -620,7 +628,9 @@ TEST_CASE("tensor_einsum") {
         auto B = ndarr<3, 2>::arange(1, 1);
         auto result = einsum<seq<I, J>, seq<J, K>, seq<I, K>>(A, B);
         CHECK(result.shape() == std::array<size_t, 2>{2, 2});
-        CHECK(result == A * B);
+        auto is_equal_mat = result == A * B;
+        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal);
         CHECK(result(0, 0) == doctest::Approx(22));
         CHECK(result(0, 1) == doctest::Approx(49));
         CHECK(result(1, 0) == doctest::Approx(28));

@@ -97,7 +97,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 [[nodiscard]] constexpr auto
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::data() const -> const T * {
-    if constexpr (OwnershipType == ownership_type::owner) {
+    if constexpr (OwnershipType == ownership_type::owner && MemorySpace == memory_space::host) {
         return data_.data();
     } else {
         return data_;

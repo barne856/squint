@@ -46,11 +46,11 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
         // NOLINTBEGIN
         using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
         if constexpr (std::is_same_v<blas_type, float>) {
-            element_wise_addition(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
+            element_wise_addition<float>(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
                                   reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
                                   other.device_strides(), device_strides(), shape().size(), size());
         } else if constexpr (std::is_same_v<blas_type, double>) {
-            element_wise_addition(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
+            element_wise_addition<double>(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
                                   reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
                                   other.device_strides(), device_strides(), shape().size(), size());
         }
@@ -73,7 +73,24 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator-=(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) -> tensor & {
     element_wise_compatible(*this, other);
-    std::transform(begin(), end(), other.begin(), begin(), std::minus{});
+    if constexpr (MemorySpace == memory_space::host) {
+        std::transform(begin(), end(), other.begin(), begin(), std::minus{});
+    } else {
+#ifdef SQUINT_USE_CUDA
+        // NOLINTBEGIN
+        using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+        if constexpr (std::is_same_v<blas_type, float>) {
+            element_wise_subtraction<float>(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
+                                  reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
+                                  other.device_strides(), device_strides(), shape().size(), size());
+        } else if constexpr (std::is_same_v<blas_type, double>) {
+            element_wise_subtraction<double>(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
+                                  reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
+                                  other.device_strides(), device_strides(), shape().size(), size());
+        }
+        // NOLINTEND
+#endif
+    }
     return *this;
 }
 
@@ -89,9 +106,52 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
           enum ownership_type OtherOwnershipType>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator==(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
-    -> bool {
+    -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> {
     element_wise_compatible(*this, other);
-    return std::equal(begin(), end(), other.begin());
+    if constexpr (fixed_shape<Shape>){
+        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
+        if constexpr (MemorySpace == memory_space::host) {
+            std::transform(begin(), end(), other.begin(), result.begin(), std::equal_to{});
+        } else {
+#ifdef SQUINT_USE_CUDA
+            // NOLINTBEGIN
+            using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+            if constexpr (std::is_same_v<blas_type, float>) {
+                element_wise_equality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                element_wise_equality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            }
+            // NOLINTEND
+#endif
+        }
+        return result;
+    }
+    else {
+        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
+        if constexpr (MemorySpace == memory_space::host) {
+            std::transform(begin(), end(), other.begin(), result.begin(), std::equal_to{});
+        } else {
+#ifdef SQUINT_USE_CUDA
+            // NOLINTBEGIN
+            using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+            if constexpr (std::is_same_v<blas_type, float>) {
+                element_wise_equality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                element_wise_equality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            }
+            // NOLINTEND
+#endif
+        }
+        return result;
+    }
 }
 
 // Element-wise inequality comparison
@@ -106,9 +166,52 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
           enum ownership_type OtherOwnershipType>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator!=(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
-    -> bool {
+    -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>  {
     element_wise_compatible(*this, other);
-    return !std::equal(begin(), end(), other.begin());
+    if constexpr (fixed_shape<Shape>){
+        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
+        if constexpr (MemorySpace == memory_space::host) {
+            std::transform(begin(), end(), other.begin(), result.begin(), std::not_equal_to{});
+        } else {
+#ifdef SQUINT_USE_CUDA
+            // NOLINTBEGIN
+            using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+            if constexpr (std::is_same_v<blas_type, float>) {
+                element_wise_inequality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                element_wise_inequality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            }
+            // NOLINTEND
+#endif
+        }
+        return result;
+    }
+    else {
+        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
+        if constexpr (MemorySpace == memory_space::host) {
+            std::transform(begin(), end(), other.begin(), result.begin(), std::not_equal_to{});
+        } else {
+#ifdef SQUINT_USE_CUDA
+            // NOLINTBEGIN
+            using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
+            if constexpr (std::is_same_v<blas_type, float>) {
+                element_wise_inequality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                element_wise_inequality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                                      other.device_strides(), device_strides(), shape().size(), size());
+            }
+            // NOLINTEND
+#endif
+        }
+        return result;
+    }
 }
 
 // Unary negation

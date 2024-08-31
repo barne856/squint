@@ -126,14 +126,18 @@ TEST_CASE("Tensor Construction and Basic Operations") {
                                                                                                           4, 5, 6};
         squint::tensor<float, squint::shape<3, 2>, squint::strides::row_major<squint::shape<3, 2>>> t2{1, 4, 2,
                                                                                                        5, 3, 6};
-        CHECK(t1 == t2);
+        auto is_equal_mat = t1 == t2;
+        auto is_equal_all = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal_all);
     }
 
     SUBCASE("Dynamic column and row major constructors") {
         squint::tensor<float, squint::dynamic, squint::dynamic> t1({3, 2}, std::vector<float>{1, 2, 3, 4, 5, 6});
         squint::tensor<float, squint::dynamic, squint::dynamic> t2({3, 2}, std::vector<float>{1, 4, 2, 5, 3, 6},
                                                                    squint::layout::row_major);
-        CHECK(t1 == t2);
+        auto is_equal_mat = t1 == t2;
+        auto is_equal_all = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
+        CHECK(is_equal_all);
     }
 }
 
@@ -635,7 +639,7 @@ TEST_CASE("Error Checking") {
 TEST_CASE("Memory Space") {
     using DeviceTensor =
         squint::tensor<float, squint::shape<2, 3>, squint::shape<3, 1>, squint::error_checking::disabled,
-                       squint::ownership_type::owner, squint::memory_space::device>;
+                       squint::ownership_type::reference, squint::memory_space::device>;
 
     SUBCASE("Device memory space") {
         DeviceTensor t;

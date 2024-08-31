@@ -70,6 +70,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(a(i, j) == doctest::Approx(-1));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device -= b_device;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx(-1));
+                }
+            }
+#endif
         }
     }
 
