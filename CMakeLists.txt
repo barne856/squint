@@ -100,6 +100,12 @@ if(SQUINT_USE_CUDA)
     target_link_libraries(SQUINT INTERFACE CUDA::cublas)
     target_link_libraries(SQUINT INTERFACE CUDA::cusolver)
     target_compile_definitions(SQUINT INTERFACE SQUINT_USE_CUDA)
+    # add .cu files in src/tensor/cuda to the library
+    file(GLOB_RECURSE CUDA_SOURCES "src/tensor/cuda/*.cu")
+    target_sources(SQUINT INTERFACE ${CUDA_SOURCES})
+    set_source_files_properties(${CUDA_SOURCES} PROPERTIES
+      SKIP_LINTING ON
+    )
   else()
     message(FATAL_ERROR "CUDA requested but not found")
   endif()
@@ -206,12 +212,3 @@ if(SQUINT_BUILD_DOCUMENTATION)
     DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()
-
-include_directories("./" "./include")
-add_executable(main main.cu)
-target_link_libraries(main PRIVATE SQUINT)
-
-set_target_properties(main PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    POSITION_INDEPENDENT_CODE ON
-)

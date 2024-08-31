@@ -1,5 +1,5 @@
 #ifndef SQUINT_TENSOR_CUDA_CONTEXT_HPP
-
+// NOLINTBEGIN
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <stdexcept>
@@ -13,7 +13,7 @@ class CudaContext {
         return instance;
     }
 
-    auto cublas_handle() const -> cublasHandle_t { return cublas_handle_; }
+    [[nodiscard]] auto cublas_handle() const -> cublasHandle_t { return cublas_handle_; }
 
     // Delete copy constructor and assignment operator
     CudaContext(const CudaContext &) = delete;
@@ -37,5 +37,5 @@ class CudaContext {
 };
 
 } // namespace squint::cuda
-
+// NOLINTEND
 #endif // SQUINT_TENSOR_CUDA_CONTEXT_HPP

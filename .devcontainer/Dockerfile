@@ -40,6 +40,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     netpbm \
     imagemagick \
     ghostscript \
+    nvidia-cuda-toolkit \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \

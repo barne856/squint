@@ -464,6 +464,7 @@ TEST_CASE("copy()") {
         // static assert ownership is owner
         static_assert(col.ownership() == squint::ownership_type::owner);
     }
+#ifdef SQUINT_USE_CUDA
     SUBCASE("Device copy()") {
         squint::tensor<float, squint::shape<2, 3>> t1{1, 4, 2, 5, 3, 6};
         // permute the tensor
@@ -477,6 +478,7 @@ TEST_CASE("copy()") {
         CHECK(t2_host(0, 2) == 3);
         CHECK(t2_host(1, 2) == 6);
     }
+#endif
 }
 
 TEST_CASE("Tensor Shape Manipulation") {

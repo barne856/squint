@@ -8,7 +8,6 @@
 #ifndef SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 #define SQUINT_TENSOR_TENSOR_ASSIGNMENT_HPP
 
-#include "driver_types.h"
 #include "squint/core/concepts.hpp"
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"

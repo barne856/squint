@@ -29,6 +29,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef SQUINT_USE_CUDA
+#include <cuda_runtime.h>
+#endif
+
 namespace squint {
 
 // Initializer list constructor for fixed shape tensors
@@ -252,6 +256,38 @@ tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *
             throw std::runtime_error("Invalid shape conversion");
         }
     }
+    if constexpr (MemorySpace == memory_space::device) {
+#ifdef SQUINT_USE_CUDA
+        // store device shape and strides
+        void *device_shape_ptr = nullptr;
+        void *device_strides_ptr = nullptr;
+        cudaError_t malloc_status = cudaMalloc(&device_shape_ptr, shape.size() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+        malloc_status = cudaMalloc(&device_strides_ptr, strides.size() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+        cudaError_t memcpy_status =
+            cudaMemcpy(device_shape_ptr, shape.data(), shape.size() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            cudaFree(device_strides_ptr);
+            throw std::runtime_error("Failed to copy data to device");
+        }
+        memcpy_status = cudaMemcpy(device_strides_ptr, strides.data(), strides.size() * sizeof(std::size_t),
+                                   cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            cudaFree(device_strides_ptr);
+            throw std::runtime_error("Failed to copy data to device");
+        }
+        device_shape_ = static_cast<std::size_t *>(device_shape_ptr);
+        device_strides_ = static_cast<std::size_t *>(device_strides_ptr);
+#endif
+    }
 }
 
 /**
@@ -264,7 +300,42 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *data)
     requires(fixed_shape<Shape> && OwnershipType == ownership_type::reference)
-    : data_(data) {}
+    : data_(data) {
+    if constexpr (MemorySpace == memory_space::device) {
+#ifdef SQUINT_USE_CUDA
+        // store device shape and strides
+        void *device_shape_ptr = nullptr;
+        void *device_strides_ptr = nullptr;
+        auto host_shape = this->shape();
+        auto host_strides = this->strides();
+        cudaError_t malloc_status = cudaMalloc(&device_shape_ptr, host_shape.size() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+        malloc_status = cudaMalloc(&device_strides_ptr, host_strides.size() * sizeof(std::size_t));
+        if (malloc_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+        cudaError_t memcpy_status = cudaMemcpy(device_shape_ptr, host_shape.data(),
+                                               host_shape.size() * sizeof(std::size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            cudaFree(device_strides_ptr);
+            throw std::runtime_error("Failed to copy data to device");
+        }
+        memcpy_status = cudaMemcpy(device_strides_ptr, host_strides.data(), host_strides.size() * sizeof(std::size_t),
+                                   cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            cudaFree(device_shape_ptr);
+            cudaFree(device_strides_ptr);
+            throw std::runtime_error("Failed to copy data to device");
+        }
+        device_shape_ = static_cast<std::size_t *>(device_shape_ptr);
+        device_strides_ = static_cast<std::size_t *>(device_strides_ptr);
+#endif
+    }
+}
 
 } // namespace squint
 

@@ -20,7 +20,8 @@
 #include <vector>
 
 #ifdef SQUINT_USE_CUDA
-#include "squint/tensor/cuda/cuda_context.hpp"
+#include "squint/tensor/cuda/element_wise.hpp"
+#include <cuda_runtime.h>
 #endif
 
 namespace squint {
@@ -42,18 +43,16 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
         std::transform(begin(), end(), other.begin(), begin(), std::plus{});
     } else {
 #ifdef SQUINT_USE_CUDA
-        auto &cuda_context = cuda::CudaContext::instance();
-        cublasHandle_t handle = cuda_context.cublas_handle();
-        using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
         // NOLINTBEGIN
+        using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
         if constexpr (std::is_same_v<blas_type, float>) {
-            const float alpha = 1.0F;
-            cublasSaxpy(handle, size(), &alpha, reinterpret_cast<const float *>(other.data()), 1,
-                        reinterpret_cast<float *>(data()), 1);
+            element_wise_addition(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
+                                  reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
+                                  other.device_strides(), device_strides(), shape().size(), size());
         } else if constexpr (std::is_same_v<blas_type, double>) {
-            const double alpha = 1.0;
-            cublasDaxpy(handle, size(), &alpha, reinterpret_cast<const double *>(other.data()), 1,
-                        reinterpret_cast<double *>(data()), 1);
+            element_wise_addition(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
+                                  reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
+                                  other.device_strides(), device_strides(), shape().size(), size());
         }
         // NOLINTEND
 #endif

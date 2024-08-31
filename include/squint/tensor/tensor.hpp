@@ -76,9 +76,13 @@ class tensor {
     /// @brief Type alias for shape storage, using std::integral_constant for fixed shapes.
     using shape_storage =
         std::conditional_t<fixed_shape<Shape>, std::integral_constant<std::monostate, std::monostate{}>, Shape>;
+    using device_shape_storage = std::conditional_t<MemorySpace == memory_space::device, std::size_t *,
+                                                    std::integral_constant<std::monostate, std::monostate{}>>;
     /// @brief Type alias for strides storage, using std::integral_constant for fixed strides.
     using strides_storage =
         std::conditional_t<fixed_shape<Strides>, std::integral_constant<std::monostate, std::monostate{}>, Strides>;
+    using device_strides_storage = std::conditional_t<MemorySpace == memory_space::device, std::size_t *,
+                                                      std::integral_constant<std::monostate, std::monostate{}>>;
     /// @brief Type alias for data storage, using std::array for fixed shapes and std::vector for dynamic shapes.
     using data_storage =
         std::conditional_t<OwnershipType == ownership_type::owner,
@@ -90,6 +94,8 @@ class tensor {
     // tensor if these definitions come last in the classes member list.
     NO_UNIQUE_ADDRESS shape_storage shape_;     ///< Storage for tensor shape.
     NO_UNIQUE_ADDRESS strides_storage strides_; ///< Storage for tensor strides.
+    NO_UNIQUE_ADDRESS device_shape_storage device_shape_;
+    NO_UNIQUE_ADDRESS device_strides_storage device_strides_;
     data_storage data_;
 
   public:
@@ -144,7 +150,11 @@ class tensor {
     ~tensor()
         requires(MemorySpace == memory_space::device && OwnershipType == ownership_type::reference)
     {
+#ifdef SQUINT_USE_CUDA
         cudaFree(data_);
+        cudaFree(device_shape_);
+        cudaFree(device_strides_);
+#endif
     }
 
     // Assignment operators
@@ -161,6 +171,18 @@ class tensor {
     [[nodiscard]] constexpr auto size() const -> std::size_t;
     [[nodiscard]] constexpr auto data() const -> const T *;
     [[nodiscard]] constexpr auto data() -> T *;
+
+    // Device Accessors
+    [[nodiscard]] auto device_shape() const -> device_shape_storage
+        requires(MemorySpace == memory_space::device)
+    {
+        return device_shape_;
+    }
+    [[nodiscard]] auto device_strides() const -> device_strides_storage
+        requires(MemorySpace == memory_space::device)
+    {
+        return device_strides_;
+    }
 
     // Static accessors
     static constexpr auto error_checking() -> error_checking { return ErrorChecking; };
@@ -204,7 +226,7 @@ class tensor {
             return owning_type(*this);
         }
     }
-
+#ifdef SQUINT_USE_CUDA
     /**
      * @brief Create a copy of the tensor on the device.
      *
@@ -245,7 +267,6 @@ class tensor {
         }
     }
 
-#ifdef SQUINT_USE_CUDA
     auto to_device() const -> tensor<std::remove_const_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference,
                                      memory_space::device>
         requires(MemorySpace == memory_space::host && OwnershipType == ownership_type::owner)
