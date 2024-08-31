@@ -1,4 +1,3 @@
-// NOLINTBEGIN
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -46,5 +45,3 @@ template void element_wise_addition<double>(double *output, const double *a, con
                                             const unsigned long *strides_out, const unsigned long *strides_a,
                                             const unsigned long *strides_b, unsigned long num_dims,
                                             unsigned long total_size);
-
-// NOLINTEND
