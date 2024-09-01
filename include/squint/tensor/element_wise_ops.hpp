@@ -16,7 +16,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <vector>
 
 #ifdef SQUINT_USE_CUDA
 #include "squint/tensor/cuda/element_wise.hpp"

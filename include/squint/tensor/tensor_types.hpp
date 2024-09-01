@@ -12,6 +12,7 @@
 #include "squint/tensor/tensor.hpp"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace squint {
 
