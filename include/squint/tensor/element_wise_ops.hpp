@@ -14,9 +14,8 @@
 #include "squint/tensor/tensor.hpp"
 #include "squint/tensor/tensor_op_compatibility.hpp"
 
-#include <cstddef>
+#include <cstdint>
 #include <functional>
-#include <type_traits>
 #include <vector>
 
 #ifdef SQUINT_USE_CUDA

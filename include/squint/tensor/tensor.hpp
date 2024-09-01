@@ -122,6 +122,7 @@ class tensor {
         requires(OwnershipType == ownership_type::reference && MemorySpace == memory_space::device)
     {
         // move constructor for device tensors
+        // NOLINTNEXTLINE
         data_ = other.data_;
         if constexpr (dynamic_shape<Shape>) {
             shape_ = std::move(other.shape_);
@@ -165,12 +166,14 @@ class tensor {
         }
 #endif
     }
-    tensor(std::vector<size_t> shape)
+    tensor(const std::vector<size_t>& shape)
         requires(dynamic_shape<Shape> && MemorySpace == memory_space::device &&
                  OwnershipType == ownership_type::reference)
     {
 #ifdef SQUINT_USE_CUDA
+        // NOLINTNEXTLINE
         shape_ = shape;
+        // NOLINTNEXTLINE
         strides_ = compute_strides(layout::column_major, shape);
         cudaError_t malloc_status = cudaMalloc(&data_, size() * sizeof(T));
         if (malloc_status != cudaSuccess) {
