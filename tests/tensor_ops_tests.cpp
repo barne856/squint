@@ -508,7 +508,7 @@ TEST_CASE("Matrix multiplication") {
         }
     }
 }
-
+#ifdef SQUINT_USE_CUDA
 TEST_CASE("Matrix multiplication device") {
     SUBCASE("Fixed shape tensors") {
         SUBCASE("Inner product of vectors") {
@@ -644,6 +644,7 @@ TEST_CASE("Matrix multiplication device") {
         }
     }
 }
+#endif
 
 TEST_CASE("General matrix division") {
     SUBCASE("Fixed shape tensors square system") {

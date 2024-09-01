@@ -134,8 +134,8 @@ auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
                                               t.device_strides(), t.device_strides(), t.shape().size(), t.size());
             }
             // NOLINTEND
-#endif
             return std::move(result);
+#endif
         }
     } else {
         if constexpr (MemorySpace == memory_space::host) {
@@ -165,8 +165,8 @@ auto operator*(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
                                               t.device_strides(), t.device_strides(), t.shape().size(), t.size());
             }
             // NOLINTEND
-#endif
             return std::move(result);
+#endif
         }
     }
 }
@@ -224,8 +224,8 @@ auto operator/(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
                                               t.device_strides(), t.device_strides(), t.shape().size(), t.size());
             }
             // NOLINTEND
-#endif
             return std::move(result);
+#endif
         }
     } else {
         if constexpr (MemorySpace == memory_space::host) {
@@ -255,8 +255,8 @@ auto operator/(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, Mem
                                               t.device_strides(), t.device_strides(), t.shape().size(), t.size());
             }
             // NOLINTEND
-#endif
             return std::move(result);
+#endif
         }
     }
 }
