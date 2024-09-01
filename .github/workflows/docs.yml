@@ -39,6 +39,8 @@ jobs:
             gcc-12 \
             g++-12 \
             texlive-latex-extra \
+            texlive-pictures \
+            texlive \
             pdf2svg \
             poppler-utils \
             netpbm \
