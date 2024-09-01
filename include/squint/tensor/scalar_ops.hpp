@@ -12,6 +12,7 @@
 #include "squint/core/error_checking.hpp"
 #include "squint/core/memory.hpp"
 #include "squint/tensor/tensor.hpp"
+// NOLINTNEXTLINE
 #include "squint/tensor/tensor_op_compatibility.hpp"
 
 #ifdef SQUINT_USE_CUDA
