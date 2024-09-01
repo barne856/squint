@@ -28,7 +28,7 @@ def write_combined_file(output_file, combined_content):
         f.write(combined_content)
 
 # Specify the folder path and file extensions to include
-folder_path = "./include/squint/tensor"
+folder_path = "./docs"
 file_extensions = ['.cpp', '.hpp', '.md', '.txt', '.py', '.rst']
 
 # Specify the subdirectories to exclude

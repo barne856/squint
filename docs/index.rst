@@ -14,6 +14,7 @@ Welcome to SQUINT's documentation!
    units
    geometry
    tensors
+   gpu_tensors
    advanced_features
    api_reference
    performance_considerations
