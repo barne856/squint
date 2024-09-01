@@ -46,13 +46,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
         // NOLINTBEGIN
         using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
         if constexpr (std::is_same_v<blas_type, float>) {
-            element_wise_addition<float>(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
-                                  reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
-                                  other.device_strides(), device_strides(), shape().size(), size());
+            element_wise_addition<float>(reinterpret_cast<float *>(data()),
+                                         reinterpret_cast<const float *>(other.data()),
+                                         reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
+                                         other.device_strides(), device_strides(), shape().size(), size());
         } else if constexpr (std::is_same_v<blas_type, double>) {
-            element_wise_addition<double>(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
-                                  reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
-                                  other.device_strides(), device_strides(), shape().size(), size());
+            element_wise_addition<double>(reinterpret_cast<double *>(data()),
+                                          reinterpret_cast<const double *>(other.data()),
+                                          reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
+                                          other.device_strides(), device_strides(), shape().size(), size());
         }
         // NOLINTEND
 #endif
@@ -80,13 +82,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
         // NOLINTBEGIN
         using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
         if constexpr (std::is_same_v<blas_type, float>) {
-            element_wise_subtraction<float>(reinterpret_cast<float *>(data()), reinterpret_cast<const float *>(other.data()),
-                                  reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
-                                  other.device_strides(), device_strides(), shape().size(), size());
+            element_wise_subtraction<float>(reinterpret_cast<float *>(data()),
+                                            reinterpret_cast<const float *>(other.data()),
+                                            reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
+                                            other.device_strides(), device_strides(), shape().size(), size());
         } else if constexpr (std::is_same_v<blas_type, double>) {
-            element_wise_subtraction<double>(reinterpret_cast<double *>(data()), reinterpret_cast<const double *>(other.data()),
-                                  reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
-                                  other.device_strides(), device_strides(), shape().size(), size());
+            element_wise_subtraction<double>(reinterpret_cast<double *>(data()),
+                                             reinterpret_cast<const double *>(other.data()),
+                                             reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
+                                             other.device_strides(), device_strides(), shape().size(), size());
         }
         // NOLINTEND
 #endif
@@ -106,10 +110,10 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
           enum ownership_type OtherOwnershipType>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator==(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
-    -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> {
+    -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> {
     element_wise_compatible(*this, other);
-    if constexpr (fixed_shape<Shape>){
-        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
+    if constexpr (fixed_shape<Shape>) {
+        tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
         if constexpr (MemorySpace == memory_space::host) {
             std::transform(begin(), end(), other.begin(), result.begin(), std::equal_to{});
         } else {
@@ -117,21 +121,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             // NOLINTBEGIN
             using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
             if constexpr (std::is_same_v<blas_type, float>) {
-                element_wise_equality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
-                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_equality<float>(
+                    reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                    reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             } else if constexpr (std::is_same_v<blas_type, double>) {
-                element_wise_equality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
-                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_equality<double>(
+                    reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                    reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             }
             // NOLINTEND
 #endif
         }
         return result;
-    }
-    else {
-        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
+    } else {
+        tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
         if constexpr (MemorySpace == memory_space::host) {
             std::transform(begin(), end(), other.begin(), result.begin(), std::equal_to{});
         } else {
@@ -139,13 +144,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             // NOLINTBEGIN
             using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
             if constexpr (std::is_same_v<blas_type, float>) {
-                element_wise_equality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
-                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_equality<float>(
+                    reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                    reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             } else if constexpr (std::is_same_v<blas_type, double>) {
-                element_wise_equality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
-                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_equality<double>(
+                    reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                    reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             }
             // NOLINTEND
 #endif
@@ -166,10 +173,10 @@ template <typename U, typename OtherShape, typename OtherStrides, enum error_che
           enum ownership_type OtherOwnershipType>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator!=(
     const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
-    -> tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>  {
+    -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> {
     element_wise_compatible(*this, other);
-    if constexpr (fixed_shape<Shape>){
-        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
+    if constexpr (fixed_shape<Shape>) {
+        tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result;
         if constexpr (MemorySpace == memory_space::host) {
             std::transform(begin(), end(), other.begin(), result.begin(), std::not_equal_to{});
         } else {
@@ -177,21 +184,22 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             // NOLINTBEGIN
             using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
             if constexpr (std::is_same_v<blas_type, float>) {
-                element_wise_inequality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
-                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_inequality<float>(
+                    reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                    reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             } else if constexpr (std::is_same_v<blas_type, double>) {
-                element_wise_inequality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
-                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_inequality<double>(
+                    reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                    reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             }
             // NOLINTEND
 #endif
         }
         return result;
-    }
-    else {
-        tensor<bool, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
+    } else {
+        tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace> result(shape());
         if constexpr (MemorySpace == memory_space::host) {
             std::transform(begin(), end(), other.begin(), result.begin(), std::not_equal_to{});
         } else {
@@ -199,13 +207,15 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
             // NOLINTBEGIN
             using blas_type = std::common_type_t<blas_type_t<T>, blas_type_t<U>>;
             if constexpr (std::is_same_v<blas_type, float>) {
-                element_wise_inequality<float>(reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
-                                      reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_inequality<float>(
+                    reinterpret_cast<float *>(result.data()), reinterpret_cast<const float *>(data()),
+                    reinterpret_cast<const float *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             } else if constexpr (std::is_same_v<blas_type, double>) {
-                element_wise_inequality<double>(reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
-                                      reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
-                                      other.device_strides(), device_strides(), shape().size(), size());
+                element_wise_inequality<double>(
+                    reinterpret_cast<double *>(result.data()), reinterpret_cast<const double *>(data()),
+                    reinterpret_cast<const double *>(other.data()), device_shape(), device_strides(),
+                    other.device_strides(), device_strides(), shape().size(), size());
             }
             // NOLINTEND
 #endif
@@ -222,8 +232,25 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::opera
 template <typename T, typename Shape, typename Strides, error_checking ErrorChecking, ownership_type OwnershipType,
           memory_space MemorySpace>
 auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::operator-() const -> tensor {
-    tensor result(*this);
-    std::transform(result.begin(), result.end(), result.begin(), std::negate{});
+    tensor result = this->copy();
+    if constexpr (MemorySpace == memory_space::host) {
+        std::transform(result.begin(), result.end(), result.begin(), std::negate{});
+    } else {
+#ifdef SQUINT_USE_CUDA
+        // NOLINTBEGIN
+        using blas_type = blas_type_t<T>;
+        if constexpr (std::is_same_v<blas_type, float>) {
+            element_wise_negation<float>(reinterpret_cast<float *>(result.data()),
+                                         reinterpret_cast<const float *>(data()), device_shape(), device_strides(),
+                                         device_strides(), shape().size(), size());
+        } else if constexpr (std::is_same_v<blas_type, double>) {
+            element_wise_negation<double>(reinterpret_cast<double *>(result.data()),
+                                          reinterpret_cast<const double *>(data()), device_shape(), device_strides(),
+                                          device_strides(), shape().size(), size());
+        }
+        // NOLINTEND
+#endif
+    }
     return result;
 }
 
@@ -238,19 +265,11 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace, typename U, typename OtherShape, typename OtherStrides,
           enum error_checking OtherErrorChecking, enum ownership_type OtherOwnershipType>
 auto operator+(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &lhs,
-               const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &rhs)
-    -> tensor<decltype(std::declval<T>() + std::declval<U>()),
-              std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Shape, std::vector<std::size_t>>,
-              std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Strides, std::vector<std::size_t>>,
-              resulting_error_checking<ErrorChecking, OtherErrorChecking>::value, ownership_type::owner, MemorySpace> {
+               const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &rhs) {
     element_wise_compatible(lhs, rhs);
-    tensor<decltype(std::declval<T>() + std::declval<U>()),
-           std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Shape, std::vector<std::size_t>>,
-           std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Strides, std::vector<std::size_t>>,
-           resulting_error_checking<ErrorChecking, OtherErrorChecking>::value, ownership_type::owner, MemorySpace>
-        result(lhs);
-    std::transform(lhs.begin(), lhs.end(), rhs.begin(), result.begin(), std::plus{});
-    return result;
+    auto result = lhs.copy();
+    result += rhs;
+    return std::move(result);
 }
 
 // Element-wise subtraction
@@ -264,19 +283,11 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace, typename U, typename OtherShape, typename OtherStrides,
           enum error_checking OtherErrorChecking, enum ownership_type OtherOwnershipType>
 auto operator-(const tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace> &lhs,
-               const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &rhs)
-    -> tensor<decltype(std::declval<T>() - std::declval<U>()),
-              std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Shape, std::vector<std::size_t>>,
-              std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Strides, std::vector<std::size_t>>,
-              resulting_error_checking<ErrorChecking, OtherErrorChecking>::value, ownership_type::owner, MemorySpace> {
+               const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &rhs) {
     element_wise_compatible(lhs, rhs);
-    tensor<decltype(std::declval<T>() - std::declval<U>()),
-           std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Shape, std::vector<std::size_t>>,
-           std::conditional_t<fixed_shape<Shape> && fixed_shape<OtherShape>, Strides, std::vector<std::size_t>>,
-           resulting_error_checking<ErrorChecking, OtherErrorChecking>::value, ownership_type::owner, MemorySpace>
-        result(lhs);
-    std::transform(lhs.begin(), lhs.end(), rhs.begin(), result.begin(), std::minus{});
-    return result;
+    auto result = lhs.copy();
+    result -= rhs;
+    return std::move(result);
 }
 
 } // namespace squint

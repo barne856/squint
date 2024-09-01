@@ -22,6 +22,12 @@
 #include <utility>
 #include <vector>
 
+#ifdef SQUINT_USE_CUDA
+#include "squint/tensor/cuda/cuda_context.hpp"
+#include <cublas_v2.h>
+#include <cuda_runtime.h>
+#endif
+
 namespace squint {
 
 /**
@@ -30,10 +36,7 @@ namespace squint {
  * @param t2 The second tensor to multiply.
  * @return A new tensor containing the result of the multiplication.
  */
-template <tensorial Tensor1, tensorial Tensor2>
-auto operator*(const Tensor1 &t1, const Tensor2 &t2)
-    requires(host_tensor<Tensor1> && host_tensor<Tensor2>)
-{
+template <tensorial Tensor1, tensorial Tensor2> auto operator*(const Tensor1 &t1, const Tensor2 &t2) {
     matrix_multiply_compatible(t1, t2);
     blas_compatible(t1, t2);
     using blas_type =
@@ -62,64 +65,118 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
     blas_type beta = 0;
 
     if constexpr (fixed_tensor<Tensor1> && fixed_tensor<Tensor2>) {
-        using strides_type = strides::column_major<result_shape_type>;
-        using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
-                                   ownership_type::owner, memory_space::host>;
-        result_type result{};
-        if constexpr (std::is_same_v<blas_type, float>) {
+        if constexpr (host_tensor<Tensor1> && host_tensor<Tensor2>) {
+            using strides_type = strides::column_major<result_shape_type>;
+            using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
+                                       ownership_type::owner, memory_space::host>;
+            result_type result{};
+            if constexpr (std::is_same_v<blas_type, float>) {
+                // NOLINTBEGIN
+                cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                            reinterpret_cast<float *>(
+                                const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                            lda,
+                            reinterpret_cast<float *>(
+                                const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                            ldb, beta, reinterpret_cast<float *>(result.data()), ldc);
+                // NOLINTEND
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                // NOLINTBEGIN
+                cblas_dgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                            lda,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                            ldb, beta,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                            ldc);
+                // NOLINTEND
+            }
+            return std::move(result);
+        } else {
+#ifdef SQUINT_USE_CUDA
             // NOLINTBEGIN
-            cblas_sgemm(
-                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
-                lda,
-                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
-                ldb, beta, reinterpret_cast<float *>(result.data()), ldc);
+            using strides_type = strides::column_major<result_shape_type>;
+            using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
+                                       ownership_type::reference, memory_space::device>;
+            auto handle = cuda::cuda_context::instance().cublas_handle();
+            auto cublas_op_a = (op_a == CBLAS_TRANSPOSE::CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+            auto cublas_op_b = (op_b == CBLAS_TRANSPOSE::CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+            result_type result{};
+            if constexpr (std::is_same_v<blas_type, float>) {
+                cublasSgemm(handle, cublas_op_a, cublas_op_b, m, n, k, &alpha,
+                            reinterpret_cast<const float *>(t1.data()), lda, reinterpret_cast<const float *>(t2.data()),
+                            ldb, &beta, reinterpret_cast<float *>(result.data()), ldc);
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                cublasDgemm(handle, cublas_op_a, cublas_op_b, m, n, k, &alpha,
+                            reinterpret_cast<const double *>(t1.data()), lda,
+                            reinterpret_cast<const double *>(t2.data()), ldb, &beta,
+                            reinterpret_cast<double *>(result.data()), ldc);
+            }
+            return std::move(result);
             // NOLINTEND
-        } else if constexpr (std::is_same_v<blas_type, double>) {
-            // NOLINTBEGIN
-            cblas_dgemm(
-                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
-                lda,
-                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
-                ldb, beta,
-                reinterpret_cast<double *>(
-                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
-                ldc);
-            // NOLINTEND
+#endif
         }
-        return result;
     } else {
-        using strides_type = std::vector<std::size_t>;
-        using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
-                                   ownership_type::owner, memory_space::host>;
-        result_type result({static_cast<std::size_t>(m), static_cast<std::size_t>(n)}, layout::column_major);
-        if constexpr (std::is_same_v<blas_type, float>) {
+        if constexpr (host_tensor<Tensor1> && host_tensor<Tensor2>) {
+            using strides_type = std::vector<std::size_t>;
+            using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
+                                       ownership_type::owner, memory_space::host>;
+            result_type result({static_cast<std::size_t>(m), static_cast<std::size_t>(n)}, layout::column_major);
+            if constexpr (std::is_same_v<blas_type, float>) {
+                // NOLINTBEGIN
+                cblas_sgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                            reinterpret_cast<float *>(
+                                const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                            lda,
+                            reinterpret_cast<float *>(
+                                const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                            ldb, beta,
+                            reinterpret_cast<float *>(
+                                const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                            ldc);
+                // NOLINTEND
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                // NOLINTBEGIN
+                cblas_dgemm(CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
+                            lda,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
+                            ldb, beta,
+                            reinterpret_cast<double *>(
+                                const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
+                            ldc);
+                // NOLINTEND
+            }
+            return std::move(result);
+        } else {
+#ifdef SQUINT_USE_CUDA
             // NOLINTBEGIN
-            cblas_sgemm(
-                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
-                lda,
-                reinterpret_cast<float *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
-                ldb, beta,
-                reinterpret_cast<float *>(
-                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
-                ldc);
-            // NOLINTEND
-        } else if constexpr (std::is_same_v<blas_type, double>) {
-            // NOLINTBEGIN
-            cblas_dgemm(
-                CBLAS_ORDER::CblasColMajor, op_a, op_b, m, n, k, alpha,
-                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor1::value_type> *>(t1.data())),
-                lda,
-                reinterpret_cast<double *>(const_cast<std::remove_const_t<typename Tensor2::value_type> *>(t2.data())),
-                ldb, beta,
-                reinterpret_cast<double *>(
-                    const_cast<std::remove_const_t<typename result_type::value_type> *>(result.data())),
-                ldc);
-            // NOLINTEND
+            using strides_type = std::vector<std::size_t>;
+            using result_type = tensor<result_value_type, result_shape_type, strides_type, result_error_checking::value,
+                                       ownership_type::reference, memory_space::device>;
+            result_type result({static_cast<std::size_t>(m), static_cast<std::size_t>(n)});
+            auto handle = cuda::cuda_context::instance().cublas_handle();
+            auto cublas_op_a = (op_a == CBLAS_TRANSPOSE::CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+            auto cublas_op_b = (op_b == CBLAS_TRANSPOSE::CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+            if constexpr (std::is_same_v<blas_type, float>) {
+                cublasSgemm(handle, cublas_op_a, cublas_op_b, m, n, k, &alpha,
+                            reinterpret_cast<const float *>(t1.data()), lda, reinterpret_cast<const float *>(t2.data()),
+                            ldb, &beta, reinterpret_cast<float *>(result.data()), ldc);
+            } else if constexpr (std::is_same_v<blas_type, double>) {
+                cublasDgemm(handle, cublas_op_a, cublas_op_b, m, n, k, &alpha,
+                            reinterpret_cast<const double *>(t1.data()), lda,
+                            reinterpret_cast<const double *>(t2.data()), ldb, &beta,
+                            reinterpret_cast<double *>(result.data()), ldc);
+            }
+            return std::move(result);
+// NOLINTEND
+#endif
         }
-        return result;
     }
 }
 
@@ -133,7 +190,7 @@ auto operator*(const Tensor1 &t1, const Tensor2 &t2)
  * This function computes the least squares solution when Ax =B is overdetermined and the least norm solution when Ax =
  * B is underdetermined.
  */
-template <tensorial T1, tensorial T2> auto operator/(const T1 &B, const T2 &A) {
+template <host_tensor T1, host_tensor T2> auto operator/(const T1 &B, const T2 &A) {
     using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
     using result_value_type =
         decltype(std::declval<typename T1::value_type>() / std::declval<typename T2::value_type>());

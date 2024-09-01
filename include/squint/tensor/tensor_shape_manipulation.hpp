@@ -298,6 +298,20 @@ auto tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::set_s
 
     this->shape_ = new_shape;
     this->strides_ = compute_strides(l, new_shape);
+    if constexpr (MemorySpace == memory_space::device && OwnershipType == ownership_type::reference) {
+        // If the tensor is a device reference, we need to update the device shape and strides as well
+        // cuda memcopy
+        cudaError_t memcpy_status = cudaMemcpy(this->device_shape_.data(), new_shape.data(),
+                                               new_shape.size() * sizeof(size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy data to device");
+        }
+        memcpy_status = cudaMemcpy(this->device_strides_.data(), this->strides_.data(),
+                                   this->strides_.size() * sizeof(size_t), cudaMemcpyHostToDevice);
+        if (memcpy_status != cudaSuccess) {
+            throw std::runtime_error("Failed to copy data to device");
+        }
+    }
 }
 
 /**

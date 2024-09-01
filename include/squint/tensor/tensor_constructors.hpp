@@ -182,7 +182,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
 template <typename U, typename OtherShape, typename OtherStrides>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(
     const tensor<U, OtherShape, OtherStrides, ErrorChecking, OwnershipType, MemorySpace> &other)
-    requires fixed_shape<Shape>
+    requires(fixed_shape<Shape> && MemorySpace == memory_space::host)
 {
     if constexpr (OwnershipType == ownership_type::owner) {
         // for owner ownership, only shape must be convertible
@@ -250,7 +250,7 @@ template <typename T, typename Shape, typename Strides, error_checking ErrorChec
           memory_space MemorySpace>
 tensor<T, Shape, Strides, ErrorChecking, OwnershipType, MemorySpace>::tensor(T *data, Shape shape, Strides strides)
     requires(dynamic_shape<Shape> && OwnershipType == ownership_type::reference)
-    : data_(data), shape_(std::move(shape)), strides_(std::move(strides)) {
+    : data_(data), shape_(shape), strides_(strides) {
     if (ErrorChecking == error_checking::enabled) {
         if (!implicit_convertible_shapes_vector(shape, this->shape())) {
             throw std::runtime_error("Invalid shape conversion");

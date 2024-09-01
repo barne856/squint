@@ -40,7 +40,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     netpbm \
     imagemagick \
     ghostscript \
-    nvidia-cuda-toolkit \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \ 
     && ln -s /usr/bin/clang-$LLVM_VERSION /usr/bin/clang \
     && ln -s /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++ \
@@ -69,6 +68,17 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     && /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-${CMAKE_VERSION} \
     && ln -s /opt/cmake-${CMAKE_VERSION}/bin/* /usr/local/bin \
     && rm /tmp/cmake-install.sh
+
+# Install CUDA
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb \
+    && dpkg -i cuda-keyring_1.1-1_all.deb
+
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    cuda-toolkit-12-6
+
+# add CUDA to the path
+ENV PATH=/usr/local/cuda-12.6/bin:/usr/local/cuda-12.6:$PATH
 
 # Clean up
 RUN apt-get -y remove wget gnupg software-properties-common

@@ -40,7 +40,7 @@ namespace squint {
  * @return The pivot indices.
  * @throws std::runtime_error if the system is singular or an error occurs during the solution.
  */
-template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
+template <host_tensor T1, host_tensor T2> auto solve(T1 &A, T2 &B) {
     blas_compatible(A, B);
     solve_compatible(A, B);
     static_assert(dimensionless_scalar<typename T1::value_type>);
@@ -88,7 +88,7 @@ template <tensorial T1, tensorial T2> auto solve(T1 &A, T2 &B) {
  * @return The pivot indices.
  * @throws std::runtime_error if an error occurs during the solution.
  */
-template <tensorial T1, tensorial T2> auto solve_general(T1 &A, T2 &B) {
+template <host_tensor T1, host_tensor T2> auto solve_general(T1 &A, T2 &B) {
     blas_compatible(A, B);
     solve_general_compatible(A, B);
     static_assert(dimensionless_scalar<typename T1::value_type>);
@@ -138,7 +138,7 @@ template <tensorial T1, tensorial T2> auto solve_general(T1 &A, T2 &B) {
  * @return The inverted matrix.
  * @throws std::runtime_error if the matrix is singular or an error occurs during inversion.
  */
-template <tensorial T> auto inv(const T &A) {
+template <host_tensor T> auto inv(const T &A) {
     inversion_compatible(A);
     static_assert(dimensionless_scalar<typename T::value_type>);
     using blas_type = blas_type_t<typename T::value_type>;
@@ -215,6 +215,7 @@ template <tensorial T> auto inv(const T &A) {
  *
  */
 template <fixed_tensor T> auto pinv(const T &A) {
+    static_assert(host_tensor<T>, "Pseudoinverse is only supported for host tensors");
     constexpr int m = make_array(typename T::shape_type{})[0];
     constexpr int n = make_array(typename T::shape_type{}).size() > 1 ? make_array(typename T::shape_type{})[1] : 1;
 
@@ -230,6 +231,7 @@ template <fixed_tensor T> auto pinv(const T &A) {
 }
 
 template <dynamic_tensor T> auto pinv(const T &A) {
+    static_assert(host_tensor<T>, "Pseudoinverse is only supported for host tensors");
     int m = A.shape()[0];
     int n = A.rank() > 1 ? A.shape()[1] : 1;
 
@@ -250,7 +252,7 @@ template <dynamic_tensor T> auto pinv(const T &A) {
  * @return The cross product of a and b.
  * @throws std::invalid_argument if the vectors are not 3D.
  */
-template <tensorial T1, tensorial T2> auto cross(const T1 &a, const T2 &b) {
+template <host_tensor T1, host_tensor T2> auto cross(const T1 &a, const T2 &b) {
     if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
         static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 &&
                           std::get<0>(make_array(typename T1::shape_type{})) == 3 &&
@@ -280,7 +282,7 @@ template <tensorial T1, tensorial T2> auto cross(const T1 &a, const T2 &b) {
  * @return The dot product of a and b.
  * @throws std::invalid_argument if the vectors have different sizes.
  */
-template <tensorial T1, tensorial T2> auto dot(const T1 &a, const T2 &b) {
+template <host_tensor T1, host_tensor T2> auto dot(const T1 &a, const T2 &b) {
     if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
         static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 &&
                           std::get<0>(make_array(typename T1::shape_type{})) ==
@@ -309,7 +311,7 @@ template <tensorial T1, tensorial T2> auto dot(const T1 &a, const T2 &b) {
  * @return The trace of the matrix.
  * @throws std::invalid_argument if the matrix is not square.
  */
-template <tensorial T> auto trace(const T &a) {
+template <host_tensor T> auto trace(const T &a) {
     if constexpr (fixed_tensor<T>) {
         static_assert(T::shape_type::size() == 2 && std::get<0>(make_array(typename T::shape_type{})) ==
                                                         std::get<1>(make_array(typename T::shape_type{})),
@@ -334,7 +336,7 @@ template <tensorial T> auto trace(const T &a) {
  * @param a The input vector.
  * @return The Euclidean norm of the vector.
  */
-template <tensorial T> auto norm(const T &a) {
+template <host_tensor T> auto norm(const T &a) {
     using value_type = typename T::value_type;
     if constexpr (quantitative<value_type>) {
         return sqrt(squared_norm(a));
@@ -348,7 +350,7 @@ template <tensorial T> auto norm(const T &a) {
  * @param a The input vector.
  * @return The squared Euclidean norm of the vector.
  */
-template <tensorial T> auto squared_norm(const T &a) {
+template <host_tensor T> auto squared_norm(const T &a) {
     using value_type = typename T::value_type;
     using result_type =
         std::conditional_t<quantitative<value_type>, decltype(std::declval<value_type>() * std::declval<value_type>()),
@@ -371,14 +373,14 @@ template <tensorial T> auto squared_norm(const T &a) {
  * @param a The input vector.
  * @return The normalized vector.
  */
-template <tensorial T> auto normalize(const T &a) { return a / norm(a); }
+template <host_tensor T> auto normalize(const T &a) { return a / norm(a); }
 
 /**
  * @brief Computes the mean of all elements in the tensor.
  * @param a The input tensor.
  * @return The mean value of all elements.
  */
-template <tensorial T> auto mean(const T &a) {
+template <host_tensor T> auto mean(const T &a) {
     typename T::value_type sum = 0;
     size_t count = 0;
 
@@ -395,21 +397,21 @@ template <tensorial T> auto mean(const T &a) {
  * @param a The input tensor.
  * @return The sum of all elements.
  */
-template <tensorial T> auto sum(const T &a) { return std::accumulate(a.begin(), a.end(), typename T::value_type(0)); }
+template <host_tensor T> auto sum(const T &a) { return std::accumulate(a.begin(), a.end(), typename T::value_type(0)); }
 
 /**
  * @brief Finds the minimum element in the tensor.
  * @param a The input tensor.
  * @return The minimum element.
  */
-template <tensorial T> auto min(const T &a) { return *std::min_element(a.begin(), a.end()); }
+template <host_tensor T> auto min(const T &a) { return *std::min_element(a.begin(), a.end()); }
 
 /**
  * @brief Finds the maximum element in the tensor.
  * @param a The input tensor.
  * @return The maximum element.
  */
-template <tensorial T> auto max(const T &a) { return *std::max_element(a.begin(), a.end()); }
+template <host_tensor T> auto max(const T &a) { return *std::max_element(a.begin(), a.end()); }
 
 /**
  * @brief Checks if two tensors are approximately equal within a given tolerance.
@@ -418,7 +420,7 @@ template <tensorial T> auto max(const T &a) { return *std::max_element(a.begin()
  * @param tol The tolerance for comparison (default is machine epsilon).
  * @return True if the tensors are approximately equal, false otherwise.
  */
-template <tensorial T1, tensorial T2>
+template <host_tensor T1, host_tensor T2>
 auto approx_equal(
     const T1 &a, const T2 &b,
     typename std::common_type_t<typename T1::value_type, typename T2::value_type> tol =
@@ -453,6 +455,8 @@ auto approx_equal(
  */
 template <dynamic_tensor Tensor1, dynamic_tensor Tensor2>
 auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<size_t, size_t>> &contraction_pairs) {
+    static_assert(host_tensor<Tensor1> && host_tensor<Tensor2>,
+                  "Tensor contraction is only supported for host tensors");
     auto A_shape = A.shape();
     auto B_shape = B.shape();
     size_t A_rank = A_shape.size();
@@ -608,6 +612,8 @@ template <typename Tensor1, typename Tensor2, typename Sequence1, typename Seque
  */
 template <fixed_tensor Tensor1, fixed_tensor Tensor2, typename Sequence1, typename Sequence2>
 auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, const Sequence2 /*unused*/) {
+    static_assert(host_tensor<Tensor1> && host_tensor<Tensor2>,
+                  "Tensor contraction is only supported for host tensors");
     using types = contraction_types<Tensor1, Tensor2, Sequence1, Sequence2>;
     using result_value_type = std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>;
 
@@ -639,6 +645,8 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, co
  */
 template <dynamic_tensor Tensor1, dynamic_tensor Tensor2>
 auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
+    static_assert(host_tensor<Tensor1> && host_tensor<Tensor2>,
+                  "Tensor contraction is only supported for host tensors");
     // Parse the subscripts
     auto pos = subscripts.find("->");
     if (pos == std::string::npos) {
@@ -709,6 +717,7 @@ auto einsum(const std::string &subscripts, const Tensor1 &A, const Tensor2 &B) {
  * specifies a matrix transpose operation.
  */
 template <dynamic_tensor Tensor> auto einsum(const std::string &subscripts, const Tensor &tensor) {
+    static_assert(host_tensor<Tensor>, "Tensor contraction is only supported for host tensors");
     // Parse the subscripts
     auto pos = subscripts.find("->");
     if (pos == std::string::npos) {
@@ -783,6 +792,8 @@ template <typename ASubscripts, typename BSubscripts> struct get_contraction_ind
 template <typename ASubscripts, typename BSubscripts, typename OutputSubscripts, fixed_tensor Tensor1,
           fixed_tensor Tensor2>
 auto einsum(const Tensor1 &A, const Tensor2 &B) {
+    static_assert(host_tensor<Tensor1> && host_tensor<Tensor2>,
+                  "Tensor contraction is only supported for host tensors");
     using a_contractions = typename get_contraction_indices<ASubscripts, BSubscripts>::type;
     using b_contractions = typename get_contraction_indices<BSubscripts, ASubscripts>::type;
 
@@ -809,6 +820,7 @@ auto einsum(const Tensor1 &A, const Tensor2 &B) {
  * @return The result of the einsum operation.
  */
 template <typename InputSubscripts, typename OutputSubscripts, typename Tensor> auto einsum(const Tensor &tensor) {
+    static_assert(host_tensor<Tensor>, "Tensor contraction is only supported for host tensors");
     if constexpr (std::is_same_v<InputSubscripts, OutputSubscripts>) {
         // No operation needed
         return tensor;

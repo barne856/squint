@@ -212,3 +212,7 @@ if(SQUINT_BUILD_DOCUMENTATION)
     DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()
+
+add_executable(main main.cpp)
+target_link_libraries(main PRIVATE SQUINT)
+include_directories(include)

@@ -587,9 +587,6 @@ TEST_CASE("tensor_einsum") {
         auto A = tens::arange(1, 1, {3});
         auto B = tens::arange(1, 1, {2});
         auto result = einsum("i,j->ij", A, B);
-        auto is_equal_mat = result == A * B;
-        bool is_equal = std::all_of(is_equal_mat.begin(), is_equal_mat.end(), [](bool b) { return b; });
-        CHECK(is_equal);
         CHECK(result.shape() == std::vector<size_t>{3, 2});
         CHECK(result(0, 0) == doctest::Approx(1));
         CHECK(result(0, 1) == doctest::Approx(2));

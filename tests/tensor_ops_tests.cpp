@@ -23,6 +23,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(a(i, j) + b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = a_device + b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(a(i, j) + b(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("Subtraction") {
@@ -32,6 +41,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(a(i, j) - b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = a_device - b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(1));
+                }
+            }
+#endif
         }
 
         SUBCASE("Unary negation") {
@@ -41,6 +59,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(-a(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = -a_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(-a(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place addition") {
@@ -75,7 +102,7 @@ TEST_CASE("Element-wise operations") {
             auto a_host = a_device.to_host();
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 3; ++j) {
-                    CHECK(a_host(i, j) == doctest::Approx(-1));
+                    CHECK(a_host(i, j) == doctest::Approx(1));
                 }
             }
 #endif
@@ -85,6 +112,10 @@ TEST_CASE("Element-wise operations") {
     SUBCASE("Dynamic shape tensors") {
         tensor<float, dynamic, dynamic> a({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
         tensor<float, dynamic, dynamic> b({2, 3}, std::vector<float>{2, 5, 3, 6, 4, 7});
+#ifdef SQUINT_USE_CUDA
+        auto a_device = a.to_device();
+        auto b_device = b.to_device();
+#endif
 
         SUBCASE("Addition") {
             auto c = a + b;
@@ -93,6 +124,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(a(i, j) + b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = a_device + b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(a(i, j) + b(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("Subtraction") {
@@ -102,6 +142,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(a(i, j) - b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = a_device - b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(1));
+                }
+            }
+#endif
         }
 
         SUBCASE("Unary negation") {
@@ -111,6 +160,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(c(i, j) == doctest::Approx(-a(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = -a_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(-a(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place addition") {
@@ -121,6 +179,16 @@ TEST_CASE("Element-wise operations") {
             CHECK(a(1, 1) == doctest::Approx(11));
             CHECK(a(0, 2) == doctest::Approx(7));
             CHECK(a(1, 2) == doctest::Approx(13));
+#ifdef SQUINT_USE_CUDA
+            a_device += b_device;
+            auto a_host = a_device.to_host();
+            CHECK(a_host(0, 0) == doctest::Approx(3));
+            CHECK(a_host(1, 0) == doctest::Approx(9));
+            CHECK(a_host(0, 1) == doctest::Approx(5));
+            CHECK(a_host(1, 1) == doctest::Approx(11));
+            CHECK(a_host(0, 2) == doctest::Approx(7));
+            CHECK(a_host(1, 2) == doctest::Approx(13));
+#endif
         }
 
         SUBCASE("In-place subtraction") {
@@ -130,6 +198,15 @@ TEST_CASE("Element-wise operations") {
                     CHECK(a(i, j) == doctest::Approx(-1));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device -= b_device;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx(1));
+                }
+            }
+#endif
         }
     }
 }
@@ -137,6 +214,9 @@ TEST_CASE("Element-wise operations") {
 TEST_CASE("Scalar operations") {
     SUBCASE("Fixed shape tensors") {
         tensor<float, shape<2, 3>> a({1, 4, 2, 5, 3, 6});
+#ifdef SQUINT_USE_CUDA
+        auto a_device = a.to_device();
+#endif
 
         SUBCASE("Scalar multiplication") {
             auto b = a * 2.0f;
@@ -145,6 +225,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(b(i, j) == doctest::Approx(2 * a(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto b_device = a_device * 2.0f;
+            auto b_host = b_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(b_host(i, j) == doctest::Approx(2 * a(i, j)));
+                }
+            }
+#endif
 
             auto c = 2.0f * a;
             for (int i = 0; i < 2; ++i) {
@@ -152,6 +241,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(c(i, j) == doctest::Approx(b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = 2.0f * a_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(b(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("Scalar division") {
@@ -161,6 +259,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(b(i, j) == doctest::Approx(a(i, j) / 2.0f));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto b_device = a_device / 2.0f;
+            auto b_host = b_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(b_host(i, j) == doctest::Approx(a(i, j) / 2.0f));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place scalar multiplication") {
@@ -170,6 +277,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(a(i, j) == doctest::Approx(2 * (1 + i * 3 + j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device *= 2.0f;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx(2 * (1 + i * 3 + j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place scalar division") {
@@ -179,11 +295,23 @@ TEST_CASE("Scalar operations") {
                     CHECK(a(i, j) == doctest::Approx((1 + i * 3 + j) / 2.0f));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device /= 2.0f;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx((1 + i * 3 + j) / 2.0f));
+                }
+            }
+#endif
         }
     }
 
     SUBCASE("Dynamic shape tensors") {
         tensor<float, dynamic, dynamic> a({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+#ifdef SQUINT_USE_CUDA
+        auto a_device = a.to_device();
+#endif
 
         SUBCASE("Scalar multiplication") {
             auto b = a * 2.0f;
@@ -192,6 +320,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(b(i, j) == doctest::Approx(2 * a(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto b_device = a_device * 2.0f;
+            auto b_host = b_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(b_host(i, j) == doctest::Approx(2 * a(i, j)));
+                }
+            }
+#endif
 
             auto c = 2.0f * a;
             for (int i = 0; i < 2; ++i) {
@@ -199,6 +336,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(c(i, j) == doctest::Approx(b(i, j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto c_device = 2.0f * a_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(b(i, j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("Scalar division") {
@@ -208,6 +354,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(b(i, j) == doctest::Approx(a(i, j) / 2.0f));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            auto b_device = a_device / 2.0f;
+            auto b_host = b_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(b_host(i, j) == doctest::Approx(a(i, j) / 2.0f));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place scalar multiplication") {
@@ -217,6 +372,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(a(i, j) == doctest::Approx(2 * (1 + i * 3 + j)));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device *= 2.0f;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx(2 * (1 + i * 3 + j)));
+                }
+            }
+#endif
         }
 
         SUBCASE("In-place scalar division") {
@@ -226,6 +390,15 @@ TEST_CASE("Scalar operations") {
                     CHECK(a(i, j) == doctest::Approx((1 + i * 3 + j) / 2.0f));
                 }
             }
+#ifdef SQUINT_USE_CUDA
+            a_device /= 2.0f;
+            auto a_host = a_device.to_host();
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(a_host(i, j) == doctest::Approx((1 + i * 3 + j) / 2.0f));
+                }
+            }
+#endif
         }
     }
 }
@@ -332,6 +505,142 @@ TEST_CASE("Matrix multiplication") {
             CHECK(c(0, 1) == doctest::Approx(29));
             CHECK(c(1, 0) == doctest::Approx(36));
             CHECK(c(1, 1) == doctest::Approx(71));
+        }
+    }
+}
+
+TEST_CASE("Matrix multiplication device") {
+    SUBCASE("Fixed shape tensors") {
+        SUBCASE("Inner product of vectors") {
+            tensor<float, shape<3>> a({1, 2, 3});
+            tensor<float, shape<3>> b({4, 5, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device.transpose() * b_device;
+            auto c_host = c_device.to_host();
+            CHECK(c_host(0, 0) == doctest::Approx(32));
+        }
+
+        SUBCASE("Outer product of vectors") {
+            tensor<float, shape<3>> a({1, 2, 3});
+            tensor<float, shape<3>> b({4, 5, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device.transpose();
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(a(i) * b(j)));
+                }
+            }
+        }
+
+        SUBCASE("Vector times matrix") {
+            tensor<float, shape<2>> a({1, 2});
+            tensor<float, shape<2, 3>> b({1, 4, 2, 5, 3, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device.transpose() * b_device;
+            auto c_host = c_device.to_host();
+            for (int j = 0; j < 3; ++j) {
+                CHECK(c_host(0, j) == doctest::Approx(a(0) * b(0, j) + a(1) * b(1, j)));
+            }
+        }
+
+        SUBCASE("Matrix times vector") {
+            tensor<float, shape<3, 3>> a({1, 2, 3, 4, 5, 6, 7, 8, 9});
+            tensor<float, shape<3>> b({1, 2, 3});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 3; ++i) {
+                float expected = 0;
+                for (int j = 0; j < 3; ++j) {
+                    expected += a(i, j) * b(j);
+                }
+                CHECK(c_host(i, 0) == doctest::Approx(expected));
+            }
+        }
+
+        SUBCASE("Matrix times matrix") {
+            tensor<float, shape<2, 3>> a({1, 4, 2, 5, 3, 6});
+            tensor<float, shape<3, 2>> b({1, 4, 2, 5, 3, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device;
+            auto c_host = c_device.to_host();
+            CHECK(c_host(0, 0) == doctest::Approx(15));
+            CHECK(c_host(0, 1) == doctest::Approx(29));
+            CHECK(c_host(1, 0) == doctest::Approx(36));
+            CHECK(c_host(1, 1) == doctest::Approx(71));
+        }
+    }
+
+    SUBCASE("Dynamic shape tensors") {
+        SUBCASE("Inner product of vectors") {
+            tensor<float, dynamic, dynamic> a({3}, std::vector<float>{1, 2, 3});
+            tensor<float, dynamic, dynamic> b({3}, std::vector<float>{4, 5, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device.transpose() * b_device;
+            auto c_host = c_device.to_host();
+            CHECK(c_host(0, 0) == doctest::Approx(32));
+        }
+
+        SUBCASE("Outer product of vectors") {
+            tensor<float, dynamic, dynamic> a({3}, std::vector<float>{1, 2, 3});
+            tensor<float, dynamic, dynamic> b({3}, std::vector<float>{4, 5, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device.transpose();
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    CHECK(c_host(i, j) == doctest::Approx(a(i) * b(j)));
+                }
+            }
+        }
+
+        SUBCASE("Vector times matrix") {
+            tensor<float, dynamic, dynamic> a({2}, std::vector<float>{1, 2});
+            tensor<float, dynamic, dynamic> b({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device.transpose() * b_device;
+            auto c_host = c_device.to_host();
+            for (int j = 0; j < 3; ++j) {
+                CHECK(c_host(0, j) == doctest::Approx(a(0) * b(0, j) + a(1) * b(1, j)));
+            }
+        }
+
+        SUBCASE("Matrix times vector") {
+            tensor<float, dynamic, dynamic> a({3, 3}, std::vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+            tensor<float, dynamic, dynamic> b({3}, std::vector<float>{1, 2, 3});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device;
+            auto c_host = c_device.to_host();
+            for (int i = 0; i < 3; ++i) {
+                float expected = 0;
+                for (int j = 0; j < 3; ++j) {
+                    expected += a(i, j) * b(j);
+                }
+                CHECK(c_host(i, 0) == doctest::Approx(expected));
+            }
+        }
+
+        SUBCASE("Matrix times matrix") {
+            tensor<float, dynamic, dynamic> a({2, 3}, std::vector<float>{1, 4, 2, 5, 3, 6});
+            tensor<float, dynamic, dynamic> b({3, 2}, std::vector<float>{1, 4, 2, 5, 3, 6});
+            auto a_device = a.to_device();
+            auto b_device = b.to_device();
+            auto c_device = a_device * b_device;
+            auto c_host = c_device.to_host();
+            CHECK(c_host(0, 0) == doctest::Approx(15));
+            CHECK(c_host(0, 1) == doctest::Approx(29));
+            CHECK(c_host(1, 0) == doctest::Approx(36));
+            CHECK(c_host(1, 1) == doctest::Approx(71));
         }
     }
 }
