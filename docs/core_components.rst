@@ -3,7 +3,6 @@ Core Components
 ===============
 
 
-
 Dimension System
 ----------------
 
@@ -124,4 +123,3 @@ It is important to note that the size of any fixed shape tensor type is exactall
 .. code-block:: cpp
 
    sizeof(vec3) == 3 * sizeof(float);
-

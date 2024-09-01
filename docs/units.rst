@@ -1,5 +1,5 @@
 Quantities and Units
-=====
+====================
 
 SQUINT provides a robust system for handling physical units and dimensions, ensuring type safety and dimensional correctness in your calculations. This page explains how to use units in SQUINT and provides examples of common operations.
 

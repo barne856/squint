@@ -82,6 +82,71 @@ Tensor Views with Step Sizes
 
 SQUINT supports creating tensor views with custom step sizes for both fixed and dynamic shape tensors, allowing for more flexible and efficient data access patterns. This feature is particularly useful for operations like strided slicing or accessing every nth element along a dimension.
 
+To illustrate how step sizes affect tensor views, consider the following diagram:
+
+.. rst-class:: only-light
+
+   .. tikz:: Tensor Views with Step Sizes
+      :libs: matrix
+      :xscale: 80
+
+      \begin{tikzpicture}
+        \matrix (m) [matrix of math nodes, row sep=0.5em, column sep=0.5em, minimum width=2em]
+        {
+          1 & 2 & 3 & 4 \\
+          5 & 6 & 7 & 8 \\
+          9 & 10 & 11 & 12 \\
+          13 & 14 & 15 & 16 \\
+        };
+        \node[above] at (m.north) {Original Tensor};
+        
+        \begin{scope}[xshift=6cm]
+          \matrix (v) [matrix of math nodes, row sep=0.5em, column sep=0.5em, minimum width=2em]
+          {
+            1 & 3 \\
+            9 & 11 \\
+          };
+          \node[above] at (v.north) {View with Step Size 2};
+          \draw[red, thick, ->] (m-1-1) -- (v-1-1);
+          \draw[red, thick, ->] (m-1-3) -- (v-1-2);
+          \draw[red, thick, ->] (m-3-1) -- (v-2-1);
+          \draw[red, thick, ->] (m-3-3) -- (v-2-2);
+        \end{scope}
+      \end{tikzpicture}
+
+.. rst-class:: only-dark
+
+   .. tikz:: Tensor Views with Step Sizes
+      :libs: matrix
+      :xscale: 80
+
+      \begin{tikzpicture}
+        \matrix (m) [matrix of math nodes, row sep=0.5em, column sep=0.5em, minimum width=2em, 
+                     every node/.style={text=white}]
+        {
+          1 & 2 & 3 & 4 \\
+          5 & 6 & 7 & 8 \\
+          9 & 10 & 11 & 12 \\
+          13 & 14 & 15 & 16 \\
+        };
+        \node[above, text=white] at (m.north) {Original Tensor};
+        
+        \begin{scope}[xshift=6cm]
+          \matrix (v) [matrix of math nodes, row sep=0.5em, column sep=0.5em, minimum width=2em, 
+                       every node/.style={text=white}]
+          {
+            1 & 3 \\
+            9 & 11 \\
+          };
+          \node[above, text=white] at (v.north) {View with Step Size 2};
+          \draw[red, thick, ->] (m-1-1) -- (v-1-1);
+          \draw[red, thick, ->] (m-1-3) -- (v-1-2);
+          \draw[red, thick, ->] (m-3-1) -- (v-2-1);
+          \draw[red, thick, ->] (m-3-3) -- (v-2-2);
+        \end{scope}
+      \end{tikzpicture}
+
+This diagram shows an original 4x4 tensor and a 2x2 view created with a step size of 2 in both dimensions. The arrows indicate which elements from the original tensor are included in the view.
 
 API for Fixed Shape Tensors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -170,9 +170,12 @@ if(SQUINT_BUILD_DOCUMENTATION)
   # Doxygen won't create this for us
   file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR})
 
-  # Only regenerate Doxygen when the Doxyfile or public headers change
+  # Collect all .rst files under docs recursively
+  file(GLOB_RECURSE SPHINX_RST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/docs/*.rst)
+
+  # Only regenerate Doxygen when the Doxyfile, .rst, or public headers change
   add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
-                     DEPENDS ${SQUINT_PUBLIC_HEADERS}
+                     DEPENDS ${SQUINT_PUBLIC_HEADERS} ${SPHINX_RST_FILES}
                      COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
                      MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
                      COMMENT "Generating API documentation with Doxygen"

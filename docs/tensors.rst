@@ -86,9 +86,67 @@ Indexing
 Comparison with Row-Centric Approaches
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It's important to understand how SQUINT's column-centric approach differs from traditional row-centric approaches. The column-centric approach has memory layouts that are analogous to the row-centric layouts but with a different ordering of dimensions:
+To visualize the difference between column-centric and row-centric approaches for tensor representation, consider the following diagram:
 
-Consider a simple example with the following tensors and their representations below:
+.. rst-class:: only-light
+
+   .. tikz:: Column-centric vs Row-centric Tensor Representation
+      :libs: matrix
+      :xscale: 80
+
+      \begin{tikzpicture}
+        \matrix (m) [matrix of math nodes, row sep=3em, column sep=4em, minimum width=2em]
+        {
+          \text{Column-centric} & \text{Row-centric} \\
+          \begin{bmatrix} a \\ b \\ c \end{bmatrix} & \begin{bmatrix} a & b & c \end{bmatrix} \\
+          \begin{bmatrix} 
+            a & d \\ 
+            b & e \\ 
+            c & f
+          \end{bmatrix} &
+          \begin{bmatrix}
+            a & b & c \\
+            d & e & f
+          \end{bmatrix} \\
+        };
+        \path[-stealth]
+          (m-1-1) edge node [left] {1st order} (m-2-1)
+          (m-1-2) edge node [right] {1st order} (m-2-2)
+          (m-2-1) edge node [left] {2nd order} (m-3-1)
+          (m-2-2) edge node [right] {2nd order} (m-3-2);
+      \end{tikzpicture}
+
+.. rst-class:: only-dark
+
+   .. tikz:: Column-centric vs Row-centric Tensor Representation
+      :libs: matrix
+      :xscale: 80
+
+      \begin{tikzpicture}[every node/.style={text=white}]
+        \matrix (m) [matrix of math nodes, row sep=3em, column sep=4em, minimum width=2em]
+        {
+          \text{Column-centric} & \text{Row-centric} \\
+          \begin{bmatrix} a \\ b \\ c \end{bmatrix} & \begin{bmatrix} a & b & c \end{bmatrix} \\
+          \begin{bmatrix} 
+            a & d \\ 
+            b & e \\ 
+            c & f
+          \end{bmatrix} &
+          \begin{bmatrix}
+            a & b & c \\
+            d & e & f
+          \end{bmatrix} \\
+        };
+        \path[-stealth, draw=white]
+          (m-1-1) edge node [left] {1st order} (m-2-1)
+          (m-1-2) edge node [right] {1st order} (m-2-2)
+          (m-2-1) edge node [left] {2nd order} (m-3-1)
+          (m-2-2) edge node [right] {2nd order} (m-3-2);
+      \end{tikzpicture}
+
+This diagram illustrates how 1st and 2nd order tensors are represented in both column-centric and row-centric approaches. Note how the column-centric approach emphasizes columns as the primary structure, while the row-centric approach emphasizes rows.
+
+The column-centric approach has memory layouts that are analogous to the row-centric layouts but with a different ordering of dimensions. Consider a simple example with the following tensors and their representations below:
 
 .. math::
   \begin{equation}
@@ -173,6 +231,7 @@ Consider a simple example with the following tensors and their representations b
 
 SQUINT uses the column-centric approach with the column-major layout by default since this is the most straightforward view when we maintain the idea of columns as the fundamental building blocks of tensors.
 You can specify any sequence to represent the strides and shape of the tensor, which allows you to use any approach with any memory layout you prefer.
+
 
 Tensor Construction
 -------------------

@@ -12,7 +12,7 @@ To use GPU tensors, you must build SQUINT with CUDA support enabled. Use the fol
 
    cmake -DSQUINT_USE_CUDA=ON ..
 
-This option requires that you have CUDA installed on your system. On ubnuntu, you can install CUDA using the following command:
+This option requires that you have CUDA installed on your system. On Ubuntu, you can install CUDA using the following command:
 
 .. code-block:: bash
 
@@ -77,6 +77,50 @@ Not Supported:
 - Subscript operators (``[]`` and ``()``)
 - Iteration over elements, rows, columns, or subviews
 - Tensor math functions (e.g., ``solve``, ``inv``, etc.)
+
+
+To visualize the process of creating a GPU tensor, performing operations, and transferring back to the host, consider the following flowchart:
+
+.. rst-class:: only-light
+
+   .. tikz:: GPU Tensor Usage Flowchart
+      :libs: shapes.geometric, arrows.meta, positioning
+      :xscale: 80
+
+      \begin{tikzpicture}[node distance=2cm, auto]
+        \node [rectangle, draw, fill=blue!20] (start) {Host Tensor};
+        \node [rectangle, draw, fill=green!20, right=of start] (gpu) {GPU Tensor};
+        \node [rectangle, draw, fill=orange!20, right=of gpu] (compute) {GPU Computation};
+        \node [rectangle, draw, fill=blue!20, below=of compute] (result) {Result on Host};
+        
+        \draw[-{Stealth[length=3mm]}] (start) -- node[above] {to\_device()} (gpu);
+        \draw[-{Stealth[length=3mm]}] (gpu) -- node[above] {operations} (compute);
+        \draw[-{Stealth[length=3mm]}] (compute) -- node[right] {to\_host()} (result);
+      \end{tikzpicture}
+
+.. rst-class:: only-dark
+
+   .. tikz:: GPU Tensor Usage Flowchart
+      :libs: shapes.geometric, arrows.meta, positioning
+      :xscale: 80
+
+      \begin{tikzpicture}[node distance=2cm, auto]
+        \node [rectangle, draw, fill=blue!80, text=white] (start) {Host Tensor};
+        \node [rectangle, draw, fill=red!80, text=white, right=of start] (gpu) {GPU Tensor};
+        \node [rectangle, draw, fill=orange!80, text=white, right=of gpu] (compute) {GPU Computation};
+        \node [rectangle, draw, fill=blue!80, text=white, below=of compute] (result) {Result on Host};
+        
+        \draw[-{Stealth[length=3mm]}, white] (start) -- node[above, text=white] {to\_device()} (gpu);
+        \draw[-{Stealth[length=3mm]}, white] (gpu) -- node[above, text=white] {operations} (compute);
+        \draw[-{Stealth[length=3mm]}, white] (compute) -- node[right, text=white] {to\_host()} (result);
+      \end{tikzpicture}
+
+This flowchart illustrates the typical workflow when using GPU tensors:
+1. Start with a tensor on the host
+2. Transfer the tensor to the GPU using `to_device()`
+3. Perform computations on the GPU
+4. Transfer the result back to the host using `to_host()`
+
 
 Performance Considerations
 --------------------------
