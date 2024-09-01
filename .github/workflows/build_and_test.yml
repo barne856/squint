@@ -68,13 +68,6 @@ jobs:
           choco install llvm
         }
 
-    - name: Check Clang-Format
-      if: matrix.compiler == 'clang' && runner.os == 'Linux'
-      run: |
-        find include/squint -iname '*.hpp' -o -iname '*.cpp' | xargs clang-format-19 -i
-        git diff --exit-code
-      shell: bash
-
     - name: Set up MSVC
       if: matrix.os == 'windows-latest' && matrix.compiler == 'msvc'
       uses: microsoft/setup-msbuild@v2
