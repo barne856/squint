@@ -31,7 +31,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - run: pip install sphinx breathe furo sphinxcontrib-tikz
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -45,6 +44,7 @@ jobs:
             netpbm \
             imagemagick \
             ghostscript
+      - run: pip install sphinx breathe furo sphinxcontrib-tikz
       - name: Build Documentation
         run: |
           mkdir build
