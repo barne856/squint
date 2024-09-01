@@ -93,9 +93,9 @@ To visualize the process of creating a GPU tensor, performing operations, and tr
         \node [rectangle, draw, fill=orange!20, right=of gpu] (compute) {GPU Computation};
         \node [rectangle, draw, fill=blue!20, below=of compute] (result) {Result on Host};
         
-        \draw[-{Stealth[length=3mm]}] (start) -- node[above] {to\_device()} (gpu);
-        \draw[-{Stealth[length=3mm]}] (gpu) -- node[above] {operations} (compute);
-        \draw[-{Stealth[length=3mm]}] (compute) -- node[right] {to\_host()} (result);
+        \draw[->] (start) -- node[above] {to\_device()} (gpu);
+        \draw[->] (gpu) -- node[above] {operations} (compute);
+        \draw[->] (compute) -- node[right] {to\_host()} (result);
       \end{tikzpicture}
 
 .. rst-class:: only-dark
@@ -110,9 +110,9 @@ To visualize the process of creating a GPU tensor, performing operations, and tr
         \node [rectangle, draw, fill=orange!80, text=white, right=of gpu] (compute) {GPU Computation};
         \node [rectangle, draw, fill=blue!80, text=white, below=of compute] (result) {Result on Host};
         
-        \draw[-{Stealth[length=3mm]}, white] (start) -- node[above, text=white] {to\_device()} (gpu);
-        \draw[-{Stealth[length=3mm]}, white] (gpu) -- node[above, text=white] {operations} (compute);
-        \draw[-{Stealth[length=3mm]}, white] (compute) -- node[right, text=white] {to\_host()} (result);
+        \draw[->, white] (start) -- node[above, text=white] {to\_device()} (gpu);
+        \draw[->, white] (gpu) -- node[above, text=white] {operations} (compute);
+        \draw[->, white] (compute) -- node[right, text=white] {to\_host()} (result);
       \end{tikzpicture}
 
 This flowchart illustrates the typical workflow when using GPU tensors:

@@ -289,7 +289,7 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=-2cm]
           \draw[thick, blue] (0,0) rectangle (2,1);
           \draw[thick, red] (1,1) rectangle (3,2);
-          \draw[-{Stealth[length=3mm]}, thick] (1,0.5) -- (2,1.5);
+          \draw[->, thick] (1,0.5) -- (2,1.5);
           \node[below] at (1.5,0) {Translation};
         \end{scope}
         
@@ -297,7 +297,7 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=2cm]
           \draw[thick, blue] (0,0) rectangle (2,1);
           \draw[thick, red, rotate around={45:(1,0.5)}] (0,0) rectangle (2,1);
-          \draw[-{Stealth[length=3mm]}, thick, rotate around={22.5:(1,0.5)}] (1,0.5) arc (0:45:0.7);
+          \draw[->, thick, rotate around={22.5:(1,0.5)}] (1,0.5) arc (0:45:0.7);
           \node[below] at (1,0) {Rotation};
         \end{scope}
         
@@ -305,8 +305,8 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=6cm]
           \draw[thick, blue] (0,0) rectangle (2,1);
           \draw[thick, red] (-0.5,-0.25) rectangle (2.5,1.25);
-          \draw[-{Stealth[length=3mm]}, thick] (0,0) -- (-0.5,-0.25);
-          \draw[-{Stealth[length=3mm]}, thick] (2,1) -- (2.5,1.25);
+          \draw[->, thick] (0,0) -- (-0.5,-0.25);
+          \draw[->, thick] (2,1) -- (2.5,1.25);
           \node[below] at (1,0) {Scaling};
         \end{scope}
       \end{tikzpicture}
@@ -328,7 +328,7 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=-2cm]
           \draw[thick, cyan] (0,0) rectangle (2,1);
           \draw[thick, red] (1,1) rectangle (3,2);
-          \draw[-{Stealth[length=3mm]}, thick, white] (1,0.5) -- (2,1.5);
+          \draw[->, thick, white] (1,0.5) -- (2,1.5);
           \node[below, text=white] at (1.5,0) {Translation};
         \end{scope}
         
@@ -336,7 +336,7 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=2cm]
           \draw[thick, cyan] (0,0) rectangle (2,1);
           \draw[thick, red, rotate around={45:(1,0.5)}] (0,0) rectangle (2,1);
-          \draw[-{Stealth[length=3mm]}, thick, white, rotate around={22.5:(1,0.5)}] (1,0.5) arc (0:45:0.7);
+          \draw[->, thick, white, rotate around={22.5:(1,0.5)}] (1,0.5) arc (0:45:0.7);
           \node[below, text=white] at (1,0) {Rotation};
         \end{scope}
         
@@ -344,8 +344,8 @@ To visualize the basic transformation functions (translation, rotation, and scal
         \begin{scope}[xshift=6cm]
           \draw[thick, cyan] (0,0) rectangle (2,1);
           \draw[thick, red] (-0.5,-0.25) rectangle (2.5,1.25);
-          \draw[-{Stealth[length=3mm]}, thick, white] (0,0) -- (-0.5,-0.25);
-          \draw[-{Stealth[length=3mm]}, thick, white] (2,1) -- (2.5,1.25);
+          \draw[->, thick, white] (0,0) -- (-0.5,-0.25);
+          \draw[->, thick, white] (2,1) -- (2.5,1.25);
           \node[below, text=white] at (1,0) {Scaling};
         \end{scope}
       \end{tikzpicture}

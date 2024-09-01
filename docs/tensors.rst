@@ -109,7 +109,7 @@ To visualize the difference between column-centric and row-centric approaches fo
             d & e & f
           \end{bmatrix} \\
         };
-        \path[-stealth]
+        \path[->]
           (m-1-1) edge node [left] {1st order} (m-2-1)
           (m-1-2) edge node [right] {1st order} (m-2-2)
           (m-2-1) edge node [left] {2nd order} (m-3-1)
@@ -137,7 +137,7 @@ To visualize the difference between column-centric and row-centric approaches fo
             d & e & f
           \end{bmatrix} \\
         };
-        \path[-stealth, draw=white]
+        \path[->, draw=white]
           (m-1-1) edge node [left] {1st order} (m-2-1)
           (m-1-2) edge node [right] {1st order} (m-2-2)
           (m-2-1) edge node [left] {2nd order} (m-3-1)
