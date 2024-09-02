@@ -39,6 +39,8 @@
 #include <vector>
 
 #ifdef SQUINT_USE_CUDA
+#include <stdexcept>
+#include <string>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #endif
