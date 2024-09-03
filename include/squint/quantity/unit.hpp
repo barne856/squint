@@ -23,6 +23,9 @@ struct unit : quantity<T, D, ErrorChecking> {
     static constexpr T scale = Scale;
     static constexpr T offset = Offset;
 
+    // default constructor
+    constexpr unit() : base_quantity_type() {}
+
     // Implicit constructor from base unit with the same dimension
     constexpr unit(const base_quantity_type &q) : base_quantity_type(q) {}
 
