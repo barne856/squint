@@ -21,7 +21,7 @@ This option requires that you have CUDA installed on your system. On Ubuntu, you
 Creating GPU Tensors
 --------------------
 
-GPU tensors cannot be created directly. Instead, you create a host tensor and then transfer it to the device using the ``to_device()`` method:
+GPU tensors cannot be created directly either through the static creation methods or other contructors. Instead, you create a host tensor and then transfer it to the device using the ``to_device()`` method:
 
 .. code-block:: cpp
 
