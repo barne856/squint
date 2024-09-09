@@ -249,29 +249,51 @@ template <dynamic_tensor T> auto pinv(const T &A) {
  * @brief Computes the cross product of two 3D vectors.
  * @param a The first vector.
  * @param b The second vector.
+ * @param c The resulting vector.
+ * @throws std::invalid_argument if the vectors are not 3D.
+ *
+ * The cross product is only defined for 3D vectors. The result vector c is calculated as:
+ * c[0] = a[1] * b[2] - a[2] * b[1]
+ * c[1] = a[2] * b[0] - a[0] * b[2]
+ * c[2] = a[0] * b[1] - a[1] * b[0]
+ *
+ */
+template <host_tensor T1, host_tensor T2, host_tensor T3> auto cross(const T1 &a, const T2 &b, T3 &c) {
+    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
+        static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 && T3::shape_type::size() == 1 &&
+                          std::get<0>(make_array(typename T1::shape_type{})) == 3 &&
+                          std::get<0>(make_array(typename T2::shape_type{})) == 3 &&
+                          std::get<0>(make_array(typename T3::shape_type{})) == 3,
+                      "Cross product is only defined for 3D vectors");
+    } else if constexpr (T1::error_checking() == error_checking::enabled ||
+                         T2::error_checking() == error_checking::enabled ||
+                         T3::error_checking() == error_checking::enabled) {
+        if (a.rank() != 1 || b.rank() != 1 || c.rank() != 1 || a.shape()[0] != 3 || b.shape()[0] != 3 ||
+            c.shape()[0] != 3) {
+            throw std::invalid_argument("Cross product is only defined for 3D vectors");
+        }
+    }
+    using result_value_type =
+        decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    static_assert(std::is_same_v<typename T3::value_type, result_value_type>,
+                  "Result tensor must have the value type that is the product of a and b");
+    c(0) = a(1) * b(2) - a(2) * b(1);
+    c(1) = a(2) * b(0) - a(0) * b(2);
+    c(2) = a(0) * b(1) - a(1) * b(0);
+}
+
+/**
+ * @brief Computes the cross product of two 3D vectors.
+ * @param a The first vector.
+ * @param b The second vector.
  * @return The cross product of a and b.
  * @throws std::invalid_argument if the vectors are not 3D.
  */
 template <host_tensor T1, host_tensor T2> auto cross(const T1 &a, const T2 &b) {
-    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
-        static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 &&
-                          std::get<0>(make_array(typename T1::shape_type{})) == 3 &&
-                          std::get<0>(make_array(typename T2::shape_type{})) == 3,
-                      "Cross product is only defined for 3D vectors");
-    } else if constexpr (T1::error_checking() == error_checking::enabled ||
-                         T2::error_checking() == error_checking::enabled) {
-        if (a.rank() != 1 || b.rank() != 1 || a.shape()[0] != 3 || b.shape()[0] != 3) {
-            throw std::invalid_argument("Cross product is only defined for 3D vectors");
-        }
-    }
-
-    using result_type = std::common_type_t<typename T1::value_type, typename T2::value_type>;
-    tensor<result_type, std::index_sequence<3>> result;
-
-    result(0) = a(1) * b(2) - a(2) * b(1);
-    result(1) = a(2) * b(0) - a(0) * b(2);
-    result(2) = a(0) * b(1) - a(1) * b(0);
-
+    using result_value_type =
+        decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    tensor<result_value_type, shape<3>> result;
+    cross(a, b, result);
     return result;
 }
 
@@ -295,10 +317,10 @@ template <host_tensor T1, host_tensor T2> auto dot(const T1 &a, const T2 &b) {
         }
     }
 
-    using result_type = std::common_type_t<typename T1::value_type, typename T2::value_type>;
-    result_type result = 0;
+    using result_type = decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    auto result = result_type(0);
 
-    for (size_t i = 0; i < a.shape()[0]; ++i) {
+    for (size_t i = 0; i < a.size(); ++i) {
         result += a(i) * b(i);
     }
 
@@ -380,17 +402,7 @@ template <host_tensor T> auto normalize(const T &a) { return a / norm(a); }
  * @param a The input tensor.
  * @return The mean value of all elements.
  */
-template <host_tensor T> auto mean(const T &a) {
-    typename T::value_type sum = 0;
-    size_t count = 0;
-
-    for (const auto &val : a) {
-        sum += val;
-        ++count;
-    }
-
-    return sum / count;
-}
+template <host_tensor T> auto mean(const T &a) { return sum(a) / a.size(); }
 
 /**
  * @brief Computes the sum of all elements in the tensor.
