@@ -411,6 +411,14 @@ For a matrix :math:`A`, the Moore-Penrose pseudoinverse :math:`A^+` satisfies:
 :math:`(AA^+)^* = AA^+`
 :math:`(A^+A)^* = A^+A`
 
+- **Matrix Determinant**:
+
+.. code-block:: cpp
+
+   auto determinant = det(A);
+
+The determinant of a square matrix :math:`A` is denoted as :math:`\text{det}(A)`.
+
 
 Vector Operations
 -----------------
