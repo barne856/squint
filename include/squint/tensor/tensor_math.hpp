@@ -326,6 +326,7 @@ template <host_tensor T> auto det(const T &A) {
 }
 
 #ifdef __AVX2__
+// NOLINTBEGIN
 /**
  * @brief Compute the cross product of two 3D vectors using AVX2 instructions (float version).
  *
@@ -369,6 +370,7 @@ inline void cross_product_avx2_double(const double *a, const double *b, double *
     __m256d vec_result = _mm256_sub_pd(tmp3, tmp4);
     _mm256_storeu_pd(result, vec_result);
 }
+// NOLINTEND
 #endif
 
 /**
