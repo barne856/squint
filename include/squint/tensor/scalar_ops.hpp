@@ -21,7 +21,7 @@
 
 namespace squint {
 
-template <scalar T> inline constexpr auto get_scalar_value(const T &s) -> const auto & {
+template <scalar T> constexpr auto get_scalar_value(const T &s) -> const auto & {
     if constexpr (quantitative<T>) {
         return s.value();
     } else {

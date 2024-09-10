@@ -1,4 +1,4 @@
-Checks: '-*,bugprone-*,cppcoreguidelines-*,modernize-*,performance-*,readability-*,misc-*,clang-analyzer-*,-readability-identifier-length,-bugprone-easily-swappable-parameters'
+Checks: '-*,bugprone-*,cppcoreguidelines-*,modernize-*,performance-*,readability-*,misc-*,clang-analyzer-*,-readability-identifier-length,-bugprone-easily-swappable-parameters,-readability-math-missing-parentheses'
 HeaderFilterRegex: '.*'
 FormatStyle: file
 CheckOptions:
