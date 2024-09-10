@@ -246,6 +246,85 @@ template <dynamic_tensor T> auto pinv(const T &A) {
 }
 
 /**
+ * @brief Computes the determinant of a square matrix.
+ * @tparam T The tensor type.
+ * @param A The input matrix.
+ * @return The determinant of the matrix.
+ * @throws std::runtime_error if the matrix is not square or if an error occurs during computation.
+ */
+template <host_tensor T> auto det(const T &A) {
+    blas_compatible(A, A);
+    static_assert(dimensionless_scalar<typename T::value_type>);
+    using result_type = typename T::value_type;
+    if constexpr (fixed_tensor<T>) {
+        constexpr auto shape = make_array(typename T::shape_type{});
+        static_assert(shape.size() == 2 && shape[0] == shape[1], "Determinant is only defined for square matrices");
+    } else if constexpr (T::error_checking() == error_checking::enabled) {
+        if (A.rank() != 2 || A.shape()[0] != A.shape()[1]) {
+            throw std::runtime_error("Determinant is only defined for square matrices");
+        }
+    }
+
+    const auto n = static_cast<BLAS_INT>(A.shape()[0]);
+
+    if (n == 0) {
+        return result_type{1}; // Determinant of 0x0 matrix is 1 by convention
+    }
+    if (n == 1) {
+        return A(0, 0);
+    }
+    if (n == 2) {
+        return A(0, 0) * A(1, 1) - A(0, 1) * A(1, 0);
+    }
+    if (n == 3) {
+        return A(0, 0) * (A(1, 1) * A(2, 2) - A(1, 2) * A(2, 1)) - A(0, 1) * (A(1, 0) * A(2, 2) - A(1, 2) * A(2, 0)) +
+               A(0, 2) * (A(1, 0) * A(2, 1) - A(1, 1) * A(2, 0));
+    }
+
+    // For larger matrices, use LAPACK
+    using blas_type = blas_type_t<typename T::value_type>;
+    static_assert(std::is_same_v<blas_type, float> || std::is_same_v<blas_type, double>,
+                  "Determinant is only supported for float and double types");
+
+    // Determine matrix layout
+    int layout = (A.strides()[0] == 1) ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR;
+
+    // Determine leading dimension
+    BLAS_INT lda = compute_leading_dimension_lapack(layout, A);
+
+    // Create a copy of A to work with
+    auto A_copy = A.copy();
+
+    std::vector<BLAS_INT> ipiv(n);
+    BLAS_INT info = 0;
+
+    // Perform LU factorization
+    // NOLINTBEGIN
+    if constexpr (std::is_same_v<blas_type, float>) {
+        info = LAPACKE_sgetrf(layout, n, n, reinterpret_cast<float *>(A_copy.data()), lda, ipiv.data());
+    } else if constexpr (std::is_same_v<blas_type, double>) {
+        info = LAPACKE_dgetrf(layout, n, n, reinterpret_cast<double *>(A_copy.data()), lda, ipiv.data());
+    }
+    // NOLINTEND
+
+    if (info != 0) {
+        // if LU factorization fails, det is zero
+        return result_type{0};
+    }
+
+    // Compute determinant from LU factorization
+    result_type det = 1;
+    for (BLAS_INT i = 0; i < n; ++i) {
+        if (ipiv[i] != i + 1) {
+            det = -det;
+        }
+        det *= A_copy(i, i);
+    }
+
+    return det;
+}
+
+/**
  * @brief Computes the cross product of two 3D vectors.
  * @param a The first vector.
  * @param b The second vector.

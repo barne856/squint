@@ -313,6 +313,33 @@ TEST_CASE("pinv()") {
     }
 }
 
+TEST_CASE("det()") {
+    SUBCASE("2x2 matrix") {
+        tensor<double, shape<2, 2>> A{{1.0, 2.0, 3.0, 4.0}};
+        auto result = det(A);
+        CHECK(result == doctest::Approx(-2.0));
+    }
+
+    SUBCASE("3x3 matrix") {
+        tensor<double, shape<3, 3>> A{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}};
+        auto result = det(A);
+        CHECK(result == doctest::Approx(0.0));
+    }
+
+    SUBCASE("4x4 matrix zero det") {
+        tensor<double, shape<4, 4>> A{
+            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0}};
+        auto result = det(A);
+        CHECK(result == doctest::Approx(0.0));
+    }
+
+    SUBCASE("4x4 matrix non-zero det") {
+        tensor<double, shape<4, 4>> A{{1, 5, 4, 1, 5, 5, 5, 2, 6, 2, 6, 3, 7, 1, 2, 4}};
+        auto result = det(A);
+        CHECK(result == doctest::Approx(-138));
+    }
+}
+
 TEST_CASE("cross()") {
     SUBCASE("3D vectors") {
         tensor<double, shape<3>> a{1.0, 2.0, 3.0};
