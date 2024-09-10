@@ -350,9 +350,21 @@ TEST_CASE("cross()") {
         CHECK(c(2) == doctest::Approx(-3.0));
     }
 
+    SUBCASE("3D vectors with output") {
+        tensor<double, shape<3>> a{1.0, 2.0, 3.0};
+        tensor<double, shape<3>> b{4.0, 5.0, 6.0};
+        tensor<double, shape<3>> c;
+        cross(a, b, c);
+        CHECK(c(0) == doctest::Approx(-3.0));
+        CHECK(c(1) == doctest::Approx(6.0));
+        CHECK(c(2) == doctest::Approx(-3.0));
+    }
+
     SUBCASE("Invalid dimensions") {
-        tensor<double, shape<2>> a{1.0, 2.0};
-        tensor<double, shape<2>> b{3.0, 4.0};
+        tensor<length, shape<3>> a{length(1.0), length(2.0)};
+        tensor<length, shape<3>> b{length(3.0), length(4.0)};
+        tensor<length, shape<3>> result;
+        // cross(a, b, result); // should not compile
     }
 }
 

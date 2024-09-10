@@ -85,6 +85,12 @@ target_include_directories(SQUINT INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(SQUINT INTERFACE -mavx2)
+elseif(MSVC)
+  target_compile_options(SQUINT INTERFACE /arch:AVX2)
+endif()
+
 # Setup BLAS backend
 setup_blas_backend()
 
@@ -214,3 +220,7 @@ if(SQUINT_BUILD_DOCUMENTATION)
     DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()
+
+add_executable(main main.cpp)
+include_directories(include)
+target_link_libraries(main SQUINT)

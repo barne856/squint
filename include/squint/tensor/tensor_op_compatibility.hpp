@@ -354,6 +354,24 @@ template <tensorial T1> void check_contiguous(const T1 &t1) {
 }
 
 /**
+ * @brief Checks if two tensors are compatible for cross product operations.
+ * @tparam T The tensor type.
+ * @param a The tensor to check.
+ * @throws std::invalid_argument if the tensor is not 3D (when error checking is enabled).
+ */
+template <host_tensor T> constexpr void cross_compatible(const T &a) {
+    if constexpr (fixed_tensor<T>) {
+        static_assert(T::shape_type::size() == 1, "Cross product is only supported for 1D tensors");
+        static_assert(std::get<0>(make_array(typename T::shape_type{})) == 3,
+                      "Cross product is only supported for 3D vectors");
+    } else if (T::error_checking() == error_checking::enabled) {
+        if (a.rank() != 1 || a.shape()[0] != 3) {
+            throw std::invalid_argument("Cross product is only supported for 3D vectors");
+        }
+    }
+}
+
+/**
  * @brief Checks if two tensors are compatible for solve operations.
  * @tparam T1 First tensor type.
  * @tparam T2 Second tensor type.

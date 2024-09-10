@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <immintrin.h>
 #include <limits>
 #include <numeric>
 #include <ranges>
@@ -324,41 +325,89 @@ template <host_tensor T> auto det(const T &A) {
     return det;
 }
 
+#ifdef __AVX2__
 /**
- * @brief Computes the cross product of two 3D vectors.
- * @param a The first vector.
- * @param b The second vector.
- * @param c The resulting vector.
- * @throws std::invalid_argument if the vectors are not 3D.
+ * @brief Compute the cross product of two 3D vectors using AVX2 instructions (float version).
  *
- * The cross product is only defined for 3D vectors. The result vector c is calculated as:
- * c[0] = a[1] * b[2] - a[2] * b[1]
- * c[1] = a[2] * b[0] - a[0] * b[2]
- * c[2] = a[0] * b[1] - a[1] * b[0]
+ * This function computes the cross product of two 3D vectors stored in memory.
+ * The result is stored in the provided output memory location.
  *
+ * @param a Pointer to the first input vector
+ * @param b Pointer to the second input vector
+ * @param result Pointer to the output vector to store the cross product result
  */
-template <host_tensor T1, host_tensor T2, host_tensor T3> auto cross(const T1 &a, const T2 &b, T3 &c) {
-    if constexpr (fixed_tensor<T1> && fixed_tensor<T2>) {
-        static_assert(T1::shape_type::size() == 1 && T2::shape_type::size() == 1 && T3::shape_type::size() == 1 &&
-                          std::get<0>(make_array(typename T1::shape_type{})) == 3 &&
-                          std::get<0>(make_array(typename T2::shape_type{})) == 3 &&
-                          std::get<0>(make_array(typename T3::shape_type{})) == 3,
-                      "Cross product is only defined for 3D vectors");
-    } else if constexpr (T1::error_checking() == error_checking::enabled ||
-                         T2::error_checking() == error_checking::enabled ||
-                         T3::error_checking() == error_checking::enabled) {
-        if (a.rank() != 1 || b.rank() != 1 || c.rank() != 1 || a.shape()[0] != 3 || b.shape()[0] != 3 ||
-            c.shape()[0] != 3) {
-            throw std::invalid_argument("Cross product is only defined for 3D vectors");
-        }
-    }
+inline void cross_product_avx2_float(const float *a, const float *b, float *result) {
+    __m128 vec_a = _mm_set_ps(0, a[2], a[1], a[0]);
+    __m128 vec_b = _mm_set_ps(0, b[2], b[1], b[0]);
+    __m128 tmp0 = _mm_shuffle_ps(vec_a, vec_a, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 tmp1 = _mm_shuffle_ps(vec_b, vec_b, _MM_SHUFFLE(3, 1, 0, 2));
+    __m128 tmp2 = _mm_mul_ps(tmp0, vec_b);
+    __m128 tmp3 = _mm_mul_ps(tmp0, tmp1);
+    __m128 tmp4 = _mm_shuffle_ps(tmp2, tmp2, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 vec_result = _mm_sub_ps(tmp3, tmp4);
+    _mm_storeu_ps(result, vec_result);
+}
+
+/**
+ * @brief Compute the cross product of two 3D vectors using AVX2 instructions (double version).
+ *
+ * This function computes the cross product of two 3D vectors stored in memory.
+ * The result is stored in the provided output memory location.
+ *
+ * @param a Pointer to the first input vector
+ * @param b Pointer to the second input vector
+ * @param result Pointer to the output vector to store the cross product result
+ */
+inline void cross_product_avx2_double(const double *a, const double *b, double *result) {
+    __m256d vec_a = _mm256_set_pd(0, a[2], a[1], a[0]);
+    __m256d vec_b = _mm256_set_pd(0, b[2], b[1], b[0]);
+    __m256d tmp0 = _mm256_permute4x64_pd(vec_a, _MM_SHUFFLE(3, 0, 2, 1));
+    __m256d tmp1 = _mm256_permute4x64_pd(vec_b, _MM_SHUFFLE(3, 1, 0, 2));
+    __m256d tmp2 = _mm256_mul_pd(tmp0, vec_b);
+    __m256d tmp3 = _mm256_mul_pd(tmp0, tmp1);
+    __m256d tmp4 = _mm256_permute4x64_pd(tmp2, _MM_SHUFFLE(3, 0, 2, 1));
+    __m256d vec_result = _mm256_sub_pd(tmp3, tmp4);
+    _mm256_storeu_pd(result, vec_result);
+}
+#endif
+
+/**
+ * @brief Compute the cross product of two 3D vectors using AVX2 instructions.
+ *
+ * This function is a wrapper around the AVX2 implementation that works with
+ * the tensor class. It assumes the tensors are contiguous in memory.
+ *
+ * @param a The first input vector
+ * @param b The second input vector
+ * @param result The output vector to store the cross product result
+ */
+template <host_tensor T1, host_tensor T2, host_tensor T3> void cross(const T1 &a, const T2 &b, T3 &result) {
+    cross_compatible(a);
+    cross_compatible(b);
+    cross_compatible(result);
+    check_contiguous(a);
+    check_contiguous(b);
+    check_contiguous(result);
+    blas_compatible(a, b);
+    blas_compatible(b, result);
+
     using result_value_type =
         decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
     static_assert(std::is_same_v<typename T3::value_type, result_value_type>,
                   "Result tensor must have the value type that is the product of a and b");
-    c(0) = a(1) * b(2) - a(2) * b(1);
-    c(1) = a(2) * b(0) - a(0) * b(2);
-    c(2) = a(0) * b(1) - a(1) * b(0);
+
+#ifdef __AVX2__
+    if constexpr (std::is_same_v<result_value_type, float>) {
+        cross_product_avx2_float(a.data(), b.data(), result.data());
+    } else if constexpr (std::is_same_v<result_value_type, double>) {
+        cross_product_avx2_double(a.data(), b.data(), result.data());
+    }
+#else
+    // fallback to scalar implementation
+    result(0) = a(1) * b(2) - a(2) * b(1);
+    result(1) = a(2) * b(0) - a(0) * b(2);
+    result(2) = a(0) * b(1) - a(1) * b(0);
+#endif
 }
 
 /**
