@@ -7,6 +7,9 @@ set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
 # Add CUDA option
 option(SQUINT_USE_CUDA "Enable CUDA support" OFF)
 
+# Add AVX option
+option(SQUINT_USE_AVX2 "Enable AVX2 support" ON)
+
 set(PROJECT_LANGUAGES CXX)
 if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
   list(APPEND PROJECT_LANGUAGES C Fortran)
@@ -85,10 +88,12 @@ target_include_directories(SQUINT INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  target_compile_options(SQUINT INTERFACE -mavx2)
-elseif(MSVC)
-  target_compile_options(SQUINT INTERFACE /arch:AVX2)
+if(SQUINT_USE_AVX2)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(SQUINT INTERFACE -mavx2)
+  elseif(MSVC)
+    target_compile_options(SQUINT INTERFACE /arch:AVX2)
+  endif()
 endif()
 
 # Setup BLAS backend

@@ -31,5 +31,5 @@
 	// make vscode user own the workspace and all mounts
 	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
 	// prevent git dubious ownership
-	"postStartCommand": "micromamba shell init --shell=bash && echo 'micromamba activate squint' >> ~/.bashrc && git config --global --add safe.directory ${containerWorkspaceFolder}"
+	"postStartCommand": "micromamba shell init --shell=bash && echo 'micromamba activate squint' >> ~/.bashrc && echo 'source /opt/intel/oneapi/setvars.sh' >> ~/.bashrc && git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

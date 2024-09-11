@@ -346,7 +346,9 @@ inline void cross_product_avx2_float(const float *a, const float *b, float *resu
     __m128 tmp3 = _mm_mul_ps(tmp0, tmp1);
     __m128 tmp4 = _mm_shuffle_ps(tmp2, tmp2, _MM_SHUFFLE(3, 0, 2, 1));
     __m128 vec_result = _mm_sub_ps(tmp3, tmp4);
-    _mm_storeu_ps(result, vec_result);
+    _mm_store_ss(&result[0], vec_result);
+    _mm_store_ss(&result[1], _mm_shuffle_ps(vec_result, vec_result, _MM_SHUFFLE(1, 1, 1, 1)));
+    _mm_store_ss(&result[2], _mm_shuffle_ps(vec_result, vec_result, _MM_SHUFFLE(2, 2, 2, 2)));
 }
 
 /**
@@ -368,7 +370,9 @@ inline void cross_product_avx2_double(const double *a, const double *b, double *
     __m256d tmp3 = _mm256_mul_pd(tmp0, tmp1);
     __m256d tmp4 = _mm256_permute4x64_pd(tmp2, _MM_SHUFFLE(3, 0, 2, 1));
     __m256d vec_result = _mm256_sub_pd(tmp3, tmp4);
-    _mm256_storeu_pd(result, vec_result);
+    _mm256_store_pd(&result[0], vec_result);
+    _mm256_store_pd(&result[1], _mm256_permute4x64_pd(vec_result, _MM_SHUFFLE(1, 1, 1, 1)));
+    _mm256_store_pd(&result[2], _mm256_permute4x64_pd(vec_result, _MM_SHUFFLE(2, 2, 2, 2)));
 }
 // NOLINTEND
 #endif
