@@ -1,5 +1,6 @@
 // NOLINTBEGIN
 #include "squint/quantity/quantity_types.hpp"
+#include "squint/tensor/tensor.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "squint/quantity.hpp"
