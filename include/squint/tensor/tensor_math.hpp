@@ -44,7 +44,8 @@ template <host_tensor T1, host_tensor T2> auto solve(T1 &A, T2 &B) {
     blas_compatible(A, B);
     solve_compatible(A, B);
     static_assert(dimensionless_scalar<typename T1::value_type>);
-    using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
+    using blas_type = std::remove_const_t<
+        std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>>;
 
     // Compute dimensions
     auto n = static_cast<BLAS_INT>(A.shape()[0]);
@@ -92,7 +93,8 @@ template <host_tensor T1, host_tensor T2> auto solve_general(T1 &A, T2 &B) {
     blas_compatible(A, B);
     solve_general_compatible(A, B);
     static_assert(dimensionless_scalar<typename T1::value_type>);
-    using blas_type = std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>;
+    using blas_type = std::remove_const_t<
+        std::common_type_t<blas_type_t<typename T1::value_type>, blas_type_t<typename T2::value_type>>>;
 
     // Compute dimensions
     auto m = static_cast<BLAS_INT>(A.shape()[0]);
@@ -141,9 +143,10 @@ template <host_tensor T1, host_tensor T2> auto solve_general(T1 &A, T2 &B) {
 template <host_tensor T> auto inv(const T &A) {
     inversion_compatible(A);
     static_assert(dimensionless_scalar<typename T::value_type>);
-    using blas_type = blas_type_t<typename T::value_type>;
-    using result_type = tensor<typename T::value_type, typename T::shape_type, typename T::strides_type,
-                               T::error_checking(), ownership_type::owner, memory_space::host>;
+    using blas_type = blas_type_t<std::remove_const_t<typename T::value_type>>;
+    using result_type =
+        tensor<std::remove_const_t<typename T::value_type>, typename T::shape_type, typename T::strides_type,
+               T::error_checking(), ownership_type::owner, memory_space::host>;
 
     // Create a copy of A to work with
     result_type result = A;
@@ -255,7 +258,7 @@ template <dynamic_tensor T> auto pinv(const T &A) {
 template <host_tensor T> auto det(const T &A) {
     blas_compatible(A, A);
     static_assert(dimensionless_scalar<typename T::value_type>);
-    using result_type = typename T::value_type;
+    using result_type = std::remove_const_t<typename T::value_type>;
     if constexpr (fixed_tensor<T>) {
         constexpr auto shape = make_array(typename T::shape_type{});
         static_assert(shape.size() == 2 && shape[0] == shape[1], "Determinant is only defined for square matrices");
@@ -282,7 +285,7 @@ template <host_tensor T> auto det(const T &A) {
     }
 
     // For larger matrices, use LAPACK
-    using blas_type = blas_type_t<typename T::value_type>;
+    using blas_type = blas_type_t<std::remove_const_t<typename T::value_type>>;
     static_assert(std::is_same_v<blas_type, float> || std::is_same_v<blas_type, double>,
                   "Determinant is only supported for float and double types");
 
@@ -341,8 +344,8 @@ template <host_tensor T1, host_tensor T2, host_tensor T3> void cross(const T1 &a
     blas_compatible(a, b);
     blas_compatible(b, result);
 
-    using result_value_type =
-        decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    using result_value_type = std::remove_const_t<decltype(std::declval<typename T1::value_type>() *
+                                                           std::declval<typename T2::value_type>())>;
     static_assert(std::is_same_v<typename T3::value_type, result_value_type>,
                   "Result tensor must have the value type that is the product of a and b");
 
@@ -359,8 +362,8 @@ template <host_tensor T1, host_tensor T2, host_tensor T3> void cross(const T1 &a
  * @throws std::invalid_argument if the vectors are not 3D.
  */
 template <host_tensor T1, host_tensor T2> auto cross(const T1 &a, const T2 &b) {
-    using result_value_type =
-        decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    using result_value_type = std::remove_const_t<decltype(std::declval<typename T1::value_type>() *
+                                                           std::declval<typename T2::value_type>())>;
     tensor<result_value_type, shape<3>> result;
     cross(a, b, result);
     return result;
@@ -386,7 +389,8 @@ template <host_tensor T1, host_tensor T2> auto dot(const T1 &a, const T2 &b) {
         }
     }
 
-    using result_type = decltype(std::declval<typename T1::value_type>() * std::declval<typename T2::value_type>());
+    using result_type = std::remove_const_t<decltype(std::declval<typename T1::value_type>() *
+                                                     std::declval<typename T2::value_type>())>;
     auto result = result_type(0);
 
     for (size_t i = 0; i < a.size(); ++i) {
@@ -413,7 +417,7 @@ template <host_tensor T> auto trace(const T &a) {
         }
     }
 
-    typename T::value_type result = 0;
+    std::remove_const_t<typename T::value_type> result = 0;
 
     for (size_t i = 0; i < a.shape()[0]; ++i) {
         result += a(i, i);
@@ -428,7 +432,7 @@ template <host_tensor T> auto trace(const T &a) {
  * @return The Euclidean norm of the vector.
  */
 template <host_tensor T> auto norm(const T &a) {
-    using value_type = typename T::value_type;
+    using value_type = std::remove_const_t<typename T::value_type>;
     if constexpr (quantitative<value_type>) {
         return sqrt(squared_norm(a));
     } else {
@@ -442,7 +446,7 @@ template <host_tensor T> auto norm(const T &a) {
  * @return The squared Euclidean norm of the vector.
  */
 template <host_tensor T> auto squared_norm(const T &a) {
-    using value_type = typename T::value_type;
+    using value_type = std::remove_const_t<typename T::value_type>;
     using result_type =
         std::conditional_t<quantitative<value_type>, decltype(std::declval<value_type>() * std::declval<value_type>()),
                            value_type>;
@@ -478,7 +482,9 @@ template <host_tensor T> auto mean(const T &a) { return sum(a) / a.size(); }
  * @param a The input tensor.
  * @return The sum of all elements.
  */
-template <host_tensor T> auto sum(const T &a) { return std::accumulate(a.begin(), a.end(), typename T::value_type(0)); }
+template <host_tensor T> auto sum(const T &a) {
+    return std::accumulate(a.begin(), a.end(), std::remove_const_t<typename T::value_type>(0));
+}
 
 /**
  * @brief Finds the minimum element in the tensor.
@@ -572,7 +578,8 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const std::vector<std::pair<si
     B_permutation.insert(B_permutation.end(), B_free_indices.begin(), B_free_indices.end());
 
     // Permute A and B
-    using result_value_type = std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>;
+    using result_value_type =
+        std::remove_const_t<std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>>;
     using tensor_type = tensor<result_value_type, typename Tensor1::shape_type, typename Tensor1::strides_type,
                                Tensor1::error_checking(), ownership_type::owner, memory_space::host>;
 
@@ -696,7 +703,8 @@ auto contract(const Tensor1 &A, const Tensor2 &B, const Sequence1 /*unused*/, co
     static_assert(host_tensor<Tensor1> && host_tensor<Tensor2>,
                   "Tensor contraction is only supported for host tensors");
     using types = contraction_types<Tensor1, Tensor2, Sequence1, Sequence2>;
-    using result_value_type = std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>;
+    using result_value_type =
+        std::remove_const_t<std::common_type_t<typename Tensor1::value_type, typename Tensor2::value_type>>;
 
     auto A_permuted = (A.template permute<typename types::A_permutation>()).copy();
     auto B_permuted = (B.template permute<typename types::B_permutation>()).copy();
