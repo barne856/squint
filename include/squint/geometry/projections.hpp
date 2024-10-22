@@ -30,7 +30,7 @@ namespace squint::geometry {
 template <typename T>
 auto ortho(length_t<T> left, length_t<T> right, length_t<T> bottom, length_t<T> top, length_t<T> near_plane,
            length_t<T> far_plane, length_t<T> unit_length = length_t<T>{1}) {
-    tensor<T, shape<4, 4>> result;
+    tensor<T, shape<4, 4>> result{};
     auto width = (right - left);
     auto height = (top - bottom);
     auto depth = (far_plane - near_plane);
@@ -67,7 +67,7 @@ auto ortho(length_t<T> left, length_t<T> right, length_t<T> bottom, length_t<T> 
 template <dimensionless_scalar T, typename U>
 auto perspective(T fovy, T aspect, length_t<U> near_plane, length_t<U> far_plane,
                  length_t<U> unit_length = length_t<U>{1}) {
-    tensor<U, shape<4, 4>> result;
+    tensor<U, shape<4, 4>> result{};
     U tanHalfFovy = std::tan(fovy / T{2});
     auto depth = far_plane - near_plane;
 
