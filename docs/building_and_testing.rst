@@ -6,8 +6,8 @@ Compiler Support
 
 SQUINT leverages modern C++ features and requires a C++23 compliant compiler. Currently supported compilers include:
 
-- GCC (g++) version 12 or later
-- Clang version 15 or later
+- GCC (g++) version 14 or later
+- Clang version 18 or later
 
 .. note::
    MSVC is partially supported but lacks support for multidimensional subscript operators.
