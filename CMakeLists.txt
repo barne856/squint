@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.27)
 
 # BLAS/LAPACKE backend options
 set(SQUINT_BLAS_BACKEND "NONE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
