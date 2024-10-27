@@ -8,7 +8,7 @@ set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
 option(SQUINT_USE_CUDA "Enable CUDA support" OFF)
 
 # Add AVX option
-option(SQUINT_USE_AVX2 "Enable AVX2 support" ON)
+option(SQUINT_USE_AVX2 "Enable AVX2 support" OFF)
 
 set(PROJECT_LANGUAGES CXX)
 if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
