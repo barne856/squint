@@ -146,7 +146,7 @@ TEST_CASE("quantity class comprehensive tests") {
     SUBCASE("Arithmetic operators") {
         length l1(10.0);
         length l2(20.0);
-        squint::time t(5.0);
+        squint::duration t(5.0);
 
         // Compound assignment
         l1 += length(5.0);

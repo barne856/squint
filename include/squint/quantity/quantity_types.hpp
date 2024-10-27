@@ -52,8 +52,8 @@ template <floating_point T, typename Dimension> using constant_quantity_t = unch
 template <typename T> using pure_t = unchecked_quantity_t<T, dimensions::unity>;
 /** @brief Type alias for a length quantity. */
 template <typename T> using length_t = unchecked_quantity_t<T, dimensions::L>;
-/** @brief Type alias for a time quantity. */
-template <typename T> using time_t = unchecked_quantity_t<T, dimensions::T>;
+/** @brief Type alias for a duration quantity. */
+template <typename T> using duration_t = unchecked_quantity_t<T, dimensions::T>;
 /** @brief Type alias for a mass quantity. */
 template <typename T> using mass_t = unchecked_quantity_t<T, dimensions::M>;
 /** @brief Type alias for a temperature quantity. */
@@ -206,8 +206,8 @@ template <typename T> using flow_t = unchecked_quantity_t<T, dimensions::flow_di
 using pure = pure_t<float>;
 /** @brief Type alias for a length quantity with a float type. */
 using length = length_t<float>;
-/** @brief Type alias for a time quantity with a float type. */
-using time = time_t<float>;
+/** @brief Type alias for a duration quantity with a float type. */
+using duration = duration_t<float>;
 /** @brief Type alias for a mass quantity with a float type. */
 using mass = mass_t<float>;
 /** @brief Type alias for a temperature quantity with a float type. */

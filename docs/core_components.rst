@@ -56,7 +56,7 @@ SQUINT provides alias templates for common quantity types to enhance readability
 .. code-block:: cpp
 
    template <typename T> using length_t = quantity<T, dimensions::L>;
-   template <typename T> using time_t = quantity<T, dimensions::T>;
+   template <typename T> using duration_t = quantity<T, dimensions::T>;
    template <typename T> using velocity_t = quantity<T, dimensions::velocity_dim>;
    // ... more aliases for other quantities
 

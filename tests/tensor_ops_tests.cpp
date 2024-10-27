@@ -763,7 +763,7 @@ TEST_CASE("Tensor Ops Type Deduction") {
     auto e = a * b;
     static_assert(std::is_same_v<decltype(e), tensor<area, shape<2, 2>>>, "Type deduction failed");
 
-    tensor<squint::time, shape<2, 2>> f({squint::time(1), squint::time(3), squint::time(2), squint::time(4)});
+    tensor<squint::duration, shape<2, 2>> f({squint::duration(1), squint::duration(3), squint::duration(2), squint::duration(4)});
     tensor<length, shape<2, 2>> g({length(5), length(11), length(10), length(22)});
     auto h = g / f;
     static_assert(std::is_same_v<decltype(h), tensor<velocity, shape<2, 2>>>, "Type deduction failed");
