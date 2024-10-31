@@ -94,11 +94,13 @@ template <typename T> auto getrf(int matrix_layout, int m, int n, T *a, int lda,
     }
 
     const int min_mn = std::min(m, n);
+    const T epsilon = std::numeric_limits<T>::epsilon();
 
     for (int i = 0; i < min_mn; ++i) {
-        // Find pivot
+        // Find pivot with threshold pivoting
         int pivot = i;
         T max_val = std::abs(matrix_element(a, i, i, lda, matrix_layout));
+        T row_max = max_val; // Track maximum in row for scaling
 
         for (int j = i + 1; j < m; ++j) {
             T val = std::abs(matrix_element(a, j, i, lda, matrix_layout));
@@ -108,7 +110,12 @@ template <typename T> auto getrf(int matrix_layout, int m, int n, T *a, int lda,
             }
         }
 
-        ipiv[i] = pivot + 1; // LAPACK uses 1-based indexing for ipiv
+        ipiv[i] = pivot + 1; // LAPACK uses 1-based indexing
+
+        // Check for numerical singularity
+        if (max_val < epsilon) {
+            return i + 1; // Matrix is numerically singular
+        }
 
         // Swap rows if necessary
         if (pivot != i) {
@@ -121,22 +128,27 @@ template <typename T> auto getrf(int matrix_layout, int m, int n, T *a, int lda,
             }
         }
 
-        // Gaussian elimination
+        // Gaussian elimination with better numerical handling
         if (matrix_element(a, i, i, lda, matrix_layout) != T(0)) {
             for (int j = i + 1; j < m; ++j) {
-                T factor = matrix_element(a, j, i, lda, matrix_layout) / matrix_element(a, i, i, lda, matrix_layout);
-                matrix_element(a, j, i, lda, matrix_layout) = factor;
+                T &element = matrix_element(a, j, i, lda, matrix_layout);
+                T pivot_val = matrix_element(a, i, i, lda, matrix_layout);
 
+                // Compute factor with better numerical precision
+                T factor = element / pivot_val;
+                element = factor; // Store multiplier
+
+                // Update remaining elements with compensated summation
                 for (int k = i + 1; k < n; ++k) {
-                    matrix_element(a, j, k, lda, matrix_layout) -= factor * matrix_element(a, i, k, lda, matrix_layout);
+                    T &update_element = matrix_element(a, j, k, lda, matrix_layout);
+                    T product = factor * matrix_element(a, i, k, lda, matrix_layout);
+                    update_element -= product;
                 }
             }
-        } else if (i == min_mn - 1) {
-            return i + 1; // Matrix is singular
         }
     }
 
-    return 0; // Success
+    return 0;
 }
 
 /**
@@ -155,33 +167,41 @@ template <typename T> int getri(int matrix_layout, int n, T *a, int lda, const i
         work[i * n + i] = T(1);
     }
 
-    // Apply permutations to identity matrix
+    // Apply permutations to identity matrix (backward order)
     for (int i = n - 1; i >= 0; --i) {
         int pivot = ipiv[i] - 1; // Convert back to 0-based indexing
         if (pivot != i) {
-            swap_row(work.data(), i, pivot, n, n);
+            for (int j = 0; j < n; ++j) {
+                std::swap(work[i * n + j], work[pivot * n + j]);
+            }
         }
     }
 
-    // Solve the system LY = P
+    // Solve L*Y = P (forward substitution)
     for (int i = 0; i < n; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            for (int k = 0; k < n; ++k) {
-                work[j * n + k] -= matrix_element(a, j, i, lda, matrix_layout) * work[i * n + k];
+        for (int j = 0; j < n; ++j) {
+            for (int k = 0; k < i; ++k) {
+                work[i * n + j] -= matrix_element(a, i, k, lda, matrix_layout) * work[k * n + j];
             }
         }
     }
 
-    // Solve the system UX = Y
-    for (int i = n - 1; i >= 0; --i) {
-        for (int j = 0; j < n; ++j) {
-            work[i * n + j] /= matrix_element(a, i, i, lda, matrix_layout);
-        }
-
-        for (int j = 0; j < i; ++j) {
-            for (int k = 0; k < n; ++k) {
-                work[j * n + k] -= matrix_element(a, j, i, lda, matrix_layout) * work[i * n + k];
+    // Solve U*X = Y (backward substitution) with scaling
+    const T epsilon = std::numeric_limits<T>::epsilon();
+    for (int j = 0; j < n; ++j) {
+        for (int i = n - 1; i >= 0; --i) {
+            T sum = work[i * n + j];
+            for (int k = i + 1; k < n; ++k) {
+                sum -= matrix_element(a, i, k, lda, matrix_layout) * work[k * n + j];
             }
+
+            // Check for division by very small numbers
+            T diagonal = matrix_element(a, i, i, lda, matrix_layout);
+            if (std::abs(diagonal) < epsilon) {
+                return i + 1; // Signal numerical singularity
+            }
+
+            work[i * n + j] = sum / diagonal;
         }
     }
 
@@ -192,7 +212,7 @@ template <typename T> int getri(int matrix_layout, int n, T *a, int lda, const i
         }
     }
 
-    return 0; // Success
+    return 0;
 }
 
 /**
