@@ -50,7 +50,7 @@ jobs:
           sudo ./llvm.sh 19
           sudo apt-get install -y clang-tidy-19 clang-format-19
         fi
-        if [ "${{ matrix.blas }}" = "OpenBLAS" || matrix.blas == "REFERENCE" ]; then
+        if [ "${{ matrix.blas }}" = "OpenBLAS" ] || [ "${{ matrix.blas }}" = "REFERENCE" ]; then
           sudo apt-get install -y gfortran
         elif [ "${{ matrix.blas }}" = "MKL" ]; then
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
