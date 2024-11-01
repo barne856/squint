@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 
 # BLAS/LAPACKE backend options
-set(SQUINT_BLAS_BACKEND "REFERENCE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, REFERENCE)")
+set(SQUINT_BLAS_BACKEND "REFERENCE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, REFERENCE, NONE)")
 set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL REFERENCE)
 
 # Add CUDA option
@@ -42,6 +42,8 @@ function(setup_blas_backend)
     setup_mkl()
   elseif(SQUINT_BLAS_BACKEND STREQUAL "REFERENCE")
     setup_reference()
+  elseif(SQUINT_BLAS_BACKEND STREQUAL "NONE")
+    target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_NONE)
   else()
     message(FATAL_ERROR "Unsupported BLAS backend: ${SQUINT_BLAS_BACKEND}")
   endif()
