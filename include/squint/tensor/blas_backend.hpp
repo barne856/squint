@@ -19,6 +19,10 @@
 #include <cblas.h>
 #include <lapacke.h>
 #define BLAS_INT int
+#elif defined(SQUINT_BLAS_BACKEND_REFERENCE)
+#include <cblas.h>
+#include <lapacke.h>
+#define BLAS_INT int
 #elif defined(SQUINT_BLAS_BACKEND_NONE)
 #include "squint/tensor/blas_backend_none.hpp"
 #define BLAS_INT int

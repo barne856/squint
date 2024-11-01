@@ -5,6 +5,10 @@
  * This file provides basic implementations of key BLAS and LAPACK functions
  * for use when no hardware-specific BLAS library is available. These implementations
  * are not optimized for performance but provide the necessary functionality.
+ * 
+ * NOTE: this file is very lightweight, but I decided to use the reference LAPACK and CBLAS
+ * implementations to ensure correctness. Therefore, the code
+ * is not used anywhere in the project anymore and could be removed.
  */
 
 // NOLINTBEGIN

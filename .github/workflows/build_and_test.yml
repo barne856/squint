@@ -12,7 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         compiler: [gcc, clang, msvc]
-        blas: [NONE, OpenBLAS, MKL]
+        blas: [REFERENCE, OpenBLAS, MKL]
         include:
           - compiler: gcc
             cc: gcc-12
@@ -112,7 +112,7 @@ jobs:
       shell: bash
 
     - name: Run Clang-Tidy
-      if: matrix.compiler == 'clang' && runner.os == 'Linux' && matrix.blas == 'NONE'
+      if: matrix.compiler == 'clang' && runner.os == 'Linux' && matrix.blas == 'REFERENCE'
       run: |
         find ./include/squint \
           -not -path './include/squint/tensor/cuda/*' \
