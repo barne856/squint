@@ -248,6 +248,89 @@ TEST_CASE("inv()") {
         CHECK(A_T_inv(1, 0) == doctest::Approx(1.0));
         CHECK(A_T_inv(1, 1) == doctest::Approx(-0.5));
     }
+    
+    SUBCASE("1000 random 4x4 matrices") {
+        // Use a fixed seed for deterministic random number generation
+        std::mt19937 gen(42);
+        std::uniform_real_distribution<double> dis(-10.0, 10.0);
+
+        // Create test matrices
+        using mat4d = tensor<double, shape<4, 4>>;
+        
+        for (int test = 0; test < 1000; ++test) {
+            // Generate a random matrix with deterministic values
+            mat4d A;
+            bool singular;
+            do {
+                singular = false;
+                // Fill matrix with random values
+                for (int i = 0; i < 4; ++i) {
+                    for (int j = 0; j < 4; ++j) {
+                        A(i, j) = dis(gen);
+                    }
+                }
+                
+                // Check if matrix is singular by computing determinant
+                // For 4x4, we can use the direct formula instead of LU decomposition
+                double det = 
+                    A(0,0) * (
+                        A(1,1) * (A(2,2) * A(3,3) - A(2,3) * A(3,2)) -
+                        A(1,2) * (A(2,1) * A(3,3) - A(2,3) * A(3,1)) +
+                        A(1,3) * (A(2,1) * A(3,2) - A(2,2) * A(3,1))
+                    ) -
+                    A(0,1) * (
+                        A(1,0) * (A(2,2) * A(3,3) - A(2,3) * A(3,2)) -
+                        A(1,2) * (A(2,0) * A(3,3) - A(2,3) * A(3,0)) +
+                        A(1,3) * (A(2,0) * A(3,2) - A(2,2) * A(3,0))
+                    ) +
+                    A(0,2) * (
+                        A(1,0) * (A(2,1) * A(3,3) - A(2,3) * A(3,1)) -
+                        A(1,1) * (A(2,0) * A(3,3) - A(2,3) * A(3,0)) +
+                        A(1,3) * (A(2,0) * A(3,1) - A(2,1) * A(3,0))
+                    ) -
+                    A(0,3) * (
+                        A(1,0) * (A(2,1) * A(3,2) - A(2,2) * A(3,1)) -
+                        A(1,1) * (A(2,0) * A(3,2) - A(2,2) * A(3,0)) +
+                        A(1,2) * (A(2,0) * A(3,1) - A(2,1) * A(3,0))
+                    );
+                
+                singular = std::abs(det) < 1e-10;
+            } while (singular);
+
+            // Compute inverse
+            auto A_inv = inv(A);
+
+            // Multiply A * A_inv, should get identity matrix
+            auto result = A * A_inv;
+            auto I = mat4::eye();
+
+            // Check that result is identity matrix
+            const double tolerance = 1e-10;
+            for (int i = 0; i < 4; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    if (i == j) {
+                        // Diagonal elements should be 1
+                        CHECK(result(i, j) == doctest::Approx(1.0).epsilon(tolerance));
+                    } else {
+                        // Off-diagonal elements should be 0
+                        CHECK(result(i, j) == doctest::Approx(0.0).epsilon(tolerance));
+                    }
+                }
+            }
+
+            // Also check A_inv * A = I
+            auto result2 = A_inv * A;
+            for (int i = 0; i < 4; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    if (i == j) {
+                        CHECK(result2(i, j) == doctest::Approx(1.0).epsilon(tolerance));
+                    } else {
+                        CHECK(result2(i, j) == doctest::Approx(0.0).epsilon(tolerance));
+                    }
+                }
+            }
+        }
+    }
 }
 
 TEST_CASE("pinv()") {
