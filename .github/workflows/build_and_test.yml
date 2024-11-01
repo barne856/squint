@@ -12,7 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         compiler: [gcc, clang, msvc]
-        blas: [REFERENCE, OpenBLAS, MKL]
+        blas: [NONE, OpenBLAS, MKL]
         include:
           - compiler: gcc
             cc: gcc-12
