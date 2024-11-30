@@ -134,6 +134,83 @@ template <host_tensor T1, host_tensor T2> auto solve_general(T1 &A, T2 &B) {
     return info;
 }
 
+#ifdef SQUINT_BLAS_BACKEND_NONE
+/**
+ * @brief Computes the inverse of a square matrix.
+ * @param A The matrix to invert.
+ * @return The inverted matrix.
+ * @throws std::runtime_error if the matrix is singular or an error occurs during inversion.
+ */
+template <host_tensor T> auto inv(const T &A) {
+    inversion_compatible(A);
+    static_assert(dimensionless_scalar<typename T::value_type>);
+    using blas_type = blas_type_t<std::remove_const_t<typename T::value_type>>;
+    using result_type =
+        tensor<std::remove_const_t<typename T::value_type>, typename T::shape_type, typename T::strides_type,
+        T::error_checking(), ownership_type::owner, memory_space::host>;
+
+    // Create copy of input matrix that will become our result
+    result_type result = A;
+    const int n = A.shape()[0];
+
+    // Create identity matrix of same shape and type
+    auto identity = result_type::eye();
+    // Fill with identity pattern
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            identity(i, j) = (i == j) ? typename T::value_type{1} : typename T::value_type{0};
+        }
+    }
+
+    // Perform Gauss-Jordan elimination with partial pivoting
+    for (int i = 0; i < n; i++) {
+        // Find pivot (largest element in current column)
+        auto max_element = std::abs(result(i, i));
+        int max_row = i;
+        for (int k = i + 1; k < n; k++) {
+            if (std::abs(result(k, i)) > max_element) {
+                max_element = std::abs(result(k, i));
+                max_row = k;
+            }
+        }
+
+        // Check if matrix is singular
+        if (approx_equal(max_element, typename T::value_type{0})) {
+            throw std::runtime_error("Matrix is singular");
+        }
+
+        // Swap maximum row with current row if needed
+        if (max_row != i) {
+            for (int k = 0; k < n; k++) {
+                std::swap(result(i, k), result(max_row, k));
+                std::swap(identity(i, k), identity(max_row, k));
+            }
+        }
+
+        // Scale current row to make the diagonal element 1
+        auto pivot = result(i, i);
+        for (int k = 0; k < n; k++) {
+            result(i, k) /= pivot;
+            identity(i, k) /= pivot;
+        }
+
+        // Eliminate current column elements in other rows
+        for (int j = 0; j < n; j++) {
+            if (j != i) {
+                auto factor = result(j, i);
+                for (int k = 0; k < n; k++) {
+                    result(j, k) -= factor * result(i, k);
+                    identity(j, k) -= factor * identity(i, k);
+                }
+            }
+        }
+    }
+
+    // At this point, result should be the identity matrix and 
+    // identity should contain the inverse
+    return identity;
+}
+#else
 /**
  * @brief Computes the inverse of a square matrix.
  * @param A The matrix to invert.
@@ -201,6 +278,7 @@ template <host_tensor T> auto inv(const T &A) {
 
     return result;
 }
+#endif
 
 /**
  * @brief Computes the Moore-Penrose pseudoinverse of a matrix.

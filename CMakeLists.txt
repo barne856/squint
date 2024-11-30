@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.27)
 
 # BLAS/LAPACKE backend options
-set(SQUINT_BLAS_BACKEND "NONE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, NONE)")
-set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL NONE)
+set(SQUINT_BLAS_BACKEND "REFERENCE" CACHE STRING "BLAS/LAPACK backend to use (OpenBLAS, MKL, REFERENCE, NONE)")
+set_property(CACHE SQUINT_BLAS_BACKEND PROPERTY STRINGS OpenBLAS MKL REFERENCE)
 
 # Add CUDA option
 option(SQUINT_USE_CUDA "Enable CUDA support" OFF)
@@ -12,6 +12,9 @@ option(SQUINT_USE_AVX2 "Enable AVX2 support" OFF)
 
 set(PROJECT_LANGUAGES CXX)
 if(SQUINT_BLAS_BACKEND STREQUAL "OpenBLAS")
+  list(APPEND PROJECT_LANGUAGES C Fortran)
+endif()
+if(SQUINT_BLAS_BACKEND STREQUAL "REFERENCE")
   list(APPEND PROJECT_LANGUAGES C Fortran)
 endif()
 if(SQUINT_USE_CUDA)
@@ -37,8 +40,10 @@ function(setup_blas_backend)
     setup_openblas()
   elseif(SQUINT_BLAS_BACKEND STREQUAL "MKL")
     setup_mkl()
+  elseif(SQUINT_BLAS_BACKEND STREQUAL "REFERENCE")
+    setup_reference()
   elseif(SQUINT_BLAS_BACKEND STREQUAL "NONE")
-    setup_none()
+    target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_NONE)
   else()
     message(FATAL_ERROR "Unsupported BLAS backend: ${SQUINT_BLAS_BACKEND}")
   endif()
@@ -74,9 +79,36 @@ function(setup_mkl)
   target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_MKL)
 endfunction()
 
-# Function to setup NONE (fallback implementations)
-function(setup_none)
-  target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_NONE)
+# Function to setup REFERENCE (fallback implementations)
+function(setup_reference)  
+  # Download LAPACK which includes CBLAS and LAPACKE
+  FetchContent_Declare(
+    lapack
+    GIT_REPOSITORY https://github.com/Reference-LAPACK/lapack.git
+    GIT_TAG v3.12.0
+  )
+  
+  # Configure LAPACK build options
+  set(BUILD_TESTING OFF)
+  set(BUILD_SHARED_LIBS OFF)
+  set(CBLAS ON)
+  set(LAPACKE ON)
+  set(BUILD_DEPRECATED OFF)
+  
+  FetchContent_MakeAvailable(lapack)
+  
+  # Link to main target
+  target_link_libraries(SQUINT INTERFACE 
+    cblas 
+    lapacke
+  )
+  target_include_directories(SQUINT INTERFACE
+    ${CMAKE_BINARY_DIR}  # For the wrapper header
+    ${lapack_BINARY_DIR}/include  # For generated headers
+    ${lapack_SOURCE_DIR}/CBLAS/include
+    ${lapack_SOURCE_DIR}/LAPACKE/include
+  )
+  target_compile_definitions(SQUINT INTERFACE SQUINT_BLAS_BACKEND_REFERENCE)
 endfunction()
 
 # Option to control building tests
