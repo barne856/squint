@@ -27,6 +27,7 @@
 #include "squint/core/memory.hpp"
 #include "squint/tensor/flat_iterator.hpp"
 #include "squint/tensor/subview_iterator.hpp"
+#include "squint/tensor/tensor_op_compatibility.hpp"
 #include "squint/util/sequence_utils.hpp"
 
 #include <array>
@@ -39,10 +40,10 @@
 #include <vector>
 
 #ifdef SQUINT_USE_CUDA
-#include <stdexcept>
-#include <string>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
+#include <stdexcept>
+#include <string>
 #endif
 
 namespace squint {
@@ -169,7 +170,7 @@ class tensor {
         }
 #endif
     }
-    tensor(const std::vector<size_t>& shape)
+    tensor(const std::vector<size_t> &shape)
         requires(dynamic_shape<Shape> && MemorySpace == memory_space::device &&
                  OwnershipType == ownership_type::reference)
     {
@@ -586,14 +587,14 @@ class tensor {
     // Comparison operators
     template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
               enum ownership_type OtherOwnershipType>
-    auto
-    operator==(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other)
-        const -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
+    auto operator==(
+        const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
+        -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
     template <typename U, typename OtherShape, typename OtherStrides, enum error_checking OtherErrorChecking,
               enum ownership_type OtherOwnershipType>
-    auto
-    operator!=(const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other)
-        const -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
+    auto operator!=(
+        const tensor<U, OtherShape, OtherStrides, OtherErrorChecking, OtherOwnershipType, MemorySpace> &other) const
+        -> tensor<std::uint8_t, Shape, Strides, ErrorChecking, ownership_type::owner, MemorySpace>;
     // Unary operators
     auto operator-() const -> tensor;
     // scalar operations
@@ -608,6 +609,27 @@ class tensor {
         } else {
             return strides() == compute_strides(layout::row_major) ||
                    strides() == compute_strides(layout::column_major);
+        }
+    }
+
+    // cast to underlying type
+    auto values() -> tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace> {
+        if constexpr (std::is_same_v<T, blas_type_t<T>>) {
+            if constexpr (fixed_shape<Shape>) {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    data());
+            } else {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    data(), shape(), strides());
+            }
+        } else {
+            if constexpr (fixed_shape<Shape>) {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    reinterpret_cast<blas_type_t<T> *>(data()));
+            } else {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    reinterpret_cast<blas_type_t<T> *>(data()), shape(), strides());
+            }
         }
     }
 

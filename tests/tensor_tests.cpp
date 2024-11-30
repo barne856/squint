@@ -1,4 +1,6 @@
 // NOLINTBEGIN
+#include "squint/quantity/quantity_types.hpp"
+#include <type_traits>
 #include <utility>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
@@ -989,5 +991,22 @@ TEST_CASE("CUDA") {
     }
 }
 #endif
+
+TEST_CASE("values()") {
+    squint::tensor<squint::length, squint::shape<2, 3>> t{squint::length(1), squint::length(4), squint::length(2),
+                                                          squint::length(5), squint::length(3), squint::length(6)};
+    auto values = t.values();
+    static_assert(std::is_same_v<float, decltype(values)::value_type>);
+    CHECK(values(0, 0) == 1.F);
+    CHECK(values(1, 0) == 4.F);
+    CHECK(values(0, 1) == 2.F);
+    CHECK(values(1, 1) == 5.F);
+    CHECK(values(0, 2) == 3.F);
+    CHECK(values(1, 2) == 6.F);
+
+    // modify values
+    values(0, 0) = 7.F;
+    CHECK(t(0, 0) == squint::length(7));
+}
 
 // NOLINTEND
