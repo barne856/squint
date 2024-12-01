@@ -1009,4 +1009,20 @@ TEST_CASE("values()") {
     CHECK(t(0, 0) == squint::length(7));
 }
 
+TEST_CASE("as()") {
+    squint::tensor<float, squint::shape<2, 3>> t{1, 4, 2, 5, 3, 6};
+    auto t_as_length = t.as<squint::length>();
+    static_assert(std::is_same_v<typename decltype(t_as_length)::value_type, squint::length>);
+    CHECK(t_as_length(0, 0) == squint::length(1));
+    CHECK(t_as_length(1, 0) == squint::length(4));
+    CHECK(t_as_length(0, 1) == squint::length(2));
+    CHECK(t_as_length(1, 1) == squint::length(5));
+    CHECK(t_as_length(0, 2) == squint::length(3));
+    CHECK(t_as_length(1, 2) == squint::length(6));
+
+    // modify values
+    t_as_length(0, 0) = squint::length(7);
+    CHECK(t(0, 0) == 7.F);
+}
+
 // NOLINTEND

@@ -633,6 +633,19 @@ class tensor {
         }
     }
 
+    // cast to quantity type
+    template<quantitative Q>
+    auto as() -> tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>
+    requires std::is_same_v<typename Q::value_type, T>
+    {
+        if constexpr (std::is_same_v<T, Q>) {
+            return tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(data());
+        } else {
+            return tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                reinterpret_cast<Q *>(data()));
+        }
+    }
+
   private:
     template <std::size_t... Is>
     [[nodiscard]] constexpr auto compute_offset_impl(const index_type &indices,
