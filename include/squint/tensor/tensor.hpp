@@ -633,11 +633,38 @@ class tensor {
         }
     }
 
+    auto values() const
+        -> tensor<const blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace> {
+        if constexpr (std::is_same_v<T, blas_type_t<T>>) {
+            if constexpr (fixed_shape<Shape>) {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    data());
+            } else {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    data(), shape(), strides());
+            }
+        } else {
+            if constexpr (fixed_shape<Shape>) {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    reinterpret_cast<const blas_type_t<T> *>(data()));
+            } else {
+                return tensor<blas_type_t<T>, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(
+                    reinterpret_cast<const blas_type_t<T> *>(data()), shape(), strides());
+            }
+        }
+    }
+
     // cast to quantity type
     template<quantitative Q>
     auto as() -> tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>
-    requires std::is_same_v<typename Q::value_type, T>
     {
+        if constexpr(quantitative<T>){
+            static_assert(std::is_same_v<blas_type_t<T>, blas_type_t<Q>>,
+                          "Quantities must have the same underlying type");
+        }
+        else{
+            static_assert(std::is_same_v<T, blas_type_t<Q>>, "Quantities must have the same underlying type");
+        }
         if constexpr (std::is_same_v<T, Q>) {
             return tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>(data());
         } else {

@@ -112,6 +112,10 @@ template <arithmetic T, dimensional D, error_checking E = error_checking::disabl
 
     [[nodiscard]] constexpr auto value() noexcept -> T & { return value_; }
     [[nodiscard]] constexpr auto value() const noexcept -> const T & { return value_; }
+    template<quantitative Q>
+    [[nodiscard]] constexpr auto as() const noexcept -> quantity<T, typename Q::dimension_type, E> {
+        return quantity<T, typename Q::dimension_type, E>(value_);
+    }
 
     /// @}
 
