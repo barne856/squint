@@ -113,6 +113,7 @@ endfunction()
 
 # Option to control building tests
 option(SQUINT_BUILD_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
+option(SQUINT_BUILD_EXAMPLES "Build the examples" ${PROJECT_IS_TOP_LEVEL})
 
 # Create interface library for SQUINT
 add_library(SQUINT INTERFACE)
@@ -182,6 +183,18 @@ if(SQUINT_BUILD_TESTS)
   add_squint_test(tensor_ops_tests)
   add_squint_test(tensor_math_tests)
   add_squint_test(geometry_tests)
+endif()
+
+# Examples
+if(SQUINT_BUILD_EXAMPLES)
+  # Function to create test targets
+  function(add_squint_example example_name)
+    add_executable(${example_name} examples/${example_name}.cpp)
+    target_link_libraries(${example_name} PRIVATE SQUINT)
+  endfunction()
+
+  # Add examples
+  add_squint_example(matrix_inverse)
 endif()
 
 add_library(SQUINT::SQUINT ALIAS SQUINT)

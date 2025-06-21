@@ -474,7 +474,7 @@ class tensor {
         requires(OwnershipType == ownership_type::owner);
     static auto diag(const T &value, const std::vector<size_t> &shape = {}, layout l = layout::column_major)
         requires(OwnershipType == ownership_type::owner);
-    static auto arange(T start, T step, const std::vector<size_t> &shape = {}, layout l = layout::column_major)
+    static auto arange(T start, T step = T(1), const std::vector<size_t> &shape = {}, layout l = layout::column_major)
         requires(OwnershipType == ownership_type::owner);
 
     // Shape manipulation
@@ -655,14 +655,12 @@ class tensor {
     }
 
     // cast to quantity type
-    template<quantitative Q>
-    auto as() -> tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace>
-    {
-        if constexpr(quantitative<T>){
+    template <quantitative Q>
+    auto as() -> tensor<Q, Shape, Strides, ErrorChecking, ownership_type::reference, MemorySpace> {
+        if constexpr (quantitative<T>) {
             static_assert(std::is_same_v<blas_type_t<T>, blas_type_t<Q>>,
                           "Quantities must have the same underlying type");
-        }
-        else{
+        } else {
             static_assert(std::is_same_v<T, blas_type_t<Q>>, "Quantities must have the same underlying type");
         }
         if constexpr (std::is_same_v<T, Q>) {
